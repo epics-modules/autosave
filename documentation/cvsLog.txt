@@ -1,0 +1,209 @@
+CVS-commit comments since synApps 5.0
+=============================================================================
+
+support/autosave/xx_auto_4step_settings.req
+support/autosave/xx_auto_SGM_settings.req
+support/autosave/xx_auto_SRSpreamp_settings.req
+support/autosave/xx_auto_dac_positions.req
+support/autosave/xx_auto_dac_settings.req
+support/autosave/xx_auto_icbAdc_settings.req
+support/autosave/xx_auto_icbAmp_settings.req
+support/autosave/xx_auto_icbHvps_settings.req
+support/autosave/xx_auto_icbTca_settings.req
+support/autosave/xx_auto_mca_settings.req
+support/autosave/xx_auto_motor_settings.req
+support/autosave/xx_auto_motor_settingsA.req
+support/autosave/xx_auto_saveData_settings.req
+support/autosave/xx_auto_scalcout_settings.req
+support/autosave/xx_auto_scaler_settings.req
+support/autosave/xx_auto_scan_settings.req
+support/autosave/xx_auto_sseq_settings.req
+support/autosave/xx_auto_swait_settings.req
+support/autosave/xx_auto_table_settings.req
+support/autosave/xx_auto_transform_settings.req
+support/autosave/xx_auto_userAve_settings.req
+
+deleted; This directory used to be a collection of autosave request files,
+intended to be '#include'd in users' request files. Now it's a module, and
+include request files are expected to be stored along with the databases they
+support.
+
+=============================================================================
+
+support/autosave/asApp/Db/SR_array_test.vdb
+
+Converted to vdct
+
+PV's for testing save_restore of arrays
+=============================================================================
+
+support/autosave/asApp/Db/sample.db
+
+deleted
+=============================================================================
+
+support/autosave/asApp/Db/save_restoreStatus.db
+
+Converted to vdct
+
+New status PV's
+
+show status of save_restore
+=============================================================================
+
+support/autosave/asApp/op/adl/SR_X_Status.adl
+
+New status PV's
+=============================================================================
+
+support/autosave/asApp/op/adl/save_restoreStatus.adl
+
+cosmetic mods
+
+New status PV's
+
+*Status.adl streamlined, extra info moved to *Legend.adl
+
+show status of save_restore
+=============================================================================
+
+support/autosave/asApp/op/adl/save_restoreStatusLegend.adl
+
+*Status.adl streamlined, extra info moved to *Legend.adl
+=============================================================================
+
+support/autosave/asApp/op/adl/save_restoreStatus_more.adl
+
+cosmetic mods
+
+New status PV's
+=============================================================================
+
+support/autosave/asApp/op/adl/save_restoreStatus_tiny.adl
+
+New status PV's
+=============================================================================
+
+support/autosave/asApp/src/Makefile
+
+more robust 3.13 version, with array support, ported to 3.14
+=============================================================================
+
+support/autosave/asApp/src/dbrestore.c
+
+Array support now understands max and curr number of elements, is prepared to
+see curr_elements change, and doesn't write a PV off if curr_elements is zero. 
+(If max_elements is zero, however, the PV will never be looked at again.)
+
+Added comments in the file, describing the last few cvs commits.  Changed the
+internal version number to 4.1
+
+Last commit had a bug.  It accepted DOS termination but not Unix
+
+Allow dos line termination ("<lf>") as well as Unix ("<lf>")
+Also, collapsed some code.  Also, modified the way sequenced
+backup file dates are compared to current date.
+
+more robust 3.13 version, with array support, ported to 3.14
+=============================================================================
+
+support/autosave/asApp/src/hide_dbrestore.c
+
+deleted
+=============================================================================
+
+support/autosave/asApp/src/initHooks.c
+
+case initialProcess now before case interruptAccept
+(no change in function)
+=============================================================================
+
+support/autosave/asApp/src/save_restore.c
+
+Use epicsThreadGetStackSize(epicsThreadStackMedium) instead of hard-coded
+(10000) stack size
+
+Change format to avoid warning
+
+Array support now understands max and curr number of elements, is prepared to
+see curr_elements change, and doesn't write a PV off if curr_elements is zero. 
+(If max_elements is zero, however, the PV will never be looked at again.)
+
+Added comments in the file, describing the last few cvs commits.  Changed the
+way time is handled, from time()-based to epicsTime-based.  Added some code to
+defend against partial init failures.  Changed the internal version number to
+4.2
+
+Allow dos line termination ("<lf>") as well as Unix ("<lf>")
+
+check that chid is non-NULL before calling ca_state()
+
+New status PV's
+
+fixed list-linking (was failing when readReqFile was called recursively)
+
+more robust 3.13 version, with array support, ported to 3.14
+=============================================================================
+
+support/autosave/asApp/src/save_restore.h
+
+Allow dos line termination ("<lf>") as well as Unix ("<lf>")
+
+more robust 3.13 version, with array support, ported to 3.14
+=============================================================================
+
+support/autosave/configure/CONFIG_APP
+
+3.14.7 version
+=============================================================================
+
+support/autosave/configure/RELEASE
+
+3.14.7 version
+=============================================================================
+
+support/autosave/configure/RULES.iocBoot
+
+deleted; higher-level Makefile now has all this stuff
+=============================================================================
+
+support/autosave/documentation/autoSaveRestore.README
+
+deleted;replaced by html file
+
+Allow dos line termination ("<lf>") as well as Unix ("<lf>")
+
+New status PV's, fixed some typos
+=============================================================================
+
+support/autosave/documentation/autoSaveRestore.html
+
+fixed typos
+
+v4.1
+=============================================================================
+
+support/autosave/documentation/autosaveReleaseNotes.html
+
+v4.1
+
+Allow dos line termination ("<lf>") as well as Unix ("<lf>")
+version number 4.0
+
+New status PV's, fixed some typos
+=============================================================================
+
+support/autosave/iocBoot/Makefile
+
+3.14.7
+=============================================================================
+
+support/autosave/iocBoot/iocas/save_restore.cmd
+
+Split out save_restore.cmd from st.cmd
+=============================================================================
+
+support/autosave/iocBoot/iocas/st.cmd
+
+Split out save_restore.cmd from st.cmd
+=============================================================================
