@@ -40,8 +40,10 @@
  *                '\n' was stripped.)
  * 01/28/05  tmm  v4.5 Filenames specified in set_pass<n>_restoreFile() now
  *                initialized with status SR_STATUS_INIT ('No Status')
+ * 02/02/05  tmm  v4.6 copy VERSION to a variable, instead of using it directly
+ *                as a string arg.  The old way crashed under some circumstances.
  */
-#define VERSION "4.5"
+#define VERSION "4.6"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -72,6 +74,7 @@
 #endif
 
 extern	DBBASE *pdbbase;
+STATIC char 	*RESTORE_VERSION = VERSION;
 
 struct restoreList restoreFileList = {0, 0, 
 			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
@@ -600,7 +603,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	long		*pStatusVal = 0;
 	char		*statusStr = 0;
 	
-	errlogPrintf("reboot_restore (v%s): entry for file '%s'\n", VERSION, filename);
+	errlogPrintf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
 	/* initialize database access routines */
 	if (!pdbbase) {
 		errlogPrintf("No Database Loaded\n");
