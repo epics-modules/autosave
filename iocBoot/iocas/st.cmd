@@ -14,19 +14,6 @@ sysCplusEnable=1
 ### Load custom EPICS software from user tree and from share
 ld < as.munch
 
-### dbrestore setup
-# ok to restore a save set that had missing values (no CA connection to PV)?
-sr_restore_incomplete_sets_ok = 1
-# dbrestore saves a copy of the save file it restored.  File name is, e.g.,
-# auto_settings.sav.bu or auto_settings.savYYMMDD-HHMMSS if
-# reboot_restoreDatedBU is nonzero.
-reboot_restoreDatedBU = 1;
-set_savefile_path(startup, "autosave")
-set_requestfile_path(startup, "")
-set_requestfile_path(startup, "autosave")
-set_requestfile_path(autosave, "asApp/Db")
-reboot_restoreDebug=0
-
 cd startup
 ################################################################################
 # Tell EPICS all about the record types, device-support modules, drivers,
@@ -34,7 +21,8 @@ cd startup
 dbLoadDatabase("../../dbd/iocas.dbd")
 iocas_registerRecordDeviceDriver(pdbbase)
 
-dbLoadRecords("$(TOP)/asApp/Db/sample.db","P=as:")
+# save_restore setup
+< save_restore.cmd
 
 ###############################################################################
 # Set shell prompt (otherwise it is left at mv167 or mv162)
