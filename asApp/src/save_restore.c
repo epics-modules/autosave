@@ -490,7 +490,7 @@ STATIC int save_restore(void)
 		ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid);
 		ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid);
 		ca_search(SR_rebootTime_PV, &SR_rebootTime_chid);
-		if (ca_pend_io(0.5)!=ECA_NORMAL) {
+		if (ca_pend_io(20.)!=ECA_NORMAL) {
 			errlogPrintf("save_restore: Can't connect to all status PV(s)\n");
 		}
 		/* Show reboot status */
@@ -655,7 +655,7 @@ STATIC int save_restore(void)
 				ca_search(plist->save_state_PV, &plist->save_state_chid);
 				ca_search(plist->statusStr_PV, &plist->statusStr_chid);
 				ca_search(plist->time_PV, &plist->time_chid);
-				if (ca_pend_io(0.5)!=ECA_NORMAL) {
+				if (ca_pend_io(20.)!=ECA_NORMAL) {
 					errlogPrintf("Can't connect to status PV(s) for list '%s'\n", plist->save_file);
 				}
 			}
