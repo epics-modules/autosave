@@ -1508,7 +1508,7 @@ void save_restoreShow(int verbose)
 				(plist->not_connected == 1) ? ' ' : 's');
 			if (verbose) {
 				for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-					printf("\t%s (max:%d curr:%d elements)\t%s", pchannel->name,
+					printf("\t%s (max:%ld curr:%ld elements)\t%s", pchannel->name,
 						pchannel->max_elements, pchannel->curr_elements, pchannel->value);
 					if (pchannel->enum_val >= 0) printf("\t%d\n",pchannel->enum_val);
 					else printf("\n");
