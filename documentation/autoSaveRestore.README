@@ -1,4 +1,4 @@
-Autosave/restore  --  save_restore.c v3.2; dbrestore.c v3.0
+Autosave/restore  --  save_restore.c v3.2; dbrestore.c v3.01
 
 This software automatically saves the values of EPICS process variables
 (PVs), to files on a server, and can automatically restore those values
@@ -8,6 +8,7 @@ which I folded into the version I've been maintaining.  A bunch of
 people contributed to getting the software running on PPC hardware,
 including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus
 Janousch and David Maden (SLS), and I'm not sure who else.  Mark Rivers
+fixed some long-standing bugs in the saving of floats and doubles.
 
 
 Contents
@@ -31,7 +32,7 @@ reqInclude.tar     -- collection of autosave-request files with parameterized
 Differences from previous versions
 ==================================
 
-save_restore v3.2; dbrestore v3.0:
+save_restore v3.2; dbrestore v3.01:
 ----------------------------------
 
 Previous versions did not reliably save non-local float and double PV
@@ -140,16 +141,19 @@ replaces its target with nothing.
 directory ("current", that is, at the time the restore commands are
 executed -- during iocInit), specify one or more directories to be
 searched for request files using one or more invocations of the
-function
+function set_requestfile_path(), e.g.,
 
-	set_requestfile_path()
 
+	set_requestfile_path(startup, "")
+	set_requestfile_path(std, "stdApp/Db")
+	set_requestfile_path(motor, "motorApp/Db")
+	...
 
 *) Select the directory in which you want save files to be written.  If
 this will not be the crate's current working directory at the time the
-files are written, execute the function
+files are written, execute the function set_savefile_path(), e.g.,
 
-	set_savefile_path()
+	set_savefile_path(startup, "autosave")
 
 in your startup script, before the create_xxx_set() commands, to
 specify the path to the directory.  If you are using NFS (recommended),
@@ -168,10 +172,12 @@ increase.
 
 *) Specify which save files are to be restored before record
 initialization (pass 0) and which are to be restored after record
-initialization (pass 1), using the commands
+initialization (pass 1), using the commands set_pass0_restoreFile(),
+and set_pass1_restoreFile(), e.g.,
 
-	set_pass0_restoreFile()
-	set_pass1_restoreFile()
+	set_pass0_restoreFile("auto_positions.sav")
+	set_pass0_restoreFile("auto_settings.sav")
+	set_pass1_restoreFile("auto_settings.sav")
 
 Place these commands in the startup file before iocInit.  If you don't
 call either of these functions (or if your calls fail completely to
@@ -195,11 +201,7 @@ Notes:
 from which it restored PV's.  This file can either be named xxx.bu, and
 be rewritten every reboot, or named xxxYYMMDD-HHMMSS, where "YY..." is a date.
 Dated backups are not overwritten.  If you want dated backup files
-(recommended), set
-
-	reboot_restoreDatedBU = 1
-
-in the startup file before iocInit.
+(recommended), set reboot_restoreDatedBU = 1 in the startup file before iocInit.
 
 
 Note:
@@ -210,17 +212,18 @@ Note:
 *) Invoke the "save" part of this software as part of the EPICS startup
 sequence, by adding lines of the form
 
-	create_monitor_set("auto_positions.req",5)
-	create_monitor_set("auto_settings.req",30)
+	create_monitor_set("auto_positions.req",5,"P=xxx:")
+	create_monitor_set("auto_settings.req",30,"P=xxx:")
 
 to the end of your EPICS startup file.  You can call the files anything
 you want.
 
-For each "create_monitor_set(<name>.req, <time>)" command, the save_restore
-process will write the files <name>.sav and <name>.savB every <time>
-seconds, if any of the PVs named in the file <name>.req have changed value
-since the last write.  Other create_xxx_set() commands do the same thing,
-but with different conditions triggering the save operation.
+For each "create_monitor_set(<name>.req, <time>, <macro substitution>)"
+command, the save_restore process will write the files <name>.sav and
+<name>.savB every <time> seconds, if any of the PVs named in the file
+<name>.req have changed value since the last write.  Other
+create_xxx_set() commands do the same thing, but with different conditions
+triggering the save operation.
 
 Note that in previous versions, create_monitor_set() used an argument of
 type double to specify the period (in seconds).  This doesn't work on the
@@ -228,11 +231,8 @@ PPC, so the arguments for this and similar functions were changed to int.
 
 If your VME crate takes a really long time to boot, it's possible the PVs
 you want to save will not have the correct values when the save_restore
-task first looks at them.  You can avoid this by putting a
-
-	taskDelay(<number_of_60_Hz_clock_ticks>)
-
-before create_monitor_set().
+task first looks at them.  You can avoid this, under vxWorks at least, by
+putting a taskDelay(<number_of_ticks>) before create_monitor_set().
 
 
 Save files
@@ -243,11 +243,11 @@ edit a save file, you must end it with the text
 <END>
 
 followed by a single arbitrary character (normally '\n').  If the file does
-not end with this text, reboot_restore() will assume the crate crashed while
-the file was being written, and will not use the file.  Once a save file has
-been created successfully, save_restore will not overwrite the file unless
-a good ".savB" backup file exists.  Similarly, it will not overwrite the
-".savB" file unless the save file was successfully written.
+not end with this text, reboot_restore() will not use the file.  (Save files
+containing version numbers less than 1.8 are exempt from this test.)  Once a
+save file has been created successfully, save_restore will not overwrite the
+file unless a good ".savB" backup file exists.  Similarly, it will not
+overwrite the ".savB" file unless the save file was successfully written.
 
 ".savB" files are created using the VxWorks "copy" command, which gives
 everything it touches the NFS permissions "0640" (read/write for owner,
