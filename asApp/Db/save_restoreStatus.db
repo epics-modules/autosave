@@ -1,0 +1,85 @@
+grecord(bo,"$(P)save_restoreHeartbeat") {
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)auto_positionsState") {
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)auto_settingsState") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)auto_positionsStatus") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(mbbo,"$(P)auto_settingsStatus") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(mbbo,"$(P)reboot_restoreStatus") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(mbbo,"$(P)save_restoreStatus") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)save_restoreRecentlyStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)auto_positionsStatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)auto_positionsTime") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+grecord(stringout,"$(P)auto_settingsStatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)auto_settingsTime") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+grecord(stringout,"$(P)reboot_restoreStatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)reboot_restoreTime") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+grecord(stringout,"$(P)save_restoreStatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
