@@ -65,8 +65,18 @@
  *                intervals independent of the channel-list settings.
  *                Status PV's have been reworked so database and medm file
  *                don't have to contain the names of save sets.
+ * 04/23/04  tmm  List linking; was failing when readReqFile was called recursively.
+ * 05/14/04  tmm  New status PV's.  The old ones had the save-set name as part of
+ *                the record names.  Now, PV's are generic, and the save-set name
+ *                is written to them.
+ * 06/28/04  tmm  Check that chid is non-NULL before calling ca_state().
+ * 10/04/04  tmm  Allow DOS line termination (CRLF) or unix (LF) in .sav file.
+ * 10/29/04  tmm  v4.1 Init all strings to "".  Check that sr_mutex exists in
+ *                save_restoreShow().
+ * 11/03/04  tmm  v4.2 Changed the way time strings are processed.  Added some code
+ *                to defend against partial init failures.
  */
-#define		SRVERSION "save/restore V4.0"
+#define		SRVERSION "save/restore V4.2"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -100,6 +110,7 @@ extern int logMsg(char *fmt, ...);
 #include	<callback.h>
 #include	<epicsMutex.h>
 #include	<epicsEvent.h>
+#include	<epicsTime.h>
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
 
@@ -116,6 +127,9 @@ extern int logMsg(char *fmt, ...);
 #define MONITORED	(TIMER|CHANGE)	/* set when timer expires and channel changes */
 #define MANUAL		0x10		/* set on request */
 #define	SINGLE_EVENTS	(PERIODIC|TRIGGERED|MANUAL)
+
+#define TIMEFMT "%a %b %d %I:%M:%S %Y\n"	/* e.g. 'Fri Sep 13 00:00:00 1986\n'	*/
+#define TIMEFMT_noY "%a %b %d %I:%M:%S"		/* e.g. 'Fri Sep 13 00:00:00'			*/
 
 struct chlist {								/* save set list element */
 	struct chlist	*pnext;					/* next list */
@@ -136,8 +150,10 @@ struct chlist {								/* save set list element */
 	CALLBACK		monitorCb;
 	int				not_connected;			/* # bad channels not saved/connected */
 	int				backup_sequence_num;	/* appended to backup files */
-	time_t			backup_time;
-	time_t			save_time;
+	epicsTimeStamp	backup_time;
+	epicsTimeStamp	save_time;
+	/* time_t			backup_time; */
+	/* time_t			save_time; */
 	int				listNumber;				/* future: identify this list's status reporting variables */
 	char			name_PV[PV_NAME_LEN];	/* future: write save-set name to generic PV */
 	chid			name_chid;
@@ -176,11 +192,11 @@ struct pathListElement {
 volatile int save_restoreDebug = 0;
 epicsExportAddress(int, save_restoreDebug);
 
-STATIC struct chlist *lptr = NULL;			/* save-set listhead */
-STATIC int listNumber = 0;					/* future: list number, to associate lists with status PV's */
-STATIC epicsMutexId	sr_mutex;				/* mut(ual) ex(clusion) for list of save sets */
-STATIC epicsEventId	sem_remove;				/* delete list semaphore */
-STATIC epicsEventId	sem_do_manual_op;		/* semaphore signalling completion of a manual operation */
+STATIC struct chlist *lptr = NULL;				/* save-set listhead */
+STATIC int listNumber = 0;						/* future: list number, to associate lists with status PV's */
+STATIC epicsMutexId	sr_mutex = NULL;			/* mut(ual) ex(clusion) for list of save sets */
+STATIC epicsEventId	sem_remove = NULL;			/* delete list semaphore */
+STATIC epicsEventId	sem_do_manual_op = NULL;	/* semaphore signalling completion of a manual operation */
 
 STATIC short	save_restore_init = 0;
 STATIC char 	*SRversion = SRVERSION;
@@ -192,34 +208,34 @@ STATIC unsigned int
 STATIC int		taskStackSize = 10000;
 STATIC epicsThreadId
 				taskID = 0;					/* save_restore task ID */
-STATIC char		remove_filename[FN_LEN];	/* name of list to delete */
+STATIC char		remove_filename[FN_LEN] = "";	/* name of list to delete */
 STATIC int		remove_dset = 0;			/* instructs save_restore task to remove list named by remove_filename */ 
 STATIC int		remove_status = 0;			/* status of remove operation */
 
 #define FROM_SAVE_FILE 1
 #define FROM_ASCII_FILE 2
-STATIC char		manual_restore_filename[FN_LEN];	/* name of file to restore from */
+STATIC char		manual_restore_filename[FN_LEN] = "";	/* name of file to restore from */
 /* tells save_restore a manual restore is requested, and identifies the file type */
 STATIC int		manual_restore_type = 0;
 STATIC int		manual_restore_status = 0;		/* result of manual_restore operation */
 
 /*** stuff for reporting status to EPICS client ***/
-STATIC char	status_prefix[10];
+STATIC char	status_prefix[10] = "";
 
-STATIC long	SR_status, SR_heartbeat;
+STATIC long	SR_status = SR_STATUS_FAIL, SR_heartbeat = 0;
 /* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
-STATIC char	SR_statusStr[STRING_LEN], SR_recentlyStr[300];
+STATIC char	SR_statusStr[STRING_LEN] = "", SR_recentlyStr[300] = "";
 STATIC char	SR_status_PV[PV_NAME_LEN] = "", SR_heartbeat_PV[PV_NAME_LEN] = ""; 
 STATIC char	SR_statusStr_PV[PV_NAME_LEN] = "", SR_recentlyStr_PV[PV_NAME_LEN] = "";
 STATIC chid	SR_status_chid, SR_heartbeat_chid,
 			SR_statusStr_chid, SR_recentlyStr_chid;
 
 STATIC long	SR_rebootStatus;
-STATIC char	SR_rebootStatusStr[STRING_LEN];
+STATIC char	SR_rebootStatusStr[STRING_LEN] = "";
 STATIC char	SR_rebootStatus_PV[PV_NAME_LEN] = "", SR_rebootStatusStr_PV[PV_NAME_LEN] = "";
 STATIC chid	SR_rebootStatus_chid, SR_rebootStatusStr_chid;
-STATIC char	SR_rebootTime_PV[PV_NAME_LEN];
-STATIC char	SR_rebootTimeStr[STRING_LEN];
+STATIC char	SR_rebootTime_PV[PV_NAME_LEN] = "";
+STATIC char	SR_rebootTimeStr[STRING_LEN] = "";
 STATIC chid	SR_rebootTime_chid;
 
 volatile int	save_restoreNumSeqFiles = 3;			/* number of sequence files to maintain */
@@ -425,18 +441,15 @@ STATIC int save_restore(void)
 {
 	struct chlist *plist;
 	char *cp, nameString[FN_LEN];
-#ifdef vxWorks
-	static size_t buflen = (STRING_LEN-1);
-#endif
 	int i, do_seq_check, just_remounted;
 	long status;
-	time_t currTime, last_seq_check, remount_check_time;
+	epicsTimeStamp currTime, last_seq_check, remount_check_time;
 
 	if (save_restoreDebug)
 			errlogPrintf("save_restore:save_restore: entry; status_prefix='%s'\n", status_prefix);
 
-	(void)time(&currTime);
-	last_seq_check = remount_check_time = currTime;
+	epicsTimeGetCurrent(&currTime);
+	last_seq_check = remount_check_time = currTime; /* struct copy */
 
 	ca_context_create(ca_enable_preemptive_callback);
 
@@ -490,13 +503,9 @@ STATIC int save_restore(void)
 			ca_put(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
 		if (SR_rebootStatusStr_chid && (ca_state(SR_rebootStatusStr_chid) == cs_conn))
 			ca_put(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
-		(void)time(&currTime);
-#ifdef vxWorks
-		(void)ctime_r(&currTime, SR_rebootTimeStr, &buflen);
-#else
-		(void)ctime_r(&currTime, SR_rebootTimeStr);
-#endif
-		if ((cp = strrchr(SR_rebootTimeStr, (int)':'))) cp[3] = 0;
+		epicsTimeGetCurrent(&currTime);
+		epicsTimeToStrftime(SR_rebootTimeStr, sizeof(SR_rebootTimeStr),
+			TIMEFMT_noY, &currTime);
 		if (SR_rebootTime_chid && (ca_state(SR_rebootTime_chid) == cs_conn))
 			ca_put(DBR_STRING, SR_rebootTime_chid, &SR_rebootTimeStr);
 	}
@@ -507,18 +516,19 @@ STATIC int save_restore(void)
 		strcpy(SR_statusStr, "Ok");
 		save_restoreSeqPeriodInSeconds = MAX(10, save_restoreSeqPeriodInSeconds);
 		save_restoreNumSeqFiles = MIN(10, MAX(0, save_restoreNumSeqFiles));
-		(void)time(&currTime);
-		do_seq_check = (difftime(currTime, last_seq_check) > save_restoreSeqPeriodInSeconds/2);
-		if (do_seq_check) last_seq_check = currTime;
+		epicsTimeGetCurrent(&currTime);
+		do_seq_check = (epicsTimeDiffInSeconds(&currTime, &last_seq_check) >
+			save_restoreSeqPeriodInSeconds/2);
+		if (do_seq_check) last_seq_check = currTime; /* struct copy */
 
 		just_remounted = 0;
 #ifdef vxWorks
 		if ((save_restoreNFSOK == 0) && save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0]) {
 			/* NFS problem: Try, every 60 seconds, to remount */
-			if (difftime(currTime, remount_check_time) > 60) {
+			if (epicsTimeDiffInSeconds(&currTime, &remount_check_time) > 60.) {
 				dismountFileSystem();
 				just_remounted = mountFileSystem();
-				remount_check_time = currTime;
+				remount_check_time = currTime; /* struct copy */
 			}
 		}
 #endif
@@ -559,7 +569,8 @@ STATIC int save_restore(void)
 			/*** Periodically make sequenced backup of most recent saved file ***/
 			if (do_seq_check) {
 				if (save_restoreNumSeqFiles && plist->last_save_file &&
-					(difftime(currTime, plist->backup_time) > save_restoreSeqPeriodInSeconds)) {
+					(epicsTimeDiffInSeconds(&currTime, &plist->backup_time) >
+						save_restoreSeqPeriodInSeconds)) {
 					do_seq(plist);
 				}
 			}
@@ -652,13 +663,9 @@ STATIC int save_restore(void)
 				ca_put(DBR_LONG, plist->save_state_chid, &plist->save_state);
 			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn))
 				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			if (plist->status >= SR_STATUS_WARN) {
-#ifdef vxWorks
-				(void)ctime_r(&plist->save_time, plist->timeStr, &buflen);
-#else
-				(void)ctime_r(&plist->save_time, plist->timeStr);
-#endif
-				if ((cp = strrchr(plist->timeStr, (int)':'))) cp[3] = 0;
+			if ((plist->status >= SR_STATUS_WARN) && (plist->save_time.secPastEpoch != 0)) {
+				epicsTimeToStrftime(plist->timeStr, sizeof(plist->timeStr),
+					TIMEFMT_noY, &plist->save_time);
 				if (plist->time_chid && (ca_state(plist->time_chid) == cs_conn))
 					ca_put(DBR_STRING, plist->time_chid, &plist->timeStr);
 			}
@@ -1119,7 +1126,7 @@ STATIC int write_save_file(struct chlist *plist)
 	}
 
 	/* keep the name and time of the last saved file */
-	(void)time(&plist->save_time);
+	epicsTimeGetCurrent(&plist->save_time);
 	strcpy(plist->last_save_file, plist->save_file);
 
 	/*** Write a backup copy of the save file ***/
@@ -1215,7 +1222,7 @@ STATIC void do_seq(struct chlist *plist)
 			plist->save_file, plist->backup_sequence_num);
 	}
 
-	plist->backup_time = time(NULL);
+	epicsTimeGetCurrent(&plist->backup_time);
 	if (++(plist->backup_sequence_num) >=  save_restoreNumSeqFiles)
 		plist->backup_sequence_num = 0;
 
@@ -1382,7 +1389,7 @@ STATIC int create_data_set(
 	plist->save_state = 0;
 	plist->save_ok = 0;
 	plist->monitor_period = MAX(mon_period, min_period);
-	plist->backup_time = time(NULL);
+	epicsTimeGetCurrent(&plist->backup_time);
 	plist->backup_sequence_num = -1;
 	plist->status = SR_STATUS_FAIL;
 	strcpy(plist->statusStr,"Initializing list");
@@ -1449,44 +1456,52 @@ void save_restoreShow(int verbose)
 		p = p->pnext;
 	}
 	printf("  save file path:\n    '%s'\n", saveRestoreFilePath);
-	epicsMutexLock(sr_mutex);
-	for (plist = lptr; plist != 0; plist = plist->pnext) {
-		printf("    %s: \n",plist->reqFile);
-		printf("    Status: '%s' - '%s'\n", SR_STATUS_STR[plist->status], plist->statusStr);
-		printf("    Last save time  :%s", ctime(&plist->save_time));
-		printf("    Last backup time:%s", ctime(&plist->backup_time));
-		strcpy(tmpstr, "[ ");
-		if (plist->save_method & PERIODIC) strcat(tmpstr, "PERIODIC ");
-		if (plist->save_method & TRIGGERED) strcat(tmpstr, "TRIGGERED ");
-		if ((plist->save_method & MONITORED)==MONITORED) strcat(tmpstr, "TIMER+CHANGE ");
-		if (plist->save_method & MANUAL) strcat(tmpstr, "MANUAL ");
-		strcat(tmpstr, "]");
-		printf("    methods: %s\n", tmpstr);
-		strcpy(tmpstr, "[ ");
-		if (plist->save_state & PERIODIC) strcat(tmpstr, "PERIOD ");
-		if (plist->save_state & TRIGGERED) strcat(tmpstr, "TRIGGER ");
-		if (plist->save_state & TIMER) strcat(tmpstr, "TIMER ");
-		if (plist->save_state & CHANGE) strcat(tmpstr, "CHANGE ");
-		if (plist->save_state & MANUAL) strcat(tmpstr, "MANUAL ");
-		strcat(tmpstr, "]");
-		printf("    save_state = 0x%x\n", plist->save_state);
-		printf("    period: %d; trigger chan: '%s'; monitor period: %d\n",
-		   plist->period,plist->trigger_channel,plist->monitor_period);
-		printf("    last saved file - %s\n",plist->last_save_file);
-		printf("    %d channel%c not connected (or ca_get failed)\n",plist->not_connected,
-			(plist->not_connected == 1) ? ' ' : 's');
-		if (verbose) {
-			for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-				printf("\t%s\t%s",pchannel->name,pchannel->value);
-				if (pchannel->enum_val >= 0) printf("\t%d\n",pchannel->enum_val);
-				else printf("\n");
+	if (sr_mutex && (epicsMutexLock(sr_mutex) == epicsMutexLockOK)) {
+		for (plist = lptr; plist != 0; plist = plist->pnext) {
+			printf("    %s: \n",plist->reqFile);
+			printf("    Status: '%s' - '%s'\n", SR_STATUS_STR[plist->status], plist->statusStr);
+			epicsTimeToStrftime(tmpstr, sizeof(tmpstr), TIMEFMT, &plist->save_time);
+			printf("    Last save time  :%s", tmpstr);
+			epicsTimeToStrftime(tmpstr, sizeof(tmpstr), TIMEFMT, &plist->backup_time);
+			printf("    Last backup time:%s", tmpstr);
+			strcpy(tmpstr, "[ ");
+			if (plist->save_method & PERIODIC) strcat(tmpstr, "PERIODIC ");
+			if (plist->save_method & TRIGGERED) strcat(tmpstr, "TRIGGERED ");
+			if ((plist->save_method & MONITORED)==MONITORED) strcat(tmpstr, "TIMER+CHANGE ");
+			if (plist->save_method & MANUAL) strcat(tmpstr, "MANUAL ");
+			strcat(tmpstr, "]");
+			printf("    methods: %s\n", tmpstr);
+			strcpy(tmpstr, "[ ");
+			if (plist->save_state & PERIODIC) strcat(tmpstr, "PERIOD ");
+			if (plist->save_state & TRIGGERED) strcat(tmpstr, "TRIGGER ");
+			if (plist->save_state & TIMER) strcat(tmpstr, "TIMER ");
+			if (plist->save_state & CHANGE) strcat(tmpstr, "CHANGE ");
+			if (plist->save_state & MANUAL) strcat(tmpstr, "MANUAL ");
+			strcat(tmpstr, "]");
+			printf("    save_state = 0x%x\n", plist->save_state);
+			printf("    period: %d; trigger chan: '%s'; monitor period: %d\n",
+			   plist->period,plist->trigger_channel,plist->monitor_period);
+			printf("    last saved file - %s\n",plist->last_save_file);
+			printf("    %d channel%c not connected (or ca_get failed)\n",plist->not_connected,
+				(plist->not_connected == 1) ? ' ' : 's');
+			if (verbose) {
+				for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
+					printf("\t%s\t%s",pchannel->name,pchannel->value);
+					if (pchannel->enum_val >= 0) printf("\t%d\n",pchannel->enum_val);
+					else printf("\n");
+				}
 			}
 		}
+		epicsMutexUnlock(sr_mutex);
+	} else {
+		if (!sr_mutex)
+			printf("  The save_restore task apparently is not running.\n");
+		else
+			printf("  Can't lock sr_mutex.\n");
 	}
 	printf("reboot-restore status:\n");
 	dbrestoreShow();
 	printf("END save_restoreShow\n");
-	epicsMutexUnlock(sr_mutex);
 }
 
 
