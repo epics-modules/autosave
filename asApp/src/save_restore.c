@@ -486,9 +486,9 @@ STATIC int save_restore(void)
 				strncpy(SR_rebootStatusStr, restoreFileList.pass1StatusStr[i], (STRING_LEN-1));
 			}
 		}
-		if (ca_state(SR_rebootStatus_chid) == cs_conn)
+		if (SR_rebootStatus_chid && (ca_state(SR_rebootStatus_chid) == cs_conn))
 			ca_put(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
-		if (ca_state(SR_rebootStatusStr_chid) == cs_conn)
+		if (SR_rebootStatusStr_chid && (ca_state(SR_rebootStatusStr_chid) == cs_conn))
 			ca_put(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
 		(void)time(&currTime);
 #ifdef vxWorks
@@ -497,7 +497,7 @@ STATIC int save_restore(void)
 		(void)ctime_r(&currTime, SR_rebootTimeStr);
 #endif
 		if ((cp = strrchr(SR_rebootTimeStr, (int)':'))) cp[3] = 0;
-		if (ca_state(SR_rebootTime_chid) == cs_conn)
+		if (SR_rebootTime_chid && (ca_state(SR_rebootTime_chid) == cs_conn))
 			ca_put(DBR_STRING, SR_rebootTime_chid, &SR_rebootTimeStr);
 	}
 
@@ -596,13 +596,13 @@ STATIC int save_restore(void)
 
 		/* report status */
 		SR_heartbeat = (SR_heartbeat+1) % 2;
-		if (ca_state(SR_status_chid) == cs_conn)
+		if (SR_status_chid && (ca_state(SR_status_chid) == cs_conn))
 			ca_put(DBR_LONG, SR_status_chid, &SR_status);
-		if (ca_state(SR_heartbeat_chid) == cs_conn)
+		if (SR_heartbeat_chid && (ca_state(SR_heartbeat_chid) == cs_conn))
 			ca_put(DBR_LONG, SR_heartbeat_chid, &SR_heartbeat);
-		if (ca_state(SR_statusStr_chid) == cs_conn)
+		if (SR_statusStr_chid && (ca_state(SR_statusStr_chid) == cs_conn))
 			ca_put(DBR_STRING, SR_statusStr_chid, &SR_statusStr);
-		if (ca_state(SR_recentlyStr_chid) == cs_conn) {
+		if (SR_recentlyStr_chid && (ca_state(SR_recentlyStr_chid) == cs_conn)) {
 			SR_recentlyStr[(STRING_LEN-1)] = '\0';
 			status = ca_put(DBR_STRING, SR_recentlyStr_chid, &SR_recentlyStr);
 		}
@@ -640,17 +640,17 @@ STATIC int save_restore(void)
 				}
 			}
 
-			if (ca_state(plist->status_chid) == cs_conn)
+			if (plist->status_chid && (ca_state(plist->status_chid) == cs_conn))
 				ca_put(DBR_LONG, plist->status_chid, &plist->status);
-			if (ca_state(plist->name_chid) == cs_conn) {
+			if (plist->name_chid && (ca_state(plist->name_chid) == cs_conn)) {
 				strncpy(nameString, plist->save_file, STRING_LEN-1);
 				cp = strrchr(nameString, (int)'.');
 				if (cp) *cp = 0;
 				ca_put(DBR_STRING, plist->name_chid, &nameString);
 			}
-			if (ca_state(plist->save_state_chid) == cs_conn)
+			if (plist->save_state_chid && (ca_state(plist->save_state_chid) == cs_conn))
 				ca_put(DBR_LONG, plist->save_state_chid, &plist->save_state);
-			if (ca_state(plist->statusStr_chid) == cs_conn)
+			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn))
 				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 			if (plist->status >= SR_STATUS_WARN) {
 #ifdef vxWorks
@@ -659,7 +659,7 @@ STATIC int save_restore(void)
 				(void)ctime_r(&plist->save_time, plist->timeStr);
 #endif
 				if ((cp = strrchr(plist->timeStr, (int)':'))) cp[3] = 0;
-				if (ca_state(plist->time_chid) == cs_conn)
+				if (plist->time_chid && (ca_state(plist->time_chid) == cs_conn))
 					ca_put(DBR_STRING, plist->time_chid, &plist->timeStr);
 			}
 		}
@@ -716,7 +716,7 @@ STATIC int connect_list(struct chlist *plist)
 	}
 
 	for (pchan = plist->pchan_list, n=m=0; pchan != 0; pchan = pchan->pnext, m++) {
-		if (ca_state(pchan->chid) == cs_conn) {
+		if (pchan->chid && (ca_state(pchan->chid) == cs_conn)) {
 			strcpy(pchan->value,"Connected");
 			n++;
 		}
@@ -761,6 +761,8 @@ STATIC int enable_list(struct chlist *plist)
 			errlogPrintf("trigger %s search failed\n", plist->trigger_channel);
 		} else if (ca_pend_io(2.0) != ECA_NORMAL) {
 			errlogPrintf("timeout on search of %s\n", plist->trigger_channel);
+		} else if (chid == NULL) {
+			errlogPrintf("no CHID for trigger channel '%s'\n", plist->trigger_channel);
 		} else if (ca_state(chid) != cs_conn) {
 			errlogPrintf("trigger %s search not connected\n", plist->trigger_channel);
 		} else if (ca_add_event(DBR_FLOAT, chid, triggered_save, (void *)plist, 0) !=ECA_NORMAL) {
@@ -825,7 +827,7 @@ STATIC int get_channel_values(struct chlist *plist)
 	for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 		pchannel->valid = 0;
 		num_elements = pchannel->num_elements;
-		if ((ca_state(pchannel->chid) == cs_conn) && (num_elements >= 1)) {
+		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (num_elements >= 1)) {
 			field_type = ca_field_type(pchannel->chid);
 			strcpy(pchannel->value, INIT_STRING);
 			if (field_type == DBF_FLOAT) {
@@ -846,7 +848,9 @@ STATIC int get_channel_values(struct chlist *plist)
 			}
 		} else {
 			not_connected++;
-			if (ca_state(pchannel->chid) != cs_conn) {
+			if (pchannel->chid == NULL) {
+				Debug(1 ,"get_channel_values: no CHID for '%s'\n", pchannel->name);
+			} else if (ca_state(pchannel->chid) != cs_conn) {
 				Debug(1 ,"get_channel_values: %s not connected\n", pchannel->name);
 			}
 			if ((num_elements < 1)) {
