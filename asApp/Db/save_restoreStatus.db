@@ -1,13 +1,7 @@
-grecord(bo,"$(P)save_restoreHeartbeat") {
+grecord(bo,"$(P)SR_heartbeat") {
 	field(DTYP,"Soft Channel")
 }
-grecord(longout,"$(P)auto_positionsState") {
-	field(DTYP,"Soft Channel")
-}
-grecord(longout,"$(P)auto_settingsState") {
-	field(DTYP,"Soft Channel")
-}
-grecord(mbbo,"$(P)auto_positionsStatus") {
+grecord(mbbo,"$(P)SR_rebootStatus") {
 	field(DTYP,"Soft Channel")
 	field(NOBT,"2")
 	field(ONVL,"1")
@@ -18,7 +12,7 @@ grecord(mbbo,"$(P)auto_positionsStatus") {
 	field(TWST,"Seq Fail")
 	field(THST,"Ok")
 }
-grecord(mbbo,"$(P)auto_settingsStatus") {
+grecord(mbbo,"$(P)SR_status") {
 	field(DTYP,"Soft Channel")
 	field(NOBT,"2")
 	field(ONVL,"1")
@@ -29,57 +23,235 @@ grecord(mbbo,"$(P)auto_settingsStatus") {
 	field(TWST,"Seq Fail")
 	field(THST,"Ok")
 }
-grecord(mbbo,"$(P)reboot_restoreStatus") {
-	field(DTYP,"Soft Channel")
-	field(NOBT,"2")
-	field(ONVL,"1")
-	field(TWVL,"2")
-	field(THVL,"3")
-	field(ZRST,"Failure")
-	field(ONST,"Warning")
-	field(TWST,"Seq Fail")
-	field(THST,"Ok")
-}
-grecord(mbbo,"$(P)save_restoreStatus") {
-	field(DTYP,"Soft Channel")
-	field(NOBT,"2")
-	field(ONVL,"1")
-	field(TWVL,"2")
-	field(THVL,"3")
-	field(ZRST,"Failure")
-	field(ONST,"Warning")
-	field(TWST,"Seq Fail")
-	field(THST,"Ok")
-}
-grecord(stringout,"$(P)save_restoreRecentlyStr") {
+grecord(stringout,"$(P)SR_recentlyStr") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Status unknown")
 }
-grecord(stringout,"$(P)auto_positionsStatusStr") {
+grecord(stringout,"$(P)SR_rebootStatusStr") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Status unknown")
 }
-grecord(stringout,"$(P)auto_positionsTime") {
+grecord(stringout,"$(P)SR_rebootTime") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Not yet saved")
 }
-grecord(stringout,"$(P)auto_settingsStatusStr") {
+grecord(stringout,"$(P)SR_statusStr") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Status unknown")
 }
-grecord(stringout,"$(P)auto_settingsTime") {
+
+grecord(stringout,"$(P)SR_0_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_0_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_0_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_0_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_0_Time") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Not yet saved")
 }
-grecord(stringout,"$(P)reboot_restoreStatusStr") {
+
+grecord(stringout,"$(P)SR_1_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_1_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_1_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_1_StatusStr") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Status unknown")
 }
-grecord(stringout,"$(P)reboot_restoreTime") {
+grecord(stringout,"$(P)SR_1_Time") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Not yet saved")
 }
-grecord(stringout,"$(P)save_restoreStatusStr") {
+
+grecord(stringout,"$(P)SR_2_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_2_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_2_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_2_StatusStr") {
 	field(DTYP,"Soft Channel")
 	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_2_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+
+grecord(stringout,"$(P)SR_3_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_3_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_3_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_3_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_3_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+
+grecord(stringout,"$(P)SR_4_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_4_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_4_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_4_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_4_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+
+grecord(stringout,"$(P)SR_5_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_5_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_5_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_5_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_5_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+
+grecord(stringout,"$(P)SR_6_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_6_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_6_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_6_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_6_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
+}
+
+grecord(stringout,"$(P)SR_7_Name") {
+	field(VAL,"Not In Use")
+	field(DTYP,"Soft Channel")
+}
+grecord(longout,"$(P)SR_7_State") {
+	field(DTYP,"Soft Channel")
+}
+grecord(mbbo,"$(P)SR_7_Status") {
+	field(DTYP,"Soft Channel")
+	field(NOBT,"2")
+	field(ONVL,"1")
+	field(TWVL,"2")
+	field(THVL,"3")
+	field(ZRST,"Failure")
+	field(ONST,"Warning")
+	field(TWST,"Seq Fail")
+	field(THST,"Ok")
+}
+grecord(stringout,"$(P)SR_7_StatusStr") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Status unknown")
+}
+grecord(stringout,"$(P)SR_7_Time") {
+	field(DTYP,"Soft Channel")
+	field(VAL,"Not yet saved")
 }

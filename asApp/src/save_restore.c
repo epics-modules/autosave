@@ -63,6 +63,8 @@
  *                In addition to .sav and .savB, can save/restore <= 10
  *                sequenced files .sav0 -.sav9, which are written at preset
  *                intervals independent of the channel-list settings.
+ *                Status PV's have been reworked so database and medm file
+ *                don't have to contain the names of save sets.
  */
 #define		SRVERSION "save/restore V4.0"
 
@@ -204,21 +206,21 @@ STATIC int		manual_restore_status = 0;		/* result of manual_restore operation */
 /*** stuff for reporting status to EPICS client ***/
 STATIC char	status_prefix[10];
 
-STATIC long	save_restoreStatus, save_restoreHeartbeat;
-/* Make save_restoreRecentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
-STATIC char	save_restoreStatusStr[STRING_LEN], save_restoreRecentlyStr[300];
-STATIC char	save_restoreStatus_PV[PV_NAME_LEN] = "", save_restoreHeartbeat_PV[PV_NAME_LEN] = ""; 
-STATIC char	save_restoreStatusStr_PV[PV_NAME_LEN] = "", save_restoreRecentlyStr_PV[PV_NAME_LEN] = "";
-STATIC chid	save_restoreStatus_chid, save_restoreHeartbeat_chid,
-			save_restoreStatusStr_chid, save_restoreRecentlyStr_chid;
+STATIC long	SR_status, SR_heartbeat;
+/* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
+STATIC char	SR_statusStr[STRING_LEN], SR_recentlyStr[300];
+STATIC char	SR_status_PV[PV_NAME_LEN] = "", SR_heartbeat_PV[PV_NAME_LEN] = ""; 
+STATIC char	SR_statusStr_PV[PV_NAME_LEN] = "", SR_recentlyStr_PV[PV_NAME_LEN] = "";
+STATIC chid	SR_status_chid, SR_heartbeat_chid,
+			SR_statusStr_chid, SR_recentlyStr_chid;
 
-STATIC long	reboot_restoreStatus;
-STATIC char	reboot_restoreStatusStr[STRING_LEN];
-STATIC char	reboot_restoreStatus_PV[PV_NAME_LEN] = "", reboot_restoreStatusStr_PV[PV_NAME_LEN] = "";
-STATIC chid	reboot_restoreStatus_chid, reboot_restoreStatusStr_chid;
-STATIC char	reboot_restoreTime_PV[PV_NAME_LEN];
-STATIC char	reboot_restoreTimeStr[STRING_LEN];
-STATIC chid	reboot_restoreTime_chid;
+STATIC long	SR_rebootStatus;
+STATIC char	SR_rebootStatusStr[STRING_LEN];
+STATIC char	SR_rebootStatus_PV[PV_NAME_LEN] = "", SR_rebootStatusStr_PV[PV_NAME_LEN] = "";
+STATIC chid	SR_rebootStatus_chid, SR_rebootStatusStr_chid;
+STATIC char	SR_rebootTime_PV[PV_NAME_LEN];
+STATIC char	SR_rebootTimeStr[STRING_LEN];
+STATIC chid	SR_rebootTime_chid;
 
 volatile int	save_restoreNumSeqFiles = 3;			/* number of sequence files to maintain */
 volatile int	save_restoreSeqPeriodInSeconds = 60;	/* period between sequence-file writes */
@@ -376,7 +378,7 @@ void save_restoreSet_NFSHost(char *hostname, char *address) {
 STATIC int mountFileSystem()
 {
 	errlogPrintf("save_restore:mountFileSystem:entry\n");
-	strncpy(save_restoreRecentlyStr, "nfsMount failed", (STRING_LEN-1));
+	strncpy(SR_recentlyStr, "nfsMount failed", (STRING_LEN-1));
 	
 #ifdef vxWorks
 	if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && saveRestoreFilePath[0]) {
@@ -387,7 +389,7 @@ STATIC int mountFileSystem()
 			errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", saveRestoreFilePath);
 			save_restoreNFSOK = 1;
 			save_restoreIoErrors = 0;
-			strncpy(save_restoreRecentlyStr, "nfsMount succeeded", (STRING_LEN-1));
+			strncpy(SR_recentlyStr, "nfsMount succeeded", (STRING_LEN-1));
 			return(1);
 		} else {
 			errlogPrintf("save_restore: Can't nfsMount file system\n");
@@ -406,7 +408,7 @@ STATIC void dismountFileSystem()
 		nfsUnmount(saveRestoreFilePath);
 		errlogPrintf("save_restore:dismountFileSystem:dismounted '%s'\n", saveRestoreFilePath);
 		save_restoreNFSOK = 0;
-		strncpy(save_restoreRecentlyStr, "nfsUnmount", (STRING_LEN-1));
+		strncpy(SR_recentlyStr, "nfsUnmount", (STRING_LEN-1));
 	}
 #else
 	errlogPrintf("save_restore:dismountFileSystem: not implemented for this OS.\n");
@@ -422,7 +424,7 @@ STATIC void dismountFileSystem()
 STATIC int save_restore(void)
 {
 	struct chlist *plist;
-	char *cp;
+	char *cp, nameString[FN_LEN];
 #ifdef vxWorks
 	static size_t buflen = (STRING_LEN-1);
 #endif
@@ -443,66 +445,66 @@ STATIC int save_restore(void)
 #endif
 
 	/* Build names for save_restore general status PV's with status_prefix */
-	if (*status_prefix && (*save_restoreStatus_PV == '\0')) {
-		strcpy(save_restoreStatus_PV, status_prefix);
-		strcat(save_restoreStatus_PV, "save_restoreStatus");
-		strcpy(save_restoreHeartbeat_PV, status_prefix);
-		strcat(save_restoreHeartbeat_PV, "save_restoreHeartbeat");
-		strcpy(save_restoreStatusStr_PV, status_prefix);
-		strcat(save_restoreStatusStr_PV, "save_restoreStatusStr");
-		strcpy(save_restoreRecentlyStr_PV, status_prefix);
-		strcat(save_restoreRecentlyStr_PV, "save_restoreRecentlyStr");
-		ca_search(save_restoreStatus_PV, &save_restoreStatus_chid);
-		ca_search(save_restoreHeartbeat_PV, &save_restoreHeartbeat_chid);
-		ca_search(save_restoreStatusStr_PV, &save_restoreStatusStr_chid);
-		ca_search(save_restoreRecentlyStr_PV, &save_restoreRecentlyStr_chid);
+	if (*status_prefix && (*SR_status_PV == '\0')) {
+		strcpy(SR_status_PV, status_prefix);
+		strcat(SR_status_PV, "SR_status");
+		strcpy(SR_heartbeat_PV, status_prefix);
+		strcat(SR_heartbeat_PV, "SR_heartbeat");
+		strcpy(SR_statusStr_PV, status_prefix);
+		strcat(SR_statusStr_PV, "SR_statusStr");
+		strcpy(SR_recentlyStr_PV, status_prefix);
+		strcat(SR_recentlyStr_PV, "SR_recentlyStr");
+		ca_search(SR_status_PV, &SR_status_chid);
+		ca_search(SR_heartbeat_PV, &SR_heartbeat_chid);
+		ca_search(SR_statusStr_PV, &SR_statusStr_chid);
+		ca_search(SR_recentlyStr_PV, &SR_recentlyStr_chid);
 
-		strcpy(reboot_restoreStatus_PV, status_prefix);
-		strcat(reboot_restoreStatus_PV, "reboot_restoreStatus");
-		strcpy(reboot_restoreStatusStr_PV, status_prefix);
-		strcat(reboot_restoreStatusStr_PV, "reboot_restoreStatusStr");
-		strcpy(reboot_restoreTime_PV, status_prefix);
-		strcat(reboot_restoreTime_PV, "reboot_restoreTime");
-		ca_search(reboot_restoreStatus_PV, &reboot_restoreStatus_chid);
-		ca_search(reboot_restoreStatusStr_PV, &reboot_restoreStatusStr_chid);
-		ca_search(reboot_restoreTime_PV, &reboot_restoreTime_chid);
+		strcpy(SR_rebootStatus_PV, status_prefix);
+		strcat(SR_rebootStatus_PV, "SR_rebootStatus");
+		strcpy(SR_rebootStatusStr_PV, status_prefix);
+		strcat(SR_rebootStatusStr_PV, "SR_rebootStatusStr");
+		strcpy(SR_rebootTime_PV, status_prefix);
+		strcat(SR_rebootTime_PV, "SR_rebootTime");
+		ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid);
+		ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid);
+		ca_search(SR_rebootTime_PV, &SR_rebootTime_chid);
 		if (ca_pend_io(0.5)!=ECA_NORMAL) {
 			errlogPrintf("save_restore: Can't connect to all status PV(s)\n");
 		}
 		/* Show reboot status */
-		reboot_restoreStatus = SR_STATUS_OK;
-		strcpy(reboot_restoreStatusStr, "Ok");
+		SR_rebootStatus = SR_STATUS_OK;
+		strcpy(SR_rebootStatusStr, "Ok");
 		for (i = 0; i < restoreFileList.pass0cnt; i++) {
-			if (restoreFileList.pass0Status[i] < reboot_restoreStatus) {
-				reboot_restoreStatus = restoreFileList.pass0Status[i];
-				strncpy(reboot_restoreStatusStr, restoreFileList.pass0StatusStr[i], (STRING_LEN-1));
+			if (restoreFileList.pass0Status[i] < SR_rebootStatus) {
+				SR_rebootStatus = restoreFileList.pass0Status[i];
+				strncpy(SR_rebootStatusStr, restoreFileList.pass0StatusStr[i], (STRING_LEN-1));
 			}
 		}
 		for (i = 0; i < restoreFileList.pass1cnt; i++) {
-			if (restoreFileList.pass1Status[i] < reboot_restoreStatus) {
-				reboot_restoreStatus = restoreFileList.pass1Status[i];
-				strncpy(reboot_restoreStatusStr, restoreFileList.pass1StatusStr[i], (STRING_LEN-1));
+			if (restoreFileList.pass1Status[i] < SR_rebootStatus) {
+				SR_rebootStatus = restoreFileList.pass1Status[i];
+				strncpy(SR_rebootStatusStr, restoreFileList.pass1StatusStr[i], (STRING_LEN-1));
 			}
 		}
-		if (ca_state(reboot_restoreStatus_chid) == cs_conn)
-			ca_put(DBR_LONG, reboot_restoreStatus_chid, &reboot_restoreStatus);
-		if (ca_state(reboot_restoreStatusStr_chid) == cs_conn)
-			ca_put(DBR_STRING, reboot_restoreStatusStr_chid, &reboot_restoreStatusStr);
+		if (ca_state(SR_rebootStatus_chid) == cs_conn)
+			ca_put(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
+		if (ca_state(SR_rebootStatusStr_chid) == cs_conn)
+			ca_put(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
 		(void)time(&currTime);
 #ifdef vxWorks
-		(void)ctime_r(&currTime, reboot_restoreTimeStr, &buflen);
+		(void)ctime_r(&currTime, SR_rebootTimeStr, &buflen);
 #else
-		(void)ctime_r(&currTime, reboot_restoreTimeStr);
+		(void)ctime_r(&currTime, SR_rebootTimeStr);
 #endif
-		if ((cp = strrchr(reboot_restoreTimeStr, (int)':'))) cp[3] = 0;
-		if (ca_state(reboot_restoreTime_chid) == cs_conn)
-			ca_put(DBR_STRING, reboot_restoreTime_chid, &reboot_restoreTimeStr);
+		if ((cp = strrchr(SR_rebootTimeStr, (int)':'))) cp[3] = 0;
+		if (ca_state(SR_rebootTime_chid) == cs_conn)
+			ca_put(DBR_STRING, SR_rebootTime_chid, &SR_rebootTimeStr);
 	}
 
 	while(1) {
 
-		save_restoreStatus = SR_STATUS_OK;
-		strcpy(save_restoreStatusStr, "Ok");
+		SR_status = SR_STATUS_OK;
+		strcpy(SR_statusStr, "Ok");
 		save_restoreSeqPeriodInSeconds = MAX(10, save_restoreSeqPeriodInSeconds);
 		save_restoreNumSeqFiles = MIN(10, MAX(0, save_restoreNumSeqFiles));
 		(void)time(&currTime);
@@ -576,13 +578,13 @@ STATIC int save_restore(void)
 			}
 
 			/* find and record worst status */
-			if (plist->status <= save_restoreStatus ) {
-				save_restoreStatus = plist->status;
-				strcpy(save_restoreStatusStr, plist->statusStr);
+			if (plist->status <= SR_status ) {
+				SR_status = plist->status;
+				strcpy(SR_statusStr, plist->statusStr);
 			}
-			if (reboot_restoreStatus < save_restoreStatus) {
-				save_restoreStatus = reboot_restoreStatus;
-				strcpy(save_restoreStatusStr, reboot_restoreStatusStr);
+			if (SR_rebootStatus < SR_status) {
+				SR_status = SR_rebootStatus;
+				strcpy(SR_statusStr, SR_rebootStatusStr);
 			}
 
 			/* next list */
@@ -593,31 +595,33 @@ STATIC int save_restore(void)
 		epicsMutexUnlock(sr_mutex);
 
 		/* report status */
-		save_restoreHeartbeat = (save_restoreHeartbeat+1) % 2;
-		if (ca_state(save_restoreStatus_chid) == cs_conn)
-			ca_put(DBR_LONG, save_restoreStatus_chid, &save_restoreStatus);
-		if (ca_state(save_restoreHeartbeat_chid) == cs_conn)
-			ca_put(DBR_LONG, save_restoreHeartbeat_chid, &save_restoreHeartbeat);
-		if (ca_state(save_restoreStatusStr_chid) == cs_conn)
-			ca_put(DBR_STRING, save_restoreStatusStr_chid, &save_restoreStatusStr);
-		if (ca_state(save_restoreRecentlyStr_chid) == cs_conn) {
-			save_restoreRecentlyStr[(STRING_LEN-1)] = '\0';
-			status = ca_put(DBR_STRING, save_restoreRecentlyStr_chid, &save_restoreRecentlyStr);
+		SR_heartbeat = (SR_heartbeat+1) % 2;
+		if (ca_state(SR_status_chid) == cs_conn)
+			ca_put(DBR_LONG, SR_status_chid, &SR_status);
+		if (ca_state(SR_heartbeat_chid) == cs_conn)
+			ca_put(DBR_LONG, SR_heartbeat_chid, &SR_heartbeat);
+		if (ca_state(SR_statusStr_chid) == cs_conn)
+			ca_put(DBR_STRING, SR_statusStr_chid, &SR_statusStr);
+		if (ca_state(SR_recentlyStr_chid) == cs_conn) {
+			SR_recentlyStr[(STRING_LEN-1)] = '\0';
+			status = ca_put(DBR_STRING, SR_recentlyStr_chid, &SR_recentlyStr);
 		}
 
 		/*** set up list-specific status PV's for any new lists ***/
 		for (plist = lptr; plist; plist = plist->pnext) {
 			/* If this is the first time for a list, connect to its status PV's */
 			if (plist->status_PV[0] == '\0') {
-				/* Build PV names */
-				strcpy(plist->status_PV, status_prefix);
-				strncat(plist->status_PV, plist->save_file, (STRING_LEN-1)-strlen(status_prefix));
-				cp = strrchr(plist->status_PV, (int)'.');
-				*cp = 0;
+				/*** Build PV names ***/
+				/* make common portion of PVname strings */
+				sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
+				strcpy(plist->name_PV, plist->status_PV);
 				strcpy(plist->save_state_PV, plist->status_PV);
 				strcpy(plist->statusStr_PV, plist->status_PV);
 				strcpy(plist->time_PV, plist->status_PV);
+				/* make all PVname strings */
 				strncat(plist->status_PV, "Status",
+					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
+				strncat(plist->name_PV, "Name",
 					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
 				strncat(plist->save_state_PV, "State",
 					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
@@ -625,7 +629,9 @@ STATIC int save_restore(void)
 					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
 				strncat(plist->time_PV, "Time",
 					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
+				/* connect with PV's */
 				ca_search(plist->status_PV, &plist->status_chid);
+				ca_search(plist->name_PV, &plist->name_chid);
 				ca_search(plist->save_state_PV, &plist->save_state_chid);
 				ca_search(plist->statusStr_PV, &plist->statusStr_chid);
 				ca_search(plist->time_PV, &plist->time_chid);
@@ -636,6 +642,12 @@ STATIC int save_restore(void)
 
 			if (ca_state(plist->status_chid) == cs_conn)
 				ca_put(DBR_LONG, plist->status_chid, &plist->status);
+			if (ca_state(plist->name_chid) == cs_conn) {
+				strncpy(nameString, plist->save_file, STRING_LEN-1);
+				cp = strrchr(nameString, (int)'.');
+				if (cp) *cp = 0;
+				ca_put(DBR_STRING, plist->name_chid, &nameString);
+			}
 			if (ca_state(plist->save_state_chid) == cs_conn)
 				ca_put(DBR_LONG, plist->save_state_chid, &plist->save_state);
 			if (ca_state(plist->statusStr_chid) == cs_conn)
@@ -720,7 +732,7 @@ STATIC int connect_list(struct chlist *plist)
 			}
 		}
 	}
-	sprintf(save_restoreRecentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
+	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
 	return(get_channel_values(plist));
 }
 
@@ -788,7 +800,7 @@ STATIC int enable_list(struct chlist *plist)
 		plist->enabled_method |= MANUAL;
 	}
 
-	sprintf(save_restoreRecentlyStr, "list '%s' enabled", plist->save_file);
+	sprintf(SR_recentlyStr, "list '%s' enabled", plist->save_file);
 	epicsMutexUnlock(sr_mutex);
 	return(OK);
 }
@@ -884,7 +896,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		if (errno) myPrintErrno("write_it");
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
 			save_restoreNFSOK = 0;
-			strncpy(save_restoreRecentlyStr, "Too many I/O errors",(STRING_LEN-1));
+			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
 		}
 		epicsMutexUnlock(sr_mutex);
 		return(ERROR);
@@ -1071,7 +1083,7 @@ STATIC int write_save_file(struct chlist *plist)
 			if (save_restoreDatedBackupFiles) {
 				fGetDateStr(datetime);
 				strcat(tmpstr, datetime);
-				sprintf(save_restoreRecentlyStr, "Bad file: '%sB'", plist->save_file);
+				sprintf(SR_recentlyStr, "Bad file: '%sB'", plist->save_file);
 			}
 			(void)myFileCopy(backup_file, tmpstr);
 		}
@@ -1097,7 +1109,7 @@ STATIC int write_save_file(struct chlist *plist)
 		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't write .sav file");
-		sprintf(save_restoreRecentlyStr, "Can't write '%s'", plist->save_file);
+		sprintf(SR_recentlyStr, "Can't write '%s'", plist->save_file);
 		epicsMutexUnlock(sr_mutex);
 		return(ERROR);
 	}
@@ -1114,7 +1126,7 @@ STATIC int write_save_file(struct chlist *plist)
 				backup_file);
 			plist->status = SR_STATUS_WARN;
 			strcpy(plist->statusStr, "Can't write .savB file");
-			sprintf(save_restoreRecentlyStr, "Can't write '%sB'", plist->save_file);
+			sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
 			epicsMutexUnlock(sr_mutex);
 			return(ERROR);
 		}
@@ -1124,7 +1136,7 @@ STATIC int write_save_file(struct chlist *plist)
 		sprintf(plist->statusStr,"%d %s not saved", plist->not_connected, 
 			plist->not_connected==1?"value":"values");
 	}
-	sprintf(save_restoreRecentlyStr, "Wrote '%s'", plist->save_file);
+	sprintf(SR_recentlyStr, "Wrote '%s'", plist->save_file);
 	epicsMutexUnlock(sr_mutex);
 	return(OK);
 }
@@ -1185,17 +1197,17 @@ STATIC void do_seq(struct chlist *plist)
 				plist->status = SR_STATUS_SEQ_WARN;
 				strcpy(plist->statusStr, "Can't write sequence file");
 			}
-			sprintf(save_restoreRecentlyStr, "Can't write '%s%1d'",
+			sprintf(SR_recentlyStr, "Can't write '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 			epicsMutexUnlock(sr_mutex);
 			return;
 		} else {
 			errlogPrintf("save_restore:do_seq: Wrote seq. file from PV list.\n");
-			sprintf(save_restoreRecentlyStr, "Wrote '%s%1d'",
+			sprintf(SR_recentlyStr, "Wrote '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 		}
 	} else {
-		sprintf(save_restoreRecentlyStr, "Wrote '%s%1d'",
+		sprintf(SR_recentlyStr, "Wrote '%s%1d'",
 			plist->save_file, plist->backup_sequence_num);
 	}
 
@@ -1218,7 +1230,7 @@ int set_savefile_name(char *filename, char *save_filename)
 		if (!strcmp(plist->reqFile,filename)) {
 			strcpy(plist->save_file,save_filename);
 			epicsMutexUnlock(sr_mutex);
-			sprintf(save_restoreRecentlyStr, "New save file: '%s'", save_filename);
+			sprintf(SR_recentlyStr, "New save file: '%s'", save_filename);
 			return(OK);
 		}
 		plist = plist->pnext;
@@ -1417,7 +1429,7 @@ void save_restoreShow(int verbose)
 		saveRestoreFilePath[0];
 
 	printf("BEGIN save_restoreShow\n");
-	printf("  Status: '%s' - '%s'\n", SR_STATUS_STR[save_restoreStatus], save_restoreStatusStr);
+	printf("  Status: '%s' - '%s'\n", SR_STATUS_STR[SR_status], SR_statusStr);
 	printf("  Debug level: %d\n", save_restoreDebug);
 	printf("  Save/restore incomplete save sets? %s\n", save_restoreIncompleteSetsOk?"YES":"NO");
 	printf("  Write dated backup files? %s\n", save_restoreDatedBackupFiles?"YES":"NO");
@@ -1629,10 +1641,10 @@ int remove_data_set(char *filename)
 
 	} else {
 		errlogPrintf("remove_data_set: Couldn't find '%s'\n", filename);
-		sprintf(save_restoreRecentlyStr, "Can't remove data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Can't remove data set '%s'", filename);
 		return(ERROR);
 	}
-	sprintf(save_restoreRecentlyStr, "Removed data set '%s'", filename);
+	sprintf(SR_recentlyStr, "Removed data set '%s'", filename);
 	return(OK);
 }
 
@@ -1648,7 +1660,7 @@ int reload_periodic_set(char *filename, int period, char *macrostring)
 		errlogPrintf("reload_periodic_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
-		sprintf(save_restoreRecentlyStr, "Reloaded data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
 		return(create_periodic_set(filename, period, macrostring));
 	}
 }
@@ -1665,7 +1677,7 @@ int reload_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 		errlogPrintf("reload_triggered_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
-		sprintf(save_restoreRecentlyStr, "Reloaded data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
 		return(create_triggered_set(filename, trigger_channel, macrostring));
 	}
 }
@@ -1683,7 +1695,7 @@ int reload_monitor_set(char * filename, int period, char *macrostring)
 		errlogPrintf("reload_monitor_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
-		sprintf(save_restoreRecentlyStr, "Reloaded data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
 		return(create_monitor_set(filename, period, macrostring));
 	}
 }
@@ -1700,7 +1712,7 @@ int reload_manual_set(char * filename, char *macrostring)
 		errlogPrintf("reload_manual_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
-		sprintf(save_restoreRecentlyStr, "Reloaded data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
 		return(create_manual_set(filename, macrostring));
 	}
 }
@@ -1729,7 +1741,7 @@ int request_manual_restore(char *filename, int file_type)
 		errlogPrintf("request_manual_restore: error restoring %s\n", filename);
 		return(ERROR);
 	} else {
-		sprintf(save_restoreRecentlyStr, "Restored data set '%s'", filename);
+		sprintf(SR_recentlyStr, "Restored data set '%s'", filename);
 		return(OK);
 	}
 }
@@ -1775,7 +1787,7 @@ int do_manual_restore(char *filename, int file_type)
 				if (!save_restoreIncompleteSetsOk) {
 					errlogPrintf("do_manual_restore: aborting restore\n");
 					epicsMutexUnlock(sr_mutex);
-					strncpy(save_restoreRecentlyStr, "Manual restore failed",(STRING_LEN-1));
+					strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 					return(ERROR);
 				}
 			}
@@ -1793,9 +1805,9 @@ int do_manual_restore(char *filename, int file_type)
 			}
 			epicsMutexUnlock(sr_mutex);
 			if (num_errs == 0) {
-				strncpy(save_restoreRecentlyStr, "Manual restore succeeded",(STRING_LEN-1));
+				strncpy(SR_recentlyStr, "Manual restore succeeded",(STRING_LEN-1));
 			} else {
-				sprintf(save_restoreRecentlyStr, "%ld errors during manual restore", num_errs);
+				sprintf(SR_recentlyStr, "%ld errors during manual restore", num_errs);
 			}
 			return(OK);
 		}
@@ -1813,7 +1825,7 @@ int do_manual_restore(char *filename, int file_type)
 	}
 	if (inp_fd == NULL) {
 		errlogPrintf("do_manual_restore: Can't open save file.");
-		strncpy(save_restoreRecentlyStr, "Manual restore failed",(STRING_LEN-1));
+		strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 		return(ERROR);
 	}
 
@@ -1848,7 +1860,7 @@ int do_manual_restore(char *filename, int file_type)
 			if (!save_restoreIncompleteSetsOk) {
 				errlogPrintf("do_manual_restore: aborting restore\n");
 				fclose(inp_fd);
-				strncpy(save_restoreRecentlyStr, "Manual restore failed",(STRING_LEN-1));
+				strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 				return(ERROR);
 			}
 		}
@@ -1861,7 +1873,7 @@ int do_manual_restore(char *filename, int file_type)
 		strcat(bu_filename,".bu");
 		(void)myFileCopy(restoreFile,bu_filename);
 	}
-	strncpy(save_restoreRecentlyStr, "Manual restore succeeded",(STRING_LEN-1));
+	strncpy(SR_recentlyStr, "Manual restore succeeded",(STRING_LEN-1));
 	return(OK);
 }
 
