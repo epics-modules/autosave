@@ -1270,7 +1270,7 @@ static int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	if (macrostring && macrostring[0]) {
 		macCreateHandle(&handle, NULL);
 		if (handle) {
-			macParseDefns(NULL, macrostring, &pairs);
+			macParseDefns(handle, macrostring, &pairs);
 			if (pairs) macInstallMacros(handle, pairs);
 			/* macReportMacros(handle); */
 		}
