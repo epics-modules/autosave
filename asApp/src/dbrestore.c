@@ -36,8 +36,10 @@
  *                previous revisions.  Changed VERSION number, in agreement
  *                with save_restore's SRVERSION string.
  * 11/30/04  tmm  v4.3 Added debug for curr_num_elements.
+ * 01/26/05  tmm  v4.4 Strip trailing '\r' from value string.  (Previously, only
+ *                '\n' was stripped.)
  */
-#define VERSION "4.3"
+#define VERSION "4.4"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -661,7 +663,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		 * xxx:interp.E 100
 		 * xxx:interp.C @array@ { "1" "0.99" }
 		 */
-		n = sscanf(bp,"%s%c%[^\n]", PVname, &c, value_string);
+		n = sscanf(bp,"%s%c%[^\n\r]", PVname, &c, value_string);
 		if (n<3) *value_string = 0;
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			if (strchr(PVname,'.') == 0) strcat(PVname,".VAL"); /* if no field name, add default */
