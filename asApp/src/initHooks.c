@@ -39,6 +39,9 @@
 #include	<initHooks.h>
 #include	<epicsPrint.h>
 #include	"save_restore.h"
+#include        <iocsh.h>
+#include        <epicsExport.h>
+
 
 extern int reboot_restore(char *filename, initHookState init_state);
 extern int set_pass0_restoreFile( char *filename);
@@ -55,7 +58,7 @@ extern struct restoreList restoreFileList;
 
 /* If this function (initHooks) is loaded, iocInit calls this function
  * at certain defined points during IOC initialization */
-void initHooks(initHookState state)
+static void stdInitHooks(initHookState state)
 {
 	int i;
 
@@ -114,3 +117,10 @@ void initHooks(initHookState state)
 	}
 	return;
 }
+
+void stdInitHooksRegister(void)
+{
+   initHookRegister(stdInitHooks);
+}
+
+epicsExportRegistrar(stdInitHooksRegister);
