@@ -489,12 +489,13 @@ edit a save file, you must end it with the text
 
 <END>
 
-followed by a single arbitrary character (normally '\n').  If the file does not
-end with this text, reboot_restore() will assume the crate crashed while the
-file was being written, or that some other bad thing happened, and will not use
-the file. Once a save file has been created successfully, save_restore will not
-overwrite the file unless a good ".savB" backup file exists. Similarly, it will
-not overwrite the ".savB" file unless the save file was successfully written.
+followed by one or two arbitrary characters (normally '\n' or '\r\n').  If the
+file does not end with this text, reboot_restore() will assume the crate
+crashed while the file was being written, or that some other bad thing
+happened, and will not use the file. Once a save file has been created
+successfully, save_restore will not overwrite the file unless a good ".savB"
+backup file exists. Similarly, it will not overwrite the ".savB" file unless
+the save file was successfully written.
 
 
 

@@ -47,6 +47,10 @@ first-served basis.
 <li><p>The order in which PV's occur in the .sav file is no longer reversed from
 the ordering in the corresponding .req file.
 
+<li><p>The test for valid .sav files now permits files to end either with
+"<END>?" or "<END>??", where "?" is any character.  This allows dos files,
+which end with "\r\n", to be restored.
+
 </ul>
 
 <h2 align="center">Release 2-3</h2>
