@@ -227,7 +227,7 @@ STATIC int		manual_restore_type = 0;
 STATIC int		manual_restore_status = 0;		/* result of manual_restore operation */
 
 /*** stuff for reporting status to EPICS client ***/
-STATIC char	status_prefix[10] = "";
+STATIC char	status_prefix[30] = "";
 
 STATIC long	SR_status = SR_STATUS_FAIL, SR_heartbeat = 0;
 /* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
@@ -313,7 +313,7 @@ void save_restoreSet_NumSeqFiles(int numSeqFiles) {save_restoreNumSeqFiles = num
 void save_restoreSet_SeqPeriodInSeconds(int period) {save_restoreSeqPeriodInSeconds = MAX(10, period);}
 void save_restoreSet_IncompleteSetsOk(int ok) {save_restoreIncompleteSetsOk = ok;}
 void save_restoreSet_DatedBackupFiles(int ok) {save_restoreDatedBackupFiles = ok;}
-void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix, 9);}
+void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix, 29);}
 
 /********************************* code *********************************/
 
