@@ -10,6 +10,37 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h2 align="center">Release 2-4</h2>
+
+<p align="left">Differences from version 2-3:
+
+<ul> <li><p>This version can save and restore array-valued PV's.  Array values
+are saved using database access, so you can't name array PV's hosted by some
+other IOC, as you can for scalar PV's.   Array PV's are restored, using
+database access, in the second pass of reboot_restore (at
+initHookAfterInitDatabase), by which time array storage presumably has been
+allocated.  It's not an error to include array PV's in a .sav file that is
+restored during reboot_restore's first pass, but reboot_restore won't try
+to restore them then.
+
+<li><p>This version supports PV's whose data type will change from DBF_NOACCESS to
+some writable type during record initialization.  (Some genSub record fields
+behave in this way, and previous version of save_restore could not restore
+them.)  It's not an error to include such PV's in a .sav file that is
+restored during reboot_restore's first pass, but reboot_restore won't try
+to restore them then.
+
+<li><p>The database and medm-display files by which save_restore reports its status
+to the user have been thoroughly reworked.  Previously, the datebase and medm
+display file had to be hardwired with the names of save_restore files.  Now,
+there are eight sets of save_restore status PV's, used on a first-come,
+first-served basis.
+
+<li><p>The order in which PV's occur in the .sav file is no longer reversed from
+the ordering in the corresponding .req file.
+
+</ul>
+
 <h2 align="center">Release 2-3</h2>
 
 <p align="left">This is the first release of the synApps autosave module.
