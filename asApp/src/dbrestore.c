@@ -16,7 +16,8 @@
  * 03/15/02  tmm  v2.5 check saveRestoreFilePath before using it.
  * 03/19/02  tmm  v2.6 initialize fname before using it.
  * 04/05/02  tmm  v2.7 Don't use copy for backup file.  It uses mode 640.
- * 08/01/03  mlr  v3.0 Convert to R3.14.2
+ * 08/01/03  mlr  v3.0 Convert to R3.14.2.  Fix a couple of bugs where failure was
+ *                     assumed to be status<0, while it should be status!=0.
  */
 #define VERSION "3.0"
 
@@ -128,7 +129,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	epicsPrintf("*** restoring from '%s' at initHookState %d ***\n",
 		fname, (int)init_state);
 	if ((inp_fd = fopen_and_check(fname, "r")) == NULL) {
-		epicsPrintf("reboot_restore: Can't open save file.");
+		epicsPrintf("reboot_restore: Can't open save file.\n");
 		return(ERROR);
 	}
 
@@ -149,7 +150,7 @@ int reboot_restore(char *filename, initHookState init_state)
 
 			Debug2(5,"attempting to put '%s' to '%s'\n", input_line, channel);
 			status = dbFindRecord(pdbentry,channel);
-			if (status < 0) {
+			if (status != 0) {
 				epicsPrintf("dbFindRecord for '%s' failed\n", channel);
 				errMessage(status,"");
 			} else {
@@ -204,7 +205,7 @@ int reboot_restore(char *filename, initHookState init_state)
 					Debug(5,"field type not handled\n", 0);
 					break;
 				}
-				if (status < 0) {
+				if (status != 0) {
 					epicsPrintf("dbPutString/dbPutMenuIndex of '%s' for '%s' failed\n",
 					  input_line,channel);
 					errMessage(status,"");
