@@ -161,7 +161,7 @@ static short	save_restore_init = 0;
 static char 	*SRversion = SRVERSION;
 static struct pathListElement *reqFilePathList = NULL;
 char			*saveRestoreFilePath = NULL;	/* path to save files, also used by dbrestore.c */
-static int		taskPriority =  190;	/* initial task priority */
+static int		taskPriority=0;	/* initial priority */
 static epicsThreadId 	taskID=NULL;				/* save_restore task tid */
 static char		remove_filename[80];	/* name of list to delete */
 static int		remove_dset = 0;
@@ -303,8 +303,9 @@ static int save_restore(void)
 {
 	struct chlist	*plist;
 
-	ca_context_create(ca_enable_preemptive_callback); 
-        while(1) {
+	ca_context_create(ca_enable_preemptive_callback);
+
+	while(1) {
 
 		/* look at each list */
 		epicsMutexLock(sr_mutex);
@@ -782,7 +783,7 @@ static int create_data_set(
 			epicsPrintf("create_data_set: could not create delete-list semaphore\n");
 			return(ERROR);
 		}
-		taskID = epicsThreadCreate("save_restore",epicsThreadPriorityMedium,
+		taskID = epicsThreadCreate("save_restore", epicsThreadPriorityCAServerLow,
 			10000, (EPICSTHREADFUNC)save_restore, 0);
 		if (taskID == NULL) {
 			epicsPrintf("create_data_set: could not create save_restore task");
@@ -1114,8 +1115,8 @@ int set_savefile_path(char *path, char *pathsub)
 
 int set_saveTask_priority(int priority)
 {
-	if (priority < 0 || priority > 255) {
-		epicsPrintf("save_restore - priority must be >=0 and <= 255\n");
+	if (priority < 0 || priority > 99) {
+		epicsPrintf("save_restore - priority must be >=0 and <= 99\n");
 		return(ERROR);
 	}
 	taskPriority = priority;
