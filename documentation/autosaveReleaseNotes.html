@@ -1,0 +1,38 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<title>autosaveReleaseNotes</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<h1 align="center">autosave Release Notes</h1>
+
+<h2 align="center">Release 2-3</h2>
+
+<p align="left">This is the first release of the synApps autosave module.
+Version numbering for this module begins with 2.3 because this module
+was split from version 2.2 of the std module, and I wanted to retain
+the CVS histories of module contents.</p>
+
+This version is intended to build with EPICS base 3.14.5.
+
+Differences from software as previously released in std 2.2:
+<ul>
+<li><p>reload_xxx_set() was hanging because epicsMutex was
+being used for intertask signalling.  Changed to epicsEvent.
+<p>Thread priorities adjusted.
+<li><p>Save files with versions earlier than 1.8 are exempt
+from the ends-with-"<END>" test.
+
+</ul>
+<address>
+    Suggestions and Comments to: <br>
+    <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
+    (mooney@aps.anl.gov) <br>
+    Last modified: March 5, 2004 
+</address>
+</body>
+</html>
