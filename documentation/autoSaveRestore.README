@@ -1,4 +1,4 @@
-autoSaveRestore  --  save_restore.c v4.0; dbrestore.c v4.0
+autosave v4.0
 
 This software automatically saves the values of EPICS process variables (PVs),
 to files on a server, and can automatically restore those values when the VME
@@ -9,19 +9,53 @@ the software running on PPC hardware, including Ron Sluiter, Andrew Johnson,
 and Pete Jemian (APS), Markus Janousch and David Maden (SLS), and I'm not sure
 who else.
 
-autoSaveRestore is a collection of files, and a rather ungainly name. In  this
-documentation, I'll use 'save_restore' for short.  'save_restore' is one part
-of autoSaveRestore; it is the task that actually does the parameter saving. 
-'reboot_restore' is the name of the function that restores parameter values
-during reboot.
+Contents
+========
 
-v4.0 highlights
----------------
+save_restore.c          -- saves PV values in files on a file server (or
+                           whatever lame piece of crap happens to be lying
+                           around) according to preset rules.
+
+dbrestore.c             -- restore PV values at boot time, using dbStaticLib
+
+initHooks.c             -- call restore routines at the correct time during boot.
+
+fGetDateStr.c           -- Frank Lenkszus' date-string routines
+
+save_restore.h          -- headers
+fGetDateStr.h
+
+auto_settings.req       -- Sample request files
+auto_positions.req 
+
+save_restoreStatus*.adl -- MEDM displays of save_restore status.
+save_restoreStatusLegend.adl
+save_restoreStatus_more.adl
+save_restoreStatus_tiny.adl
+SR_X_Status.adl
+
+save_restoreStatus.db   -- database containing records save_restore uses to
+                           report status.
+
+SR_array_test.vdb       -- Test database for array save_restore.
+
+Differences from previous versions
+==================================
+
+v4.0
+----
 Status PV's have been reworked.  Now you don't have to modify either the
 database or the medm-display file to use your own save-set names.
 
-v3.5 highlights
----------------
+The test for valid .sav files now permits files to end either with
+"<END>?" or "<END>??", where "?" is any character.  This allows dos files,
+which end with "\r\n", to be restored.
+
+v3.5
+----
+Sometime in the past, I made fdbrestore() and fdbrestoreX() unavailable to
+console users by making them macros.  This is fixed.
+
 Beginning with version 3.5, arrays can be saved and restored much as scalar
 PV's.  Arrays are read and written using run-time database access, which
 implies that they can only be written during pass 1 of the restore, and that
@@ -37,8 +71,8 @@ Prior to v3.5, PV's were listed 'backwards' in the save file -- i.e., the first
 PV in the request file became the last PV in the save file.  Now, both files
 have the same ordering.  
 
-v3.3 highlights
----------------
+save_restore v3.3; dbrestore v3.3:
+----------------------------------
 In versions earlier than 3.3, save_restore's job was simply to save parameters
 through a reboot.  The file server to which save files were written was assumed
 competent to protect those files, and when the server said a save file was
@@ -77,55 +111,6 @@ default; you must take action to arrange them.
 Save_restore cannot defend against adverse file permissions, or against the
 save directory (NFS mount point) disappearing altogether.
 
-
-Contents
-========
-
-save_restore.c          -- saves PV values in files on a file server (or
-                           whatever lame piece of crap happens to be lying
-                           around) according to preset rules.
-
-dbrestore.c             -- restore PV values at boot time, using dbStaticLib
-
-initHooks.c             -- call restore routines at the correct time during boot.
-
-fGetDateStr.c           -- Frank Lenkszus' date-string routines
-
-save_restore.h          -- headers
-fGetDateStr.h
-
-auto_settings.req       -- Sample request files
-auto_positions.req 
-
-reqInclude.tar          -- collection of save_restore-request files with
-                           parameterized PV names (e.g.,  "$(P)$(T).PREC")
-                           intended  to be included in auto_settings.req.
-                           This collection was copied from *App/Db directories
-                           in the synApps_4.4 CVS repository on 8/27/03.
-
-save_restoreStatus*.adl -- MEDM displays of save_restore status.
-SR_X_Status.adl
-
-save_restoreStatus.db   -- database containing records save_restore uses to
-                           report status.
-
-SR_array_test.vdb       -- Test database for array save_restore.
-
-Differences from previous versions
-==================================
-
-v4.0
-----
-Status PV's have been reworked.  Now you don't have to modify either the
-database or the medm-display file to use your own save-set names.
-
-v3.5
-----
-Sometime in the past, I made fdbrestore() and fdbrestoreX() unavailable to
-console users by making them macros.  This is fixed.
-
-save_restore v3.3; dbrestore v3.3:
-----------------------------------
 Several variables and user-callable functions have been renamed, as their
 meanings have changed.  In preparation for 3.14, most user-settable variables
 can now be set by a function call.  Here's a list of variables and functions

@@ -20,7 +20,7 @@ a module) took its number from the save_restore.c file version.  To avoid more
 confusion, the module version number has been bumped up past the most recent
 (and, I hope, final) 3.13 version, which was 3.5.
 
-<p align="left">Differences from version 2-3:
+<p align="left">Differences from version 2-3 (i.e., synApps 5.0):
 
 <ul> <li><p>This version can save and restore array-valued PV's.  Array values
 are saved using database access, so you can't name array PV's hosted by some
@@ -51,6 +51,14 @@ the ordering in the corresponding .req file.
 "<END>?" or "<END>??", where "?" is any character.  This allows dos files,
 which end with "\r\n", to be restored.
 
+<li><p>Added the functions dbrestoreShow(void) and save_restoreShow(int verbose),
+callable from the ioc console.
+
+<li><p>Under vxWorks, this version can manage its own NFS mount, and will
+dismount/remount the file system when save_restoreRemountThreshold I/O
+errors have occurred.
+
+<li><p>Many function and variable names have changed.
 </ul>
 
 <h2 align="center">Release 2-3</h2>
