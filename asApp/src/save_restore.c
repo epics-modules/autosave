@@ -1823,7 +1823,7 @@ int do_manual_restore(char *filename, int file_type)
 	strncat(restoreFile, filename, MAX(sizeof(restoreFile) -1 - strlen(restoreFile),0));
 
 	if (file_type == FROM_SAVE_FILE) {
-		inp_fd = fopen_and_check(restoreFile, "r", &status);
+		inp_fd = fopen_and_check(restoreFile, &status);
 	} else {
 		inp_fd = fopen(restoreFile, "r");
 	}

@@ -58,7 +58,7 @@ struct restoreList {
 		char *pass1StatusStr[MAXRESTOREFILES];
 };
 
-extern FILE *fopen_and_check(const char *file, const char *mode, long *status);
+extern FILE *fopen_and_check(const char *file, long *status);
 
 extern long SR_get_array_info(char *name, long *num_elements, long *field_size, long *field_type);
 extern long SR_get_array(char *name, void *pArray, long *num_elements);
@@ -74,7 +74,7 @@ extern volatile int save_restoreNumSeqFiles;
 extern volatile int save_restoreDebug;
 extern volatile int save_restoreDatedBackupFiles;
 extern struct restoreList restoreFileList;
-extern int myFileCopy(char *source, char *dest);
+extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
 
 extern int	save_restoreNFSOK;
