@@ -22,8 +22,7 @@ who else.
 <h2> Module contents</h2>
 <dl>
 <dt>save_restore.c
-<dd>saves PV values in files on a file server (or whatever lame piece of crap
- happens to be lying around) according to preset rules.
+<dd>saves PV values in files on a file server according to preset rules.
 
 <dt>dbrestore.c
 <dd>restore PV values at boot time, using dbStaticLib
@@ -243,7 +242,7 @@ successfully, save_restore will not overwrite the file unless a good ".savB"
 backup file exists. Similarly, it will not overwrite the ".savB" file unless
 the save file was successfully written.
 
-
+Also, you can comment out lines in a .sav file by beginning them with '#'.
 
 <h2>User-callable functions</h2>
 

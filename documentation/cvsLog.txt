@@ -91,6 +91,22 @@ more robust 3.13 version, with array support, ported to 3.14
 
 support/autosave/asApp/src/dbrestore.c
 
+Added myPrintErrno() function
+
+Limit string conversion length in reboot_restore()'s use of sscanf()
+
+Allow user to comment out a line from a .sav file by beginning the
+line with '#'
+
+strcpy() -> strNcpy() in places where there could be trouble
+
+check return code from fseek()
+
+v4.6 copy VERSION to a variable, instead of using it directly as a string arg.  Check that restoreFileList.pass<n>files[i] is not NULL before comparing the string it's supposed to be pointing to.  Neither of those things fixed the crash, but replacing errlogPrintf with printf in reboot_restore did.
+
+changed from using VERSION directly as an argument to errlogPrintf, to
+initializing a string and using that as the arg.
+
 Array support now understands max and curr number of elements, is prepared to
 see curr_elements change, and doesn't write a PV off if curr_elements is zero. 
 (If max_elements is zero, however, the PV will never be looked at again.)
@@ -120,6 +136,11 @@ case initialProcess now before case interruptAccept
 
 support/autosave/asApp/src/save_restore.c
 
+Post selected save-set status strings promptly
+
+Status-PV name strings were restricted in length by a programming error
+Added TATTLE macro to report CA error
+
 Use epicsThreadGetStackSize(epicsThreadStackMedium) instead of hard-coded
 (10000) stack size
 
@@ -146,6 +167,17 @@ more robust 3.13 version, with array support, ported to 3.14
 =============================================================================
 
 support/autosave/asApp/src/save_restore.h
+
+Status-PV name strings were restricted in length by a programming error
+Added TATTLE macro to report CA error
+
+myPrintErrno changed to a function implemented in save_restore.c
+
+PV_NAME_LEN increased from 40 to 80
+
+Added strNcpy() macro
+
+Removed epicsThreadSleep from Debug macro
 
 Allow dos line termination ("<lf>") as well as Unix ("<lf>")
 
