@@ -229,7 +229,7 @@ STATIC int		manual_restore_status = 0;		/* result of manual_restore operation */
 /*** stuff for reporting status to EPICS client ***/
 STATIC char	status_prefix[30] = "";
 
-STATIC long	SR_status = SR_STATUS_FAIL, SR_heartbeat = 0;
+STATIC long	SR_status = SR_STATUS_INIT, SR_heartbeat = 0;
 /* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
 STATIC char	SR_statusStr[STRING_LEN] = "", SR_recentlyStr[300] = "";
 STATIC char	SR_status_PV[PV_NAME_LEN] = "", SR_heartbeat_PV[PV_NAME_LEN] = ""; 
@@ -563,7 +563,7 @@ STATIC int save_restore(void)
 			 */
 			if ( (plist->save_state & SINGLE_EVENTS)
 			  || ((plist->save_state & MONITORED) == MONITORED)
-			  || ((plist->status == SR_STATUS_FAIL) && just_remounted)) {
+			  || ((plist->status <= SR_STATUS_FAIL) && just_remounted)) {
 
 				/* fetch values all of the channels */
 				plist->not_connected = get_channel_values(plist);
@@ -1415,7 +1415,9 @@ STATIC int create_data_set(
 	plist->monitor_period = MAX(mon_period, min_period);
 	epicsTimeGetCurrent(&plist->backup_time);
 	plist->backup_sequence_num = -1;
-	plist->status = SR_STATUS_FAIL;
+	plist->save_ok = 0;
+	plist->not_connected = -1;
+	plist->status = SR_STATUS_INIT;
 	strcpy(plist->statusStr,"Initializing list");
 
 	/** construct the save_file name **/

@@ -22,14 +22,15 @@
 #define         MIN(a,b)   ((a)<(b)?(a):(b))
 #define         MAXRESTOREFILES 8
 
-#define SR_STATUS_OK		3
-#define SR_STATUS_SEQ_WARN	2
-#define SR_STATUS_WARN		1
-#define SR_STATUS_FAIL		0
+#define SR_STATUS_OK		4
+#define SR_STATUS_SEQ_WARN	3
+#define SR_STATUS_WARN		2
+#define SR_STATUS_FAIL		1
+#define SR_STATUS_INIT		0
 
 /* Make sure to leave room for trailing null */
-static char SR_STATUS_STR[4][8] =
-	{"Failure", "Warning", "Warning", "   Ok  "};
+static char SR_STATUS_STR[4][10] =
+	{"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
 
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"

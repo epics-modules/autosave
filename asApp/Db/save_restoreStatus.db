@@ -10,26 +10,30 @@ record(bo, "$(P)SR_heartbeat") {
 
 record(mbbo, "$(P)SR_rebootStatus") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(mbbo, "$(P)SR_status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_recentlyStr") {
@@ -63,14 +67,16 @@ record(longout, "$(P)SR_0_State") {
 
 record(mbbo, "$(P)SR_0_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_0_StatusStr") {
@@ -94,14 +100,16 @@ record(longout, "$(P)SR_1_State") {
 
 record(mbbo, "$(P)SR_1_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_1_StatusStr") {
@@ -125,14 +133,16 @@ record(longout, "$(P)SR_2_State") {
 
 record(mbbo, "$(P)SR_2_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_2_StatusStr") {
@@ -156,14 +166,16 @@ record(longout, "$(P)SR_3_State") {
 
 record(mbbo, "$(P)SR_3_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_3_StatusStr") {
@@ -187,14 +199,16 @@ record(longout, "$(P)SR_4_State") {
 
 record(mbbo, "$(P)SR_4_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_4_StatusStr") {
@@ -218,14 +232,16 @@ record(longout, "$(P)SR_5_State") {
 
 record(mbbo, "$(P)SR_5_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_5_StatusStr") {
@@ -249,14 +265,16 @@ record(longout, "$(P)SR_6_State") {
 
 record(mbbo, "$(P)SR_6_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_6_StatusStr") {
@@ -280,14 +298,16 @@ record(longout, "$(P)SR_7_State") {
 
 record(mbbo, "$(P)SR_7_Status") {
   field(DTYP, "Soft Channel")
-  field(NOBT, "2")
+  field(NOBT, "3")
   field(ONVL, "1")
   field(TWVL, "2")
   field(THVL, "3")
-  field(ZRST, "Failure")
-  field(ONST, "Warning")
-  field(TWST, "Seq Fail")
-  field(THST, "Ok")
+  field(FRVL, "4")
+  field(ZRST, "No Status")
+  field(ONST, "Failure")
+  field(TWST, "Warning")
+  field(THST, "Seq Fail")
+  field(FRST, "Ok")
 }
 
 record(stringout, "$(P)SR_7_StatusStr") {

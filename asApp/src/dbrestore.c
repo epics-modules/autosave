@@ -787,7 +787,7 @@ int set_pass0_restoreFile( char *filename)
 	cp = (char *)calloc(40, 1);
 	restoreFileList.pass0StatusStr[fileNum] = cp;
 	strcpy(cp, "Unknown, probably failed");
-	restoreFileList.pass0Status[fileNum] = SR_STATUS_FAIL;
+	restoreFileList.pass0Status[fileNum] = SR_STATUS_INIT;
 	restoreFileList.pass0cnt++;
 	return(OK);
 }
@@ -812,7 +812,7 @@ int set_pass1_restoreFile(char *filename)
 	cp = (char *)calloc(40, 1);
 	restoreFileList.pass1StatusStr[fileNum] = cp;
 	strcpy(cp, "Unknown, probably failed");
-	restoreFileList.pass1Status[fileNum] = SR_STATUS_FAIL;
+	restoreFileList.pass1Status[fileNum] = SR_STATUS_INIT;
 	restoreFileList.pass1cnt++;
 	return(OK);
 }
