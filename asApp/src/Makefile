@@ -29,14 +29,6 @@ LIBRARY_IOC += autosave
 autosave_SRCS += dbrestore.c save_restore.c
 autosave_SRCS += initHooks.c fGetDateStr.c
 
-# <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
-autosave_SRCS += as_registerRecordDeviceDriver.cpp
-#autosave_SRCS_DEFAULT += asMain.cpp #maybe only for win32
-#autosave_SRCS_vxWorks += -nil- #?
-
-#The following adds support from base/src/vxWorks
-#autosave_OBJS_vxWorks += $(EPICS_BASE_BIN)/vxComLibrary
-
 autosave_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #=============================
