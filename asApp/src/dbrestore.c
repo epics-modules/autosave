@@ -19,14 +19,16 @@
  */
 #define VERSION "2.7"
 
+#ifdef vxWorks
 #include	<vxWorks.h>
-#include	<stdio.h>
 #include	<stdioLib.h>
 #include	<stdlib.h>
 #include	<sys/stat.h>
+#include	<usrLib.h>
+#endif
+#include	<stdio.h>
 #include	<string.h>
 #include	<ctype.h>
-#include	<usrLib.h>
 #include	<time.h>
 
 #include	<dbDefs.h>
@@ -179,7 +181,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				case DBF_OUTLINK:
 				case DBF_FWDLINK:
 					/* Can't restore links after InitDatabase */
-					if (init_state < INITHOOKafterInitDatabase) {
+					if (init_state < initHookAfterInitDatabase) {
 						status = dbPutString(pdbentry,input_line);
 						Debug(5,"dbPutString() returns %d:",status);
 						if (reboot_restoreDebug >= 5) errMessage(status,"");
@@ -229,7 +231,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	dbFinishEntry(pdbentry);
 
 	/* If this is the second pass for a restore file, don't write backup file again.*/
-	if (init_state >= INITHOOKafterInitDatabase) {
+	if (init_state >= initHookAfterInitDatabase) {
 		for(i = 0; i < restoreFileList.pass0cnt; i++) {
 			if (strcmp(filename, restoreFileList.pass0files[i]) == 0)
 				return(OK);
