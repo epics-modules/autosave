@@ -1,0 +1,16 @@
+################
+# RECORD SUPPORT
+################
+
+################
+# DEVICE SUPPORT
+################
+
+
+################
+# DRIVER SUPPORT
+################
+
+registrar(save_restoreRegister)
+registrar(dbrestoreRegister)
+registrar(asInitHooksRegister)
