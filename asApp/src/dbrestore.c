@@ -34,9 +34,10 @@
  *                backup-file dates are compared to current date.
  * 10/29/04  tmm  v4.1 Added revision descriptions that should have been in
  *                previous revisions.  Changed VERSION number, in agreement
- *                with save_restore's SRVERSION string. 
+ *                with save_restore's SRVERSION string.
+ * 11/30/04  tmm  v4.3 Added debug for curr_num_elements.
  */
-#define VERSION "4.1"
+#define VERSION "4.3"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -986,6 +987,7 @@ long SR_get_array(char *PVname, void *pArray, long *pnum_elements)
 		request_field_type = DBF_USHORT;
 	}
 	status = dbGet(paddr, request_field_type, pArray, NULL, pnum_elements, NULL);
+	Debug(10, "SR_get_array: '%s' currently has %ld elements\n", PVname, *pnum_elements);
 	dbScanUnlock((dbCommon *)paddr->precord);
 	return(status);
 }

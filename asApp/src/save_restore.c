@@ -75,8 +75,12 @@
  *                save_restoreShow().
  * 11/03/04  tmm  v4.2 Changed the way time strings are processed.  Added some code
  *                to defend against partial init failures.
+ * 11/30/04  tmm  v4.3 Arrays now maintain max and curr number of elements, and
+ *                save_restore tracks changes in curr_elements.  Previously,
+ *                if dbGet() set num_elements to zero for a PV, that was the last
+ *                time save_restore looked at the PV.
  */
-#define		SRVERSION "save/restore V4.2"
+#define		SRVERSION "save/restore V4.3"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -177,7 +181,8 @@ struct channel {					/* database channel list element */
 	char			value[64];		/* value string */
 	short			enum_val;		/* short value of an enumerated field */
 	short			valid;			/* we think we got valid data for this channel */
-	long			num_elements;	/* number of elements, initially from ca, but then from dbAddr */
+	long			max_elements;	/* number of elements, initially from ca, but then from dbAddr */
+	long			curr_elements;	/* number of elements from dbGet */
 	long			field_type;		/* field type from dbAddr */
 	void			*pArray;
 };
@@ -727,15 +732,25 @@ STATIC int connect_list(struct chlist *plist)
 			strcpy(pchan->value,"Connected");
 			n++;
 		}
-		pchan->num_elements = ca_element_count(pchan->chid); /* just to see if it's an array */
-		if (pchan->num_elements > 1) {
+		pchan->max_elements = ca_element_count(pchan->chid);	/* just to see if it's an array */
+		pchan->curr_elements = pchan->max_elements;				/* begin with this assumption */
+		if (save_restoreDebug >= 10)
+			errlogPrintf("save_restore:connect_list: '%s' has, at most, %ld elements\n",
+				pchan->name, pchan->max_elements);
+		if (pchan->max_elements > 1) {
 			/* We use database access for arrays, so get that info */
-			status = SR_get_array_info(pchan->name, &pchan->num_elements, &field_size, &pchan->field_type);
+			status = SR_get_array_info(pchan->name, &pchan->max_elements, &field_size, &pchan->field_type);
+			/* info resulting from dbNameToAddr() might be different, but it's still not the actual element count */
+			pchan->curr_elements = pchan->max_elements;
+			if (save_restoreDebug >= 10)
+				errlogPrintf("save_restore:connect_list:(after SR_get_array_info) '%s' has, at most, %ld elements\n",
+					pchan->name, pchan->max_elements);
 			if (status == 0)
-				pchan->pArray = calloc(pchan->num_elements, field_size);
+				pchan->pArray = calloc(pchan->max_elements, field_size);
 			if (pchan->pArray == NULL) {
 				errlogPrintf("save_restore:connect_list: can't alloc array for '%s'\n", pchan->name);
-				pchan->num_elements = 0;
+				pchan->max_elements = 0;
+				pchan->curr_elements = 0;
 			}
 		}
 	}
@@ -826,15 +841,13 @@ STATIC int get_channel_values(struct chlist *plist)
 	int				not_connected = 0;
 	unsigned short	num_channels = 0;
 	short			field_type;
-	long			num_elements;
-	
+
 	epicsMutexLock(sr_mutex);
 
 	/* attempt to fetch all channels that are connected */
 	for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 		pchannel->valid = 0;
-		num_elements = pchannel->num_elements;
-		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (num_elements >= 1)) {
+		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (pchannel->max_elements >= 1)) {
 			field_type = ca_field_type(pchannel->chid);
 			strcpy(pchannel->value, INIT_STRING);
 			if (field_type == DBF_FLOAT) {
@@ -850,8 +863,13 @@ STATIC int get_channel_values(struct chlist *plist)
 			}
 			num_channels++;
 			pchannel->valid = 1;
-			if (num_elements > 1) {
-				(void)SR_get_array(pchannel->name, pchannel->pArray, &pchannel->num_elements);
+			if (pchannel->max_elements > 1) {
+				pchannel->curr_elements = pchannel->max_elements;
+				(void)SR_get_array(pchannel->name, pchannel->pArray, &pchannel->curr_elements);
+			}
+			if (save_restoreDebug >= 15) {
+				errlogPrintf("save_restore:get_channel_values: '%s' currently has %ld elements\n",
+					pchannel->name, pchannel->curr_elements);
 			}
 		} else {
 			not_connected++;
@@ -860,8 +878,9 @@ STATIC int get_channel_values(struct chlist *plist)
 			} else if (ca_state(pchannel->chid) != cs_conn) {
 				Debug(1 ,"get_channel_values: %s not connected\n", pchannel->name);
 			}
-			if ((num_elements < 1)) {
-				Debug(1 ,"get_channel_values: %s has %ld elements\n", pchannel->name, num_elements);
+			if ((pchannel->max_elements < 1)) {
+				Debug(1 ,"get_channel_values: %s has, at most, %ld elements\n",
+					pchannel->name, pchannel->max_elements);
 			}
 		}
 	}
@@ -949,7 +968,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		}
 
 		errno = 0;
-		if (pchannel->num_elements <= 1) {
+		if (pchannel->curr_elements <= 1) {
+			/* treat as scalar */
 			if (pchannel->enum_val >= 0) {
 				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
 			} else {
@@ -960,8 +980,9 @@ STATIC int write_it(char *filename, struct chlist *plist)
 				if (errno) myPrintErrno("write_it");
 				goto trouble;
 			}
-		} else if (pchannel->num_elements > 1) {
-			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->num_elements);
+		} else {
+			/* treat as array */
+			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
 			if (n <= 0 || errno) {
 				if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 				if (errno) myPrintErrno("write_it");
@@ -1458,7 +1479,8 @@ void save_restoreShow(int verbose)
 	printf("  save file path:\n    '%s'\n", saveRestoreFilePath);
 	if (sr_mutex && (epicsMutexLock(sr_mutex) == epicsMutexLockOK)) {
 		for (plist = lptr; plist != 0; plist = plist->pnext) {
-			printf("    %s: \n",plist->reqFile);
+			printf("  %s: \n",plist->reqFile);
+			printf("    Status PV: %s\n", plist->status_PV);
 			printf("    Status: '%s' - '%s'\n", SR_STATUS_STR[plist->status], plist->statusStr);
 			epicsTimeToStrftime(tmpstr, sizeof(tmpstr), TIMEFMT, &plist->save_time);
 			printf("    Last save time  :%s", tmpstr);
@@ -1486,7 +1508,8 @@ void save_restoreShow(int verbose)
 				(plist->not_connected == 1) ? ' ' : 's');
 			if (verbose) {
 				for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-					printf("\t%s\t%s",pchannel->name,pchannel->value);
+					printf("\t%s (max:%d curr:%d elements)\t%s", pchannel->name,
+						pchannel->max_elements, pchannel->curr_elements, pchannel->value);
 					if (pchannel->enum_val >= 0) printf("\t%d\n",pchannel->enum_val);
 					else printf("\n");
 				}
@@ -1812,10 +1835,10 @@ int do_manual_restore(char *filename, int file_type)
 			}
 
 			for (pchannel = plist->pchan_list; pchannel !=0; pchannel = pchannel->pnext) {
-				if (pchannel->num_elements == 1) {
-					status = ca_put(DBR_STRING,pchannel->chid,pchannel->value);
+				if (pchannel->curr_elements <= 1) {
+					status = ca_put(DBR_STRING, pchannel->chid, pchannel->value);
 				} else {
-					status = SR_put_array_values(pchannel->name, pchannel->pArray, pchannel->num_elements);
+					status = SR_put_array_values(pchannel->name, pchannel->pArray, pchannel->curr_elements);
 				}
 			}
 			if (status) num_errs++;
@@ -2014,7 +2037,8 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 				strcpy(pchannel->name, name);
 				strcpy(pchannel->value,"Not Connected");
 				pchannel->enum_val = -1;
-				pchannel->num_elements = 0;
+				pchannel->max_elements = 0;
+				pchannel->curr_elements = 0;
 			}
 		}
 	}
