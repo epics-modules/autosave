@@ -1,5 +1,4 @@
 /* initHooks.c	ioc initialization hooks */ 
-/* share/src/db @(#)initHooks.c	1.5     7/11/94 */
 /*
  *      Author:		Marty Kraimer
  *      Date:		06-01-91
@@ -58,7 +57,7 @@ extern struct restoreList restoreFileList;
 
 /* If this function (initHooks) is loaded, iocInit calls this function
  * at certain defined points during IOC initialization */
-static void stdInitHooks(initHookState state)
+static void asInitHooks(initHookState state)
 {
 	int i;
 
@@ -118,9 +117,9 @@ static void stdInitHooks(initHookState state)
 	return;
 }
 
-void stdInitHooksRegister(void)
+void asInitHooksRegister(void)
 {
-   initHookRegister(stdInitHooks);
+   initHookRegister(asInitHooks);
 }
 
-epicsExportRegistrar(stdInitHooksRegister);
+epicsExportRegistrar(asInitHooksRegister);
