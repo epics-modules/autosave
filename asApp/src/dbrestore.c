@@ -16,10 +16,12 @@
  * 03/15/02  tmm  v2.5 check saveRestoreFilePath before using it.
  * 03/19/02  tmm  v2.6 initialize fname before using it.
  * 04/05/02  tmm  v2.7 Don't use copy for backup file.  It uses mode 640.
- * 08/01/03  mlr  v3.0 Convert to R3.14.2.  Fix a couple of bugs where failure was
- *                     assumed to be status<0, while it should be status!=0.
+ * 08/01/03  mlr  v3.0 Convert to R3.14.2.  Fix a couple of bugs where failure
+ *                 was assumed to be status<0, while it should be status!=0.
+ * 11/18/03  tmm  v3.01 Save files with versions earlier than 1.8 don't have to
+ *                pass the <END> test.
  */
-#define VERSION "3.0"
+#define VERSION "3.01"
 
 #include	<stdio.h>
 #include	<stdlib.h>
@@ -296,16 +298,19 @@ FILE *fopen_and_check(const char *fname, const char *mode)
 	int try_backup = 0;
 	char tmpstr[30];
 	char file[256];
+	double version=0;
 
 	strcpy(file, fname);
 	if ((inp_fd = fopen(file, "r")) == NULL) {
 		epicsPrintf("fopen_and_check: Can't open file '%s'.\n", file);
 		try_backup = 1;
 	} else {
+		fgets(tmpstr, 29, inp_fd);
+		version = atof(strchr(tmpstr,(int)'V')+1);
 		/* check out "successfully written" marker */
-		if ((fseek(inp_fd, -6, SEEK_END)) ||
+		if ((version > 1.79) && ((fseek(inp_fd, -6, SEEK_END)) ||
 				(fgets(tmpstr, 6, inp_fd) == 0) ||
-				(strncmp(tmpstr, "<END>", 5) != 0)) {
+				(strncmp(tmpstr, "<END>", 5) != 0))) {
 			fclose(inp_fd);
 			try_backup = 1;
 		} else {
@@ -321,9 +326,12 @@ FILE *fopen_and_check(const char *fname, const char *mode)
 			epicsPrintf("fopen_and_check: Can't open file '%s'\n", file);
 			return(NULL);
 		} else {
-			if ((fseek(inp_fd, -6, SEEK_END)) ||
+			fgets(tmpstr, 29, inp_fd);
+			version = atof(strchr(tmpstr,(int)'V')+1);
+			/* check out "successfully written" marker */
+			if ((version > 1.79) && ((fseek(inp_fd, -6, SEEK_END)) ||
 					(fgets(tmpstr, 6, inp_fd) == 0) ||
-					(strncmp(tmpstr, "<END>", 5) != 0)) {
+					(strncmp(tmpstr, "<END>", 5) != 0))) {
 				epicsPrintf("fopen_and_check: File '%s' is not trusted.\n",
 					file);
 				fclose(inp_fd);
