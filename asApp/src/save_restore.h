@@ -16,7 +16,6 @@
 #define Debug(l,FMT,V...) ;
 #endif
 
-#define myPrintErrno(s) {errlogPrintf("%s(%d): [0x%x]=",__FILE__,__LINE__,errno); perror(s);}
 
 #define         MAX(a,b)   ((a)>(b)?(a):(b))
 #define         MIN(a,b)   ((a)<(b)?(a):(b))
@@ -46,7 +45,7 @@ static char SR_STATUS_STR[5][10] =
 
 #define FN_LEN 80 /* filename length */
 #define STRING_LEN MAX_STRING_SIZE	/* EPICS max length for string PV */
-#define PV_NAME_LEN 40 /* string containing a PV name */
+#define PV_NAME_LEN 80 /* string containing a PV name */
 
 struct restoreList {
         int pass0cnt;
@@ -59,6 +58,7 @@ struct restoreList {
 		char *pass1StatusStr[MAXRESTOREFILES];
 };
 
+extern void myPrintErrno(char *s);
 extern FILE *fopen_and_check(const char *file, long *status);
 
 extern long SR_get_array_info(char *name, long *num_elements, long *field_size, long *field_type);
@@ -83,3 +83,11 @@ extern int	save_restoreIoErrors;
 extern volatile int	save_restoreRemountThreshold;
 
 
+/* strncpy sucks (may copy extra characters, may not null-terminate) */
+#define strNcpy(dest, src, N) {			\
+	int ii;								\
+	char *dd=dest, *ss=src;				\
+	for (ii=0; *ss && ii < N-1; ii++)	\
+		*dd++ = *ss++;					\
+	*dd = '\0';							\
+}
