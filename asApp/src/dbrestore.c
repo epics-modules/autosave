@@ -28,8 +28,15 @@
  *                Attempt to restore scalars to DBF_NOACCESS fields by calling
  *                dbNameToAddr() and then a dbFastPutConvert[][] routine.  (It's
  *                not an error to attempt this in pass 0, though it must fail.)
- *                Previously, restoreFileList.pass<n>Status wasn't initialized. */
-#define VERSION "4.0"
+ *                Previously, restoreFileList.pass<n>Status wasn't initialized.
+ * 10/04/04  tmm  Allow DOS line termination (CRLF) or unix (LF) in .sav files.
+ *                Also, collapsed some code, and modified the way sequenced
+ *                backup-file dates are compared to current date.
+ * 10/29/04  tmm  v4.1 Added revision descriptions that should have been in
+ *                previous revisions.  Changed VERSION number, in agreement
+ *                with save_restore's SRVERSION string. 
+ */
+#define VERSION "4.1"
 
 #include	<stdio.h>
 #include	<errno.h>
