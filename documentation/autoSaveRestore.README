@@ -1,0 +1,478 @@
+Autosave/restore  --  save_restore.c v3.2; dbrestore.c v3.0
+
+This software automatically saves the values of EPICS process variables
+(PVs), to files on a server, and can automatically restore those values
+when the VME crate is rebooted.  The original author is Bob Dalesio; I
+made a few improvements; Frank Lenkszus made some more improvements,
+which I folded into the version I've been maintaining.  A bunch of
+people contributed to getting the software running on PPC hardware,
+including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus
+Janousch and David Maden (SLS), and I'm not sure who else.  Mark Rivers
+
+
+Contents
+========
+
+save_restore.c     -- saves PV values in files on a file server,
+                      according to preset rules.
+dbrestore.c        -- restore PV values at boot time, using dbStaticLib
+initHooks.c        -- call restore routines at the correct time during boot.
+fGetDateStr.c      -- Frank Lenkszus' date-string routines
+save_restore.h     -- header
+fGetDateStr.h      -- header
+auto_settings.req  -- Sample request files
+auto_positions.req 
+reqInclude.tar     -- collection of autosave-request files with parameterized
+                      PV names (e.g.,  "$(P)$(T).PREC") intended  to be
+                      included in auto_settings.req.
+
+
+
+Differences from previous versions
+==================================
+
+save_restore v3.2; dbrestore v3.0:
+----------------------------------
+
+Previous versions did not reliably save non-local float and double PV
+values under EPICS 3.14 
+
+save_restore v2.9a; dbrestore v2.7:
+----------------------------------
+Previously, create_data_set() would return without releasing a
+semaphore (causing the save_restore task to hang) if called with
+save_method==TRIGGERED, but no trigger channel was specified.
+
+Previously, fdbrestore() would return without releasing a semaphore
+(causing the save_restore task to hang) if called with the name of a
+save set currently being maintained, and the save list contained
+unconnected PV's, and the variable 'sr_restore_incomplete_sets_ok' was
+false.
+
+Added macro-string argument to create_xxx_set()
+
+Added argument 'verbose' to fdblist()
+
+Added second argument, 'subpath', to set_XXXfile_path(). This allows the
+caller to pass the path as two args to be concatenated, making it easier
+to build the path string using a variable set in the cdCommands file.
+
+Use logMsg() instead of epicsPrintf() for several informational messages.
+
+The variables chlist and reqFilePathList are now private.
+
+Increased ca_pend_io search timeout in connect_list() from 2 to 5 seconds.  
+Decreased fetch timeout from num_channels/10 to 10 seconds.
+
+Decreased ca_pend_io clear-channel timeout from num_channels/10 to 10 seconds
+in remove_data_set().
+
+Changed call to macParseDefns() to specify the macro-substitution handle.
+
+save_restore v2.7; dbrestore v2.7:
+---------------------------------
+
+*******************************************************************************
+ATTENTION ATTENTION ATTENTION ATTENTION ATTENTION ATTENTION ATTENTION ATTENTION 
+*******************************************************************************
+This version is incompatible in one important respect with versions of
+save_restore.c numbered lower than 2.6:  The functions
+	create_periodic_set()
+	create_monitor_set()
+	reload_periodic_set()
+	reload_monitor_set()
+now take 'int' arguments to specify time periods, instead of 'double' arguments.
+This change was required for compatibility with PPC processors.
+
+In Frank Lenkszus' version, the calls 
+	set_pass<n>_restoreFile()
+were required to specify files to be restored.  In this version, if no
+restore files have been specified, the code specifies the default files
+auto_positions.sav and auto_settings.sav for you, for backward compatibility
+with my previous version.  If you really don't want to restore any files,
+you now must either not load initHooks, or replace it with your own version.
+
+In Frank Lenkszus' version, set_requestfile_path() could specify only a single
+directory.  Now that include files are a possibility, you can specify several
+request-file directories by calling set_requestfile_path() several times.
+
+Backup files made as part of a restore operation (i.e., files ending in
+".bu", or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy"
+command.
+
+
+How to use this software
+========================
+
+This software can be used in many different ways.  I'll describe what
+you have to do to use it as it's used at APS beamlines to save PV
+values periodically, and restore them on reboot.
+
+
+*) Create "request" files (e.g., auto_settings.req, auto_positions.req)
+specifying the PVs whose values you want to save and restore.  The save
+files corresponding to these request files will have the ".req" suffix
+replaced by ".sav".  Request files can include other request files
+(nested includes are allowed) and macro substitution can be performed
+on the included files (using William Lupton's macro library), with the
+following syntax:
+
+	file <request_file> <macro-substitution_string>
+
+e.g.,
+
+	file xx_auto_motor_settings.req P=xxx:,M=m1
+
+I've tried to defend against forseeable variations in syntax, so that
+include lines with embedded whitespace and/or quotes, macro strings
+without commas, empty macro strings, and lines with trailing comments
+will be parsed as one would want.  Generally, quotes are ignored,
+whitespace implies a comma but otherwise is ignored, and everything
+after the second sequence of non-whitespace characters (i.e., after the
+file name) and before the (optional) comment character '#' is taken as
+the macro-substitution string.  Macro substitution is performed on the
+entire line, so it's possible to parameterize names of included files,
+as well as PV names.  It is also possible to define a macro that
+replaces its target with nothing.
+
+
+*) If the request files will not be in the crate's current working
+directory ("current", that is, at the time the restore commands are
+executed -- during iocInit), specify one or more directories to be
+searched for request files using one or more invocations of the
+function
+
+	set_requestfile_path()
+
+
+*) Select the directory in which you want save files to be written.  If
+this will not be the crate's current working directory at the time the
+files are written, execute the function
+
+	set_savefile_path()
+
+in your startup script, before the create_xxx_set() commands, to
+specify the path to the directory.  If you are using NFS (recommended),
+ensure that the path does not contain symbolic links.  In my experience,
+VxWorks cannot write to an NFS file through a symbolic link.  (I don't
+understand all the ins and outs of this limitation.)
+
+
+*) Give the "crate" write permission to the directory in which the save
+files are to be written.  If you forget this step, autoSaveRestore may be
+able to write save files, but the files will be corrupted because the crate
+will not be able to change their lengths.  autoSaveRestore attempts to
+detect this condition, but cannot work around it if the file length must
+increase.
+
+
+*) Specify which save files are to be restored before record
+initialization (pass 0) and which are to be restored after record
+initialization (pass 1), using the commands
+
+	set_pass0_restoreFile()
+	set_pass1_restoreFile()
+
+Place these commands in the startup file before iocInit.  If you don't
+call either of these functions (or if your calls fail completely to
+specify any restore files) the supplied initHooks routine will attempt
+to restore the file "auto_positions.sav" before record init, and the file
+"auto_settings.sav" both before and after record init.
+
+Notes:
+  Link fields cannot be restored (by dbStatic calls) after record
+  initialization.  If you want save/restore to work for link fields you
+  must specify them in a pass-0 file.  It is not an error to specify link
+  fields in a pass-1 file, but this software will not try to restore them.
+
+  Device support code for the motor record uses the value of the field
+  DVAL, restored during pass 0, only if the value read from the hardware
+  is zero.  If the value from hardware is nonzero, it is used instead of
+  the restored value.
+
+
+*) At boot time, the restore software writes a backup copy of the ".sav" file
+from which it restored PV's.  This file can either be named xxx.bu, and
+be rewritten every reboot, or named xxxYYMMDD-HHMMSS, where "YY..." is a date.
+Dated backups are not overwritten.  If you want dated backup files
+(recommended), set
+
+	reboot_restoreDatedBU = 1
+
+in the startup file before iocInit.
+
+
+Note:
+  If a save file is restored in both pass 0 and pass 1, the backup file
+  will be written only during pass 0.
+
+
+*) Invoke the "save" part of this software as part of the EPICS startup
+sequence, by adding lines of the form
+
+	create_monitor_set("auto_positions.req",5)
+	create_monitor_set("auto_settings.req",30)
+
+to the end of your EPICS startup file.  You can call the files anything
+you want.
+
+For each "create_monitor_set(<name>.req, <time>)" command, the save_restore
+process will write the files <name>.sav and <name>.savB every <time>
+seconds, if any of the PVs named in the file <name>.req have changed value
+since the last write.  Other create_xxx_set() commands do the same thing,
+but with different conditions triggering the save operation.
+
+Note that in previous versions, create_monitor_set() used an argument of
+type double to specify the period (in seconds).  This doesn't work on the
+PPC, so the arguments for this and similar functions were changed to int.
+
+If your VME crate takes a really long time to boot, it's possible the PVs
+you want to save will not have the correct values when the save_restore
+task first looks at them.  You can avoid this by putting a
+
+	taskDelay(<number_of_60_Hz_clock_ticks>)
+
+before create_monitor_set().
+
+
+Save files
+----------
+Save files are not intended to be edited manually.  If you, nevertheless, do
+edit a save file, you must end it with the text
+
+<END>
+
+followed by a single arbitrary character (normally '\n').  If the file does
+not end with this text, reboot_restore() will assume the crate crashed while
+the file was being written, and will not use the file.  Once a save file has
+been created successfully, save_restore will not overwrite the file unless
+a good ".savB" backup file exists.  Similarly, it will not overwrite the
+".savB" file unless the save file was successfully written.
+
+".savB" files are created using the VxWorks "copy" command, which gives
+everything it touches the NFS permissions "0640" (read/write for owner,
+read only for group, and nothing for other).  One way to work around this
+inconvenience is to use the unix chmod command:
+
+   chmod g+s <directory_name>
+
+to cause all files written in the directory to have the same group as the
+directory has.
+
+
+User-callable functions:
+========================
+
+int manual_save(char *request_file);
+	If a manual save set for the request file "request_file" was created
+	with create_manual_set(), this command will cause current PV values to be
+	saved.
+
+int set_savefile_name(char *request_file, char *save_file);
+	If a save set has already been created for the request file, this function
+	will change the save file name.
+
+int create_periodic_set(char *request_file, int period, char *macrostring);
+	Create a save set for the request file.  The save file will be written
+	every <period> seconds.
+	This function can be called at any time after iocInit.
+
+int create_triggered_set(char *request_file, char *trigger_channel,
+		char *macrostring);
+	Create a save set for the request file.  The save file will be written
+	whenever the PV specified by <trigger_channel> is posted.  Normally this
+	occurs when the PV's value changes.
+	This function can be called at any time after iocInit.
+
+int create_monitor_set(char *request_file, int period, char *macrostring);
+	Create a save set for the request file.  The save file will be written
+	every <period> seconds, if any PV in the save set was posted (changed
+	value) since the last write.
+	This function can be called at any time after iocInit.
+
+int create_manual_set(char *request_file, char *macrostring);
+	Create a save set for the request file.  The save file will be written
+	when the function manual_save() is called with the same request-file name.
+	This function can be called at any time after iocInit.
+
+int fdbrestore(char *save_file);
+	If <save_file> refers to a save set that exists in memory, then PV's in
+	the save set will be restored from values in memory.  Otherwise, this
+	functions restores the PV's in <saveRestorePath>/<save_file> and creates
+	a new backup file "<saveRestorePath>/<save_file>.bu".  The effect probably
+	will not be the same as a boot-time restore, because caput() calls are used
+	instead of static database access dbPutX() calls.  Record processing will
+	result from caput()'s to inherently process-passive fields.
+	This function can be called at any time after iocInit.
+
+int fdbrestoreX(char *save_file);
+	This function restores from the file <saveRestorePath>/<save_file>, which
+	can look just like a save file, but which needn't end in <END>.  No backup
+	file will be written.  The effect probably will not be the same as a
+	boot-time restore, because caput() calls are used instead of static database
+	access dbPutX() calls.  Record processing will result from caput()'s to
+	inherently process-passive fields.
+	This function can be called at any time after iocInit.
+
+void fdblist(int verbose);
+	List all the save sets currently being managed by the save_restore task.
+	If (verbose != 0), lists the PV's as well.
+
+int set_requestfile_path(char *path, char *pathsub);
+	Called before create_xxx_set(), this function specifies the path to be
+	prepended to request-file names.  <pathsub>, if present, will be appended
+	to <path>, if present, with a separating '/' whether or not <path> ends
+	or <pathsub> begins with '/'.  If the result does not end in '/', one will
+	be appended to it.
+	You can specify several directories to be searched for request files by
+	calling this routine several times.  Directories will be searched in the
+	order in which the set_requestfile_path() calls were made.  If you never
+	call the routine, the crate's current working directory will be searched.
+	If you ever call it, the current directory ("./") will be searched only if
+	you've asked for it explicitly.
+
+int set_savefile_path(char *path, char *pathsub);
+	Called before create_xxx_set(), this function specifies the path to be
+	prepended to save-file names.   <pathsub>, if present, will be appended
+	to <path>, if present, with a separating '/' whether or not <path> ends
+	or <pathsub> begins with '/'.  If the result does not end in '/', one will
+	be appended to it.
+
+int set_saveTask_priority(int priority);
+	Set the priority of the save_restore task.
+
+int remove_data_set(char *request_file);
+	If a save set has been created for <request_file>, this function will
+	delete it.
+
+int reload_periodic_set(char *request_file, int period, char *macrostring);
+	This function allows you to change the PV's and the period associated with
+	a save set created by create_periodic_set().
+
+int reload_triggered_set(char *request_file, char *trigger_channel,
+		char *macrostring);
+	This function allows you to change the PV's and the trigger channel
+	associated with a save set created by create_triggered_set().
+
+int reload_monitor_set(char * request_file, int period, char *macrostring);
+	This function allows you to change the PV's and the period associated with
+	a save set created by create_monitor_set().
+
+int reload_manual_set(char * request_file, char *macrostring);
+	This function allows you to change the PV's associated with a save set
+	created by create_manual_set().
+
+Note: Don't get too ambitions with the remove/reload functions.  You
+have to wait for one to finish completely (the save_restore task must
+get through its service loop) before executing another.  If you call
+one before the previous function is completely finished, I don't know
+what will happen.
+
+int reboot_restore(char *save_file, initHookState init_state)
+	This should only be called from initHooks because it can only function
+	correctly if called at particular times during iocInit.
+
+int set_pass0_restoreFile(char *save_file)
+	This function specifies a save file to be restored during iocInit,
+	before record initialization.
+	Up to eight files can be specified using calls to this function.
+
+int set_pass1_restoreFile(char *save_file)
+	This function specifies a save file to be restored during iocInit,
+	after record initialization.
+	Up to eight files can be specified using calls to this function.
+
+
+Control variables:
+==================
+
+int save_restoreDebug             -- Initially 0.  Increase to get more
+                                     informational messages
+
+int save_restore_test_fopen       -- Initially 0.  If nonzero, before
+                                     attempting to write a file, autosave will
+                                     try to open a test file.  If it can't, a
+                                     warning will be written to the console.
+
+int sr_save_incomplete_sets_ok    -- Initially 1.  If set to zero, autosave will
+                                     not write a .sav file unless it has a CA
+                                     connection to every PV in the list.
+
+int sr_restore_incomplete_sets_ok -- Initially 1.  If set to zero, restore will
+                                     not restore a .sav file unless that file
+                                     contains a value for every PV.
+
+Example of use:
+===============
+
+---------- begin excerpt from st.cmd ----------------------
+
+### Load custom EPICS software [including save_restore.o and dbrestore.o]
+ld < xxxLib.munch
+.
+.
+.
+### dbrestore setup
+reboot_restoreDebug  = 0
+# ok to restore a save set that had missing values (no CA connection to PV)?
+sr_restore_incomplete_sets_ok = 1
+
+# dbrestore saves a copy of the save file it restored.  File name is, e.g.,
+# "auto_settings.sav.bu" or "auto_settings.sav020306-083522" if
+# reboot_restoreDatedBU is nonzero.
+reboot_restoreDatedBU = 1;
+
+# specify where save files should go
+set_savefile_path(startup, "autosave")
+
+## specify where request files come from
+# We want to include request files that are stored with the databases they
+# support -- e.g., in stdApp/Db, mcaApp/Db, etc.  The variables std, mca,
+# etc. are defined in cdCommands
+set_requestfile_path(startup, "")
+set_requestfile_path(startup, "autosave")
+set_requestfile_path(ip, "ipApp/Db")
+set_requestfile_path(ip330, "ip330App/Db")
+set_requestfile_path(mca, "mcaApp/Db")
+set_requestfile_path(ipunidig, "ipUnidigApp/Db")
+set_requestfile_path(dac128v, "dac128VApp/Db")
+set_requestfile_path(motor, "motorApp/Db")
+set_requestfile_path(std, "stdApp/Db")
+
+# specify what save files should be restored when
+set_pass0_restoreFile("auto_positions.sav")
+set_pass0_restoreFile("auto_settings.sav")
+set_pass1_restoreFile("auto_settings.sav")
+
+.
+.
+.
+dbLoadDatabase("../../dbd/xxx.dbd")
+dbLoadRecords(...
+.
+.
+.
+iocInit
+.
+.
+.
+### Start up the autosave task and tell it what to do.
+# The task is actually named "save_restore".
+# (See also, 'initHooks' above, which is the means by which the values that
+# will be saved by the task we're starting here are going to be restored.
+#
+#save_restoreDebug=20
+#
+# save positions every five seconds
+create_monitor_set("auto_positions.req",5,"P=xxx:")
+# save other things every thirty seconds
+create_monitor_set("auto_settings.req",30,"P=xxx:")
+.
+.
+.
+
+---------- end excerpt from st.cmd ----------------------
+
+
+Tim Mooney
+11/17/03
