@@ -84,6 +84,7 @@
  * 01/28/05  tmm  v4.5 Increased size of status-prefix to 29 bytes+NULL.  Added
  *                new status value: 'No Status'
  * 02/16/05  tmm  v4.6 Fixed faulty building of PV-name strings for status PV's
+ *                Post selected save-set status strings promptly.
  */
 #define		SRVERSION "save/restore V4.6"
 
@@ -1125,11 +1126,19 @@ STATIC int write_save_file(struct chlist *plist)
 			errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 			plist->status = SR_STATUS_FAIL;
 			strcpy(plist->statusStr, "Can't write .savB file");
+			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+				ca_flush_io();
+			}
 			epicsMutexUnlock(sr_mutex);
 			return(ERROR);
 		}
 		plist->status = SR_STATUS_WARN;
 		strcpy(plist->statusStr, ".savB file was bad");
+		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+			ca_flush_io();
+		}
 		backup_state = BS_NEW;
 	}
 
@@ -1141,6 +1150,10 @@ STATIC int write_save_file(struct chlist *plist)
 		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't write .sav file");
+		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+			ca_flush_io();
+		}
 		sprintf(SR_recentlyStr, "Can't write '%s'", plist->save_file);
 		epicsMutexUnlock(sr_mutex);
 		return(ERROR);
@@ -1158,6 +1171,10 @@ STATIC int write_save_file(struct chlist *plist)
 				backup_file);
 			plist->status = SR_STATUS_WARN;
 			strcpy(plist->statusStr, "Can't write .savB file");
+			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+				ca_flush_io();
+			}
 			sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
 			epicsMutexUnlock(sr_mutex);
 			return(ERROR);
@@ -1167,6 +1184,10 @@ STATIC int write_save_file(struct chlist *plist)
 		plist->status = SR_STATUS_WARN;
 		sprintf(plist->statusStr,"%d %s not saved", plist->not_connected, 
 			plist->not_connected==1?"value":"values");
+		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+			ca_flush_io();
+		}
 	}
 	sprintf(SR_recentlyStr, "Wrote '%s'", plist->save_file);
 	epicsMutexUnlock(sr_mutex);
@@ -1958,6 +1979,10 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	if (!inp_fd) {
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't open .req file");
+		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+			ca_flush_io();
+		}
 		errlogPrintf("save_restore:readReqFile: unable to open file %s. Exiting.\n", reqFile);
 		return(ERROR);
 	}
@@ -2022,6 +2047,10 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			if (pchannel == (struct channel *)0) {
 				plist->status = SR_STATUS_WARN;
 				strcpy(plist->statusStr, "Can't alloc channel memory");
+				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+					ca_flush_io();
+				}
 				errlogPrintf("readReqFile: channel calloc failed");
 			} else {
 				/* add new element to the list */
