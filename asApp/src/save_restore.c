@@ -83,8 +83,9 @@
  *                instead of hard-coded stack size.
  * 01/28/05  tmm  v4.5 Increased size of status-prefix to 29 bytes+NULL.  Added
  *                new status value: 'No Status'
+ * 02/16/05  tmm  v4.6 Fixed faulty building of PV-name strings for status PV's
  */
-#define		SRVERSION "save/restore V4.5"
+#define		SRVERSION "save/restore V4.6"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -450,7 +451,7 @@ STATIC int save_restore(void)
 {
 	struct chlist *plist;
 	char *cp, nameString[FN_LEN];
-	int i, do_seq_check, just_remounted;
+	int i, do_seq_check, just_remounted, n;
 	long status;
 	epicsTimeStamp currTime, last_seq_check, remount_check_time;
 
@@ -476,10 +477,10 @@ STATIC int save_restore(void)
 		strcat(SR_statusStr_PV, "SR_statusStr");
 		strcpy(SR_recentlyStr_PV, status_prefix);
 		strcat(SR_recentlyStr_PV, "SR_recentlyStr");
-		ca_search(SR_status_PV, &SR_status_chid);
-		ca_search(SR_heartbeat_PV, &SR_heartbeat_chid);
-		ca_search(SR_statusStr_PV, &SR_statusStr_chid);
-		ca_search(SR_recentlyStr_PV, &SR_recentlyStr_chid);
+		TATTLE(ca_search(SR_status_PV, &SR_status_chid), "save_restore: ca_search(%s) returned %s", SR_status_PV);
+		TATTLE(ca_search(SR_heartbeat_PV, &SR_heartbeat_chid), "save_restore: ca_search(%s) returned %s", SR_heartbeat_PV);
+		TATTLE(ca_search(SR_statusStr_PV, &SR_statusStr_chid), "save_restore: ca_search(%s) returned %s", SR_statusStr_PV);
+		TATTLE(ca_search(SR_recentlyStr_PV, &SR_recentlyStr_chid), "save_restore: ca_search(%s) returned %s", SR_recentlyStr_PV);
 
 		strcpy(SR_rebootStatus_PV, status_prefix);
 		strcat(SR_rebootStatus_PV, "SR_rebootStatus");
@@ -487,10 +488,10 @@ STATIC int save_restore(void)
 		strcat(SR_rebootStatusStr_PV, "SR_rebootStatusStr");
 		strcpy(SR_rebootTime_PV, status_prefix);
 		strcat(SR_rebootTime_PV, "SR_rebootTime");
-		ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid);
-		ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid);
-		ca_search(SR_rebootTime_PV, &SR_rebootTime_chid);
-		if (ca_pend_io(20.)!=ECA_NORMAL) {
+		TATTLE(ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatus_PV);
+		TATTLE(ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatusStr_PV);
+		TATTLE(ca_search(SR_rebootTime_PV, &SR_rebootTime_chid), "save_restore: ca_search(%s) returned %s", SR_rebootTime_PV);
+		if (ca_pend_io(0.5)!=ECA_NORMAL) {
 			errlogPrintf("save_restore: Can't connect to all status PV(s)\n");
 		}
 		/* Show reboot status */
@@ -633,29 +634,24 @@ STATIC int save_restore(void)
 			if (plist->status_PV[0] == '\0') {
 				/*** Build PV names ***/
 				/* make common portion of PVname strings */
-				sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
+				n = (STRING_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
 				strcpy(plist->name_PV, plist->status_PV);
 				strcpy(plist->save_state_PV, plist->status_PV);
 				strcpy(plist->statusStr_PV, plist->status_PV);
 				strcpy(plist->time_PV, plist->status_PV);
 				/* make all PVname strings */
-				strncat(plist->status_PV, "Status",
-					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
-				strncat(plist->name_PV, "Name",
-					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
-				strncat(plist->save_state_PV, "State",
-					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
-				strncat(plist->statusStr_PV, "StatusStr",
-					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
-				strncat(plist->time_PV, "Time",
-					(STRING_LEN-1)-strlen(status_prefix)-(strlen(plist->save_file)-4));
+				strncat(plist->status_PV, "Status", n);
+				strncat(plist->name_PV, "Name", n);
+				strncat(plist->save_state_PV, "State", n);
+				strncat(plist->statusStr_PV, "StatusStr", n);
+				strncat(plist->time_PV, "Time", n);
 				/* connect with PV's */
-				ca_search(plist->status_PV, &plist->status_chid);
-				ca_search(plist->name_PV, &plist->name_chid);
-				ca_search(plist->save_state_PV, &plist->save_state_chid);
-				ca_search(plist->statusStr_PV, &plist->statusStr_chid);
-				ca_search(plist->time_PV, &plist->time_chid);
-				if (ca_pend_io(20.)!=ECA_NORMAL) {
+				TATTLE(ca_search(plist->status_PV, &plist->status_chid), "save_restore: ca_search(%s) returned %s", plist->status_PV);
+				TATTLE(ca_search(plist->name_PV, &plist->name_chid), "save_restore: ca_search(%s) returned %s", plist->name_PV);
+				TATTLE(ca_search(plist->save_state_PV, &plist->save_state_chid), "save_restore: ca_search(%s) returned %s", plist->save_state_PV);
+				TATTLE(ca_search(plist->statusStr_PV, &plist->statusStr_chid), "save_restore: ca_search(%s) returned %s", plist->statusStr_PV);
+				TATTLE(ca_search(plist->time_PV, &plist->time_chid), "save_restore: ca_search(%s) returned %s", plist->time_PV);
+				if (ca_pend_io(0.5)!=ECA_NORMAL) {
 					errlogPrintf("Can't connect to status PV(s) for list '%s'\n", plist->save_file);
 				}
 			}

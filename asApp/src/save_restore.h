@@ -16,6 +16,12 @@
 #define Debug(l,FMT,V...) ;
 #endif
 
+#define     TATTLE(CA_ERROR_CODE, FMT, ARG) \
+{ \
+    int err_code = (CA_ERROR_CODE); \
+    if (!(err_code & CA_M_SUCCESS)) \
+        printf(FMT, (ARG), ca_message(err_code)); \
+}
 
 #define         MAX(a,b)   ((a)>(b)?(a):(b))
 #define         MIN(a,b)   ((a)<(b)?(a):(b))
