@@ -1,0 +1,14 @@
+$(P)$(A)CGAIN
+$(P)$(A)FGAIN
+$(P)$(A)SFGAIN
+$(P)$(A)INPP
+$(P)$(A)DMOD
+$(P)$(A)DMOD
+$(P)$(A)PTYP
+$(P)$(A)SMOD
+$(P)$(A)BLMOD
+$(P)$(A)PZ
+$(P)$(A)PURMOD
+$(P)$(A)DTMOD
+$(P)$(A)INHP
+$(P)$(A)READBACK.SCAN
