@@ -10,80 +10,297 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
-<h2 align="center">Release 4-0</h2>
-
-<P>
-Note version numbering got messed up because the 3.13 and 3.14 versions are on
-separate development tracks.  The 3.14 module took its number from the 'std'
-module, (from which it was extracted), while the 3.13 version (which was never
-a module) took its number from the save_restore.c file version.  To avoid more
-confusion, the module version number has been bumped up past the most recent
-(and, I hope, final) 3.13 version, which was 3.5.
-
-<p align="left">Differences from version 2-3 (i.e., synApps 5.0):
-
-<ul> <li><p>This version can save and restore array-valued PV's.  Array values
-are saved using database access, so you can't name array PV's hosted by some
-other IOC, as you can for scalar PV's.   Array PV's are restored, using
-database access, in the second pass of reboot_restore (at
-initHookAfterInitDatabase), by which time array storage presumably has been
-allocated.  It's not an error to include array PV's in a .sav file that is
-restored during reboot_restore's first pass, but reboot_restore won't try
-to restore them then.
-
-<li><p>This version supports PV's whose data type will change from DBF_NOACCESS to
-some writable type during record initialization.  (Some genSub record fields
-behave in this way, and previous version of save_restore could not restore
-them.)  It's not an error to include such PV's in a .sav file that is
-restored during reboot_restore's first pass, but reboot_restore won't try
-to restore them then.
-
-<li><p>The database and medm-display files by which save_restore reports its status
-to the user have been thoroughly reworked.  Previously, the datebase and medm
-display file had to be hardwired with the names of save_restore files.  Now,
-there are eight sets of save_restore status PV's, used on a first-come,
-first-served basis.
-
-<li><p>The order in which PV's occur in the .sav file is no longer reversed from
-the ordering in the corresponding .req file.
-
-<li><p>The test for valid .sav files now permits files to end either with
-"<END>?" or "<END>??", where "?" is any character.  This allows dos files,
-which end with "\r\n", to be restored.
-
-<li><p>Added the functions dbrestoreShow(void) and save_restoreShow(int verbose),
-callable from the ioc console.
-
-<li><p>Under vxWorks, this version can manage its own NFS mount, and will
-dismount/remount the file system when save_restoreRemountThreshold I/O
-errors have occurred.
-
-<li><p>Many function and variable names have changed.
-</ul>
-
-<h2 align="center">Release 2-3</h2>
-
-<p align="left">This is the first release of the synApps autosave module.
-Version numbering for this module begins with 2.3 because this module
-was split from version 2.2 of the std module, and I wanted to retain
-the CVS histories of module contents.</p>
-
-This version is intended to build with EPICS base 3.14.5.
-
-Differences from software as previously released in std 2.2:
+<h3>v4.1</h3>
 <ul>
-<li><p>reload_xxx_set() was hanging because epicsMutex was
-being used for intertask signalling.  Changed to epicsEvent.
-<p>Thread priorities adjusted.
-<li><p>Save files with versions earlier than 1.8 are exempt
-from the ends-with-"<END>" test.
+<li>Check that chid is not NULL before calling ca_state()
 
+<li>The test for valid .sav files now permits files to end either with
+"<code>&lt;END&gt;?</code>" or "<code>&lt;END&gt;??</code>", where
+"</code>?</code>" is any character.  This allows dos files, which end with
+"</code>\r\n</code>", to be restored.
+
+<li>Use epicsTime() instead of time().  Defend against partial-init failures
+
+<li>Array support now understands max and curr number of elements, and is
+prepared to see the current number of elements change.
+
+<li>Use epicsThreadStackSizeGet instead of hard-coded stack size.
 </ul>
+
+<h3>v4.0</h3>
+<ul>
+<li>Status PV's have been reworked.  Now you don't have to modify either the
+database or the medm-display file to use your own save-set names.
+</ul>
+
+<h3>v3.5</h3>
+<ul>
+<li>Sometime in the past, I made fdbrestore() and fdbrestoreX() unavailable to
+console users by making them macros.  This is fixed.
+
+<li>Beginning with version 3.5, arrays can be saved and restored much as scalar
+PV's.  Arrays are read and written using run-time database access, which
+implies that they can only be written during pass 1 of the restore, and that
+you cannot save the value of a non-local array PV.  (Scalar PV's are read using
+channel access and normally are written using static database access.)
+
+<li>Beginning with v3.5, scalar PV's which have type DBF_NOACCESS in the .dbd
+file, and are set to some other DBF type during record initialization, can be
+restored in pass 1.  (Some fields of the genSub record behave in this way, and
+previous versions of save_restore could not restore them.)
+
+<li>Prior to v3.5, PV's were listed 'backwards' in the save file -- i.e., the
+first PV in the request file became the last PV in the save file.  Now, both
+files have the same ordering.  
+</ul>
+
+<h3>save_restore v3.3; dbrestore v3.3</h3>
+<ul>
+<li>In versions earlier than 3.3, save_restore's job was simply to save parameters
+through a reboot.  The file server to which save files were written was assumed
+competent to protect those files, and when the server said a .sav file was
+safe, save_restore believed it.  Beginning with 3.3, the file server is viewed
+as the enemy: save_restore expects it to lie about file status, to suddenly
+stop recognizing previously valid file handles, and to return error codes that
+don't make sense.  Save_restore can now defend its NFS mount against a server
+reboot, defend parameter values against a server power failure, and attempts to
+defend against a user messing around with the directory into which save files
+are being written.
+
+<li>Save_restore now allows you to change, at run time, the directory and/or the
+server to which save files are written.  Here's an example:
+
+<pre>
+	# The normal save_restore directory setup, in st.cmd: 
+	save_restoreSet_NFSHost("oxygen", "164.54.52.4")
+	set_savefile_path(startup, "autosave")
+	...
+	iocBoot()
+	...
+	(end of st.cmd)
+	...
+	# Type the following into the ioc's console
+	save_restoreSet_NFSHost("wheaties", "164.54.53.101")
+	# You'll get an immediate error if the old save file path doesn't
+	# exist, or has adverse permissions, on the new server.
+	set_savefile_path("/local/autosave", "")
+	# save_restore will immediately attempt to mount the new file path
+
+</pre>
+
+<P>The above code assumes the ioc has permission to mount file systems on the host
+('wheaties', in this case) and that the ioc has read/write/execute permission
+to the directory in which it is supposed to write .sav files (in this case,
+'/local/autosave').  Neither of these conditions are likely to be met by
+default; you must take action to arrange them.
+
+<P>Save_restore cannot defend against adverse file permissions, or against the
+save directory (NFS mount point) disappearing altogether.
+
+<li>Several variables and user-callable functions have been renamed, as their
+meanings have changed.  In preparation for 3.14, most user-settable variables
+can now be set by a function call.  Here's a list of variables and functions
+added, deleted, or changed:
+
+<table border>
+<tr><th>OLD<th>NEW
+<tr><td>sr_save_incomplete_sets_ok		<td>save_restoreIncompleteSetsOk
+<tr><td>sr_restore_incomplete_sets_ok	<td>save_restoreIncompleteSetsOk
+<tr><td>--no comparable function--		<td>save_restoreSet_IncompleteSetsOk(value)
+
+<tr><td>reboot_restoreDebug				<td>save_restoreDebug
+<tr><td>--no comparable function--		<td>save_restoreSet_Debug(value)
+
+<tr><td>reboot_restoreDatedBu			<td>save_restoreDatedBackupFiles
+<tr><td>--no comparable function--		<td>save_restoreSet_DatedBackupFiles(value)
+
+<tr><td>--no comparable variable--		<td>save_restoreNumSeqFiles
+<tr><td>--no comparable function--		<td>save_restoreSet_NumSeqFiles(value)
+<tr><td>--no comparable variable--		<td>save_restoreSeqPeriodInSeconds
+<tr><td>--no comparable function--		<td>save_restoreSet_SeqPeriodInSeconds(value)
+<tr><td colspan=2>NOTE: if save_restoreNumSeqFiles &gt; 0, redundant .sav file
+will be written every save_restoreSeqPeriodInSeconds seconds
+
+<tr><td>--no comparable function--		<td>dbrestoreShow()
+<tr><td>fdblist()						<td>save_restoreShow(verbose)
+<tr><td colspan=2>NOTE: save_restoreShow() calls dbrestoreShow()
+
+<tr><td>save_restore_test_fopen			<td>--no comparable variable--
+<tr><td colspan=2>NOTE: test is no longer done
+
+<tr><td>create_periodic_set(file,period)<td>create_periodic_set(file,period,macro)
+<tr><td>create_triggered_set(file,trigPV)<td>create_triggered_set(file,trigPV,macro)
+<tr><td>create_monitor_set(file,period)<td>create_monitor_set(file,period,macro)
+<tr><td>create_manual_set(file) <td>create_manual_set(file,macro)
+<tr><td>reload_periodic_set(file,period)<td>reload_periodic_set(file,period,macro)
+<tr><td>reload_triggered_set(file,trigPV)<td>reload_triggered_set(file,trigPV,macro)
+<tr><td>reload_monitor_set(file,period)<td>reload_monitor_set(file,period,macro)
+<tr><td>reload_manual_set(file) <td>reload_manual_set(file,macro)
+
+<tr><td colspan=2>NOTE: macro string is optional and supplements any macro
+strings defined in request files.  You can only reload one set at a time;
+you must wait for a reload to complete before starting another one.
+
+<tr><td colspan=2>
+NOTE: IN VERSIONS EARLIER THAN 2.7, Time PERIODS WERE SPECIFIED USING
+FLOATING POINT NUMBERS.  THEY ARE NOW SPECIFIED AS INTEGERS (IN SECONDS).
+	
+<tr><td>set_savefile_path(path) <td>set_savefile_path(path,pathsub)
+<tr><td>set_requestfile_path(path)         -> set_requestfile_path(path,pathsub)
+<tr><td colspan=2>
+NOTE: if pathsub is specified, it is appended to path.  The purpose of
+this change was to make it easier to use variabled defined in cdCommands
+as path elements.  Example: set_requestfile_path(std,"stdApp/Db")
+
+<tr><td>--no comparable function--<td>save_restoreSet_status_prefix(value)
+<tr><td colspan=2>
+NOTE: save_restore expects PV's with which it can display its status.
+Status PV's are request-file specific; the supplied database contains
+PV's for auto_positions.req and auto_settings.req only.  If you use
+other request files, you can add your own PV's.  It's OK if the PV's
+don't exist, but you will get informational messages when their absence
+is noticed.
+
+<tr><td>--no comparable function--<td>save_restoreSet_NFSHost(host,IPaddress)
+<tr><td>--no comparable variable--<td>save_restoreRemountThreshold
+<tr><td colspan=2>
+NOTE: If save_restore is managing its own NFS mount (i.e., if calls to
+save_restoreSet_NFSHost() and set_savefile_path() succeeded) it will
+dismount and remount after save_restoreRemountThreshold consecutive
+I/O errors (e.g. to fix a stale file handle).
+</table>
+
+<li>Save_restore now maintains status PV's for each PV list, and rolled-up status
+PV's for overall save status and reboot status.
+
+<li>fdblist() renamed as save_restoreShow(), now enhanced with more status
+information, including rolled-up reboot status.
+
+<li>Save_restore can now maintain up to ten "sequence files" (named *.savX, where X
+is a digit in [0..(save_restoreNumSeqFiles-1)]), which are copies of the most
+recent .sav or .savB file, copied at user-specified intervals.  If no valid
+.sav or .savB file exists, save_restore will write sequence files directly from
+its PV list, as though it were writing a .sav file.  At boot time, if .sav and
+.savB are both corrupt or missing, save_restore will restore from the most
+recent sequence file.
+
+<li>Save_restore no longer tests fopen() by writing a temporary file, before saving.
+
+<li>Save_restore will manage its own NFS mount, if the host name and address has
+been specified with a call to save_restoreSet_NFSHost(), and the save-file path
+(used as the mount point) has been set by a call to set_savefile_path().  When
+more than 'save_restoreRemountThreshold' consecutive, unexpected I/O errors
+(the default number is ten) have occurred, save_restore will attempt to remount
+the file system.
+
+<li>Previously, save_restore saved floats and doubles using an algorithm that was
+prone to failure, especially for PV's from another ioc. (Thanks to Mark Rivers
+for finding and fixing this bug.)
+
+<li>Now use errlogPrintf() for all messages except those from callback routines,
+where logMsg() is used.
+
+<li>All CA monitors are now set up by the save_restore task.  Previously, some were
+setup by whatever task called create_XXX_set().
+
+<li>Previously, if a save-file write failed, it would not be retried until the
+normal conditions (e.g., a PV's value changed) were again met. Now, if
+save_restore is managing its own NFS mount, and enough I/O errors have
+accumulated to cause an NFS remount, all save sets in failure are written
+immediately after the remount succeeds.
+
+<li>Some ca_pend timeouts adjusted or limited.  Previous timeouts were
+inappropriate if many thousands of PV's were specified in a request file.
+
+<li>Save files now contain the time at which they were written, in the format of
+fGetDateStr() -- yymmdd-hhmmss.
+
+<li>Dated backup files now have an underscore between the name and the date.
+
+<li>Previously, if the second fopen() call in myFileCopy() failed, the function
+would return without closing the first file.
+
+<li>Previously, save_restore would overwrite corrupted files in the normal course
+of operation.  Now, whenever a corrupted file is encountered, a copy is made. 
+If the copy is made at restore time, the copy is named, e.g.,
+auto_settings.sav_RBAD_030818-134850; if at save time, it's named, e.g.,
+auto_settings.sav_SBAD_030818-134850.
+
+<li>save_restore no longer uses the vxWorks 'copy' command for anything, because it
+writes files with inconvenient permissions.
+</ul>
+
+<h3>save_restore v2.9a; dbrestore v2.7</h3>
+<ul>
+<li>Previously, create_data_set() would return without releasing a semaphore
+(causing the save_restore task to hang) if called with save_method==TRIGGERED,
+but no trigger channel was specified.
+
+<li>Previously, fdbrestore() would return without releasing a semaphore (causing
+the save_restore task to hang) if called with the name of a save set currently
+being maintained, and the save list contained unconnected PV's, and the
+variable 'sr_restore_incomplete_sets_ok' was false.
+
+<li>Added macro-string argument to create_xxx_set()
+
+<li>Added argument 'verbose' to fdblist()
+
+<li>Added second argument, 'subpath', to set_XXXfile_path(). This allows the caller
+to pass the path as two args to be concatenated, making it easier to build the
+path string using a variable set in the cdCommands file.
+
+<li>Use logMsg() instead of epicsPrintf() for several informational messages.
+
+<li>The variables chlist and reqFilePathList are now private.
+
+<li>Increased ca_pend_io search timeout in connect_list() from 2 to 5 seconds. 
+Decreased fetch timeout from num_channels/10 to 10 seconds.
+
+<li>Decreased ca_pend_io clear-channel timeout from num_channels/10 to 10 seconds
+in remove_data_set().
+
+<li>Changed call to macParseDefns() to specify the macro-substitution handle.
+</ul>
+
+<h3>save_restore v2.7; dbrestore v2.7</h3>
+
+<table border>
+<tr><th><b>ATTENTION</b>
+<tr><td>This version is incompatible in one important respect with versions of
+save_restore.c numbered lower than 2.6:  The functions
+<ul>
+<li>create_periodic_set()
+<li>create_monitor_set()
+<li>reload_periodic_set()
+<li>reload_monitor_set()
+</ul>
+now take 'int' arguments to specify time periods, instead of 'double'
+arguments.  This change was required for compatibility with PPC
+processors.
+</table>
+
+<ul>
+<li>In Frank Lenkszus' version, the calls set_pass<n>_restoreFile() were required
+to specify files to be restored.  In this version, if no restore files have
+been specified, initHooks specifies the default files auto_positions.sav and
+auto_settings.sav for you, for backward compatibility with my previous
+version.  If you really don't want to restore any files, you now must either
+not load initHooks, or replace it with your own version.
+
+<li>In Frank Lenkszus' version, set_requestfile_path() could specify only a single
+directory.  Now that include files are a possibility, you can specify several
+request-file directories by calling set_requestfile_path() several times.
+
+<li>Backup files made as part of a restore operation (i.e., files ending in ".bu",
+or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy" command.
+</ul>
+
+
 <address>
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: March 5, 2004 
+    Last modified: December 22, 2004 
 </address>
 </body>
 </html>
