@@ -87,7 +87,7 @@ int	fGetDateStr( char datetime[])
 	tsLocalTime(&now);
 	p = tsStampToText( &now, TS_TEXT_MMDDYY, time_text);
 	p2 = tmp;
-	if( p1 = strchr(p, (int) '/')) {
+	if ((p1 = strchr(p, (int) '/'))) {
 		*p1= NULL;
 		strcpy(p2, p);
 	} else {
@@ -95,7 +95,7 @@ int	fGetDateStr( char datetime[])
 		return(-1);
 	}	
 	p = ++p1;
-	if( p1 = strchr(p, (int) '/')) {
+	if ((p1 = strchr(p, (int) '/'))) {
 		*p1= NULL;
 		strncat(p2, p, 2);
 	} else {
@@ -103,14 +103,14 @@ int	fGetDateStr( char datetime[])
 		return(-1);
 	}	
 	p = ++p1;
-	if( p1 = strchr(p, (int) ' ')) {
+	if ((p1 = strchr(p, (int) ' '))) {
 		*p1= NULL;
 		strncat(p2, p, 2);
 	} else {
 		printf("Couldn't crack time: %s\n", p);
 		return(-1);
 	}	
-	if(strlen(p2) != 6) {
+	if (strlen(p2) != 6) {
 		printf("Oops, MM/DD/YY format error: %s\n", p2);
 		return(-1);
 	}
@@ -125,7 +125,7 @@ int	fGetDateStr( char datetime[])
 	datetime[7] = 0;
 	
 	p = ++p1;
-	if( p1 = strchr(p, (int) ':')) {
+	if ((p1 = strchr(p, (int) ':'))) {
 		*p1= NULL;
 		strncat(datetime, p, 2);
 	} else {
@@ -133,7 +133,7 @@ int	fGetDateStr( char datetime[])
 		return(-1);
 	}	
 	p = ++p1;
-	if( p1 = strchr(p, (int) ':')) {
+	if ((p1 = strchr(p, (int) ':'))) {
 		*p1= NULL;
 		strncat(datetime, p, 2);
 	} else {
