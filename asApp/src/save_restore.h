@@ -29,7 +29,7 @@
 #define SR_STATUS_INIT		0
 
 /* Make sure to leave room for trailing null */
-static char SR_STATUS_STR[4][10] =
+static char SR_STATUS_STR[5][10] =
 	{"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
 
 #define FLOAT_FMT "%.7g"
