@@ -38,8 +38,10 @@
  * 11/30/04  tmm  v4.3 Added debug for curr_num_elements.
  * 01/26/05  tmm  v4.4 Strip trailing '\r' from value string.  (Previously, only
  *                '\n' was stripped.)
+ * 01/28/05  tmm  v4.5 Filenames specified in set_pass<n>_restoreFile() now
+ *                initialized with status SR_STATUS_INIT ('No Status')
  */
-#define VERSION "4.4"
+#define VERSION "4.5"
 
 #include	<stdio.h>
 #include	<errno.h>
