@@ -79,9 +79,10 @@ extern int logMsg(char *fmt, ...);
 #include    <macLib.h>
 #include	<callback.h>
 #include	<epicsMutex.h>
+#include	<epicsEvent.h>
 #include	"save_restore.h"
 
-#define TIME2WAIT 20		/* time to wait for semaphore */
+#define TIME2WAIT 20		/* time to wait for delete-list semaphore */
 #define PATH_SIZE 255		/* size of a single path element */
 
 /*** Debugging variables, macros ***/
@@ -108,7 +109,7 @@ volatile int save_restore_test_fopen = 0;
  */
 static struct chlist *lptr;		/* save set listhead */
 static epicsMutexId sr_mutex;	/* mut(ual) ex(clusion) for list of save sets */
-static epicsMutexId	sem_remove;	/* delete list semaphore */
+static epicsEventId	sem_remove;	/* delete list semaphore */
 
 /* save_methods - used to determine when a file should be deleted */
 #define PERIODIC	0x01		/* set when timer goes off */
@@ -356,7 +357,7 @@ static int save_restore(void)
 			}
 			remove_filename[0] = 0;
 			remove_dset = 0;
-			epicsMutexUnlock(sem_remove);
+			epicsEventSignal(sem_remove);
 		}
 
 		/* go to sleep for a while */
@@ -458,7 +459,7 @@ static int enable_list(struct chlist *plist)
 	if ((plist->save_method & MONITORED) && !(plist->enabled_method & MONITORED)) {
 		for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 			Debug(10, "enable_list: calling ca_add_event for '%s'\n", pchannel->name);
-			if (save_restoreDebug >= 10) epicsPrintf("enable_list: arg = 0x%x\n", plist);
+			if (save_restoreDebug >= 10) epicsPrintf("enable_list: arg = %p\n", plist);
 			/*
 			 * Work around obscure problem affecting USHORTS by making DBR type different
 			 * from any possible field type.  This avoids tickling a bug that causes dbGet
@@ -777,13 +778,12 @@ static int create_data_set(
 			epicsPrintf("create_data_set: could not create list header mutex");
 			return(ERROR);
 		}
-		if ((sem_remove = epicsMutexCreate()) == 0) {
-			epicsPrintf("create_data_set: could not create delete list semaphore\n");
+		if ((sem_remove = epicsEventCreate(epicsEventEmpty)) == 0) {
+			epicsPrintf("create_data_set: could not create delete-list semaphore\n");
 			return(ERROR);
 		}
-		epicsMutexLock(sem_remove);
-                taskID = epicsThreadCreate("save_restore",epicsThreadPriorityMedium,
-                                        10000, (EPICSTHREADFUNC)save_restore, 0);
+		taskID = epicsThreadCreate("save_restore",epicsThreadPriorityMedium,
+			10000, (EPICSTHREADFUNC)save_restore, 0);
 		if (taskID == NULL) {
 			epicsPrintf("create_data_set: could not create save_restore task");
 			return(ERROR);
@@ -1187,13 +1187,13 @@ int remove_data_set(char *filename)
 
 int reload_periodic_set(char *filename, int period, char *macrostring)
 {
+	epicsEventWaitStatus s;
+
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
-	if (epicsMutexLock(sem_remove) != epicsMutexLockOK) {
-		epicsPrintf("reload_periodic_set: Can't get mutex for '%s'\n", filename);
-		return(ERROR);
-	}
-	if (remove_status) {
+	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
+	if (s) epicsPrintf("reload_periodic_set: epicsEventWaitWithTimeout -> %d\n", (int)s);
+	if (s || remove_status) {
 		epicsPrintf("reload_periodic_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
@@ -1203,13 +1203,13 @@ int reload_periodic_set(char *filename, int period, char *macrostring)
 
 int reload_triggered_set(char *filename, char *trigger_channel, char *macrostring)
 {
+	epicsEventWaitStatus s;
+
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
-	if (epicsMutexLock(sem_remove) != epicsMutexLockOK) {
-		epicsPrintf("reload_triggered_set: Can't get mutex for '%s'\n", filename);
-		return(ERROR);
-	}
-	if (remove_status) {
+	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
+	if (s) epicsPrintf("reload_triggered_set: epicsEventWaitWithTimeout -> %d\n", s);
+	if (s || remove_status) {
 		epicsPrintf("reload_triggered_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
@@ -1220,13 +1220,13 @@ int reload_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 
 int reload_monitor_set(char * filename, int period, char *macrostring)
 {
+	epicsEventWaitStatus s;
+
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
-	if (epicsMutexLock(sem_remove) != epicsMutexLockOK) {
-		epicsPrintf("reload_monitor_set: Can't get mutex for '%s'\n", filename);
-		return(ERROR);
-	}
-	if (remove_status) {
+	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
+	if (s) epicsPrintf("reload_monitor_set: epicsEventWaitWithTimeout -> %d\n", s);
+	if (s || remove_status) {
 		epicsPrintf("reload_monitor_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
@@ -1236,13 +1236,13 @@ int reload_monitor_set(char * filename, int period, char *macrostring)
 
 int reload_manual_set(char * filename, char *macrostring)
 {
+	epicsEventWaitStatus s;
+
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
-	if (epicsMutexLock(sem_remove) != epicsMutexLockOK) {
-		epicsPrintf("reload_manual_set: Can't get mutex for '%s'\n", filename);
-		return(ERROR);
-	}
-	if (remove_status) {
+	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
+	if (s) epicsPrintf("reload_manual_set: epicsEventWaitWithTimeout -> %d\n", s);
+	if (s || remove_status) {
 		epicsPrintf("reload_manual_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
