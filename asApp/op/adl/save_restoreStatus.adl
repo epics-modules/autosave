@@ -302,7 +302,7 @@ text {
 		height=20
 	}
 	display[0] {
-		label="save-sets 0 & 1"
+		label="Add save-sets 0 & 1"
 		name="save_restoreStatus_more.adl"
 		args="P=$(P)"
 		policy="replace display"
@@ -319,7 +319,7 @@ text {
 		height=20
 	}
 	display[0] {
-		label="save-sets 0 & 1"
+		label="Just the rolled-up status"
 		name="save_restoreStatus_tiny.adl"
 		args="P=$(P)"
 		policy="replace display"

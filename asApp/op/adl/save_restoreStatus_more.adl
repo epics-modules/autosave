@@ -8,7 +8,7 @@ display {
 		x=208
 		y=539
 		width=400
-		height=210
+		height=230
 	}
 	clr=14
 	bclr=3
@@ -192,69 +192,12 @@ polygon {
 		(378,20)
 	}
 }
-"text update" {
-	object {
-		x=120
-		y=194
-		width=210
-		height=12
-	}
-	monitor {
-		chan="$(P)SR_rebootStatusStr"
-		clr=54
-		bclr=2
-	}
-	limits {
-	}
-}
-"text update" {
-	object {
-		x=10
-		y=188
-		width=100
-		height=20
-	}
-	monitor {
-		chan="$(P)SR_rebootStatus"
-		clr=54
-		bclr=3
-	}
-	limits {
-	}
-}
-text {
-	object {
-		x=10
-		y=168
-		width=150
-		height=20
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="reboot status"
-}
-"text update" {
-	object {
-		x=170
-		y=171
-		width=150
-		height=14
-	}
-	monitor {
-		chan="$(P)SR_rebootTime"
-		clr=54
-		bclr=3
-	}
-	limits {
-	}
-}
 "related display" {
 	object {
-		x=335
-		y=36
-		width=55
-		height=22
+		x=315
+		y=102
+		width=75
+		height=20
 	}
 	display[0] {
 		label="Legend"
@@ -262,39 +205,7 @@ text {
 	}
 	clr=0
 	bclr=63
-	label="-MCTRP"
-}
-polyline {
-	object {
-		x=10
-		y=110
-		width=321
-		height=2
-	}
-	"basic attribute" {
-		clr=14
-		width=2
-	}
-	points {
-		(11,111)
-		(330,111)
-	}
-}
-polyline {
-	object {
-		x=10
-		y=160
-		width=391
-		height=2
-	}
-	"basic attribute" {
-		clr=14
-		width=2
-	}
-	points {
-		(11,161)
-		(400,161)
-	}
+	label="-M C T R P"
 }
 "text update" {
 	object {
@@ -343,9 +254,9 @@ polyline {
 }
 "related display" {
 	object {
-		x=340
-		y=185
-		width=55
+		x=350
+		y=205
+		width=40
 		height=20
 	}
 	display[0] {
@@ -392,10 +303,132 @@ polyline {
 	bclr=63
 	label="-More"
 }
+"related display" {
+	object {
+		x=305
+		y=205
+		width=40
+		height=20
+	}
+	display[0] {
+		label="Just the rolled-up status"
+		name="save_restoreStatus_tiny.adl"
+		args="P=$(P)"
+		policy="replace display"
+	}
+	display[1] {
+		label="Roll-up & reboot status"
+		name="save_restoreStatus.adl"
+		args="P=$(P)"
+	}
+	clr=0
+	bclr=63
+	label="-Less"
+}
+composite {
+	object {
+		x=10
+		y=60
+		width=320
+		height=40
+	}
+	"composite name"=""
+	children {
+		"text update" {
+			object {
+				x=120
+				y=86
+				width=210
+				height=12
+			}
+			monitor {
+				chan="$(P)SR_rebootStatusStr"
+				clr=54
+				bclr=2
+			}
+			limits {
+			}
+		}
+		"text update" {
+			object {
+				x=10
+				y=80
+				width=100
+				height=20
+			}
+			monitor {
+				chan="$(P)SR_rebootStatus"
+				clr=54
+				bclr=3
+			}
+			limits {
+			}
+		}
+		text {
+			object {
+				x=10
+				y=60
+				width=150
+				height=20
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="reboot status"
+		}
+		"text update" {
+			object {
+				x=170
+				y=63
+				width=150
+				height=14
+			}
+			monitor {
+				chan="$(P)SR_rebootTime"
+				clr=54
+				bclr=3
+			}
+			limits {
+			}
+		}
+	}
+}
+polyline {
+	object {
+		x=10
+		y=150
+		width=301
+		height=2
+	}
+	"basic attribute" {
+		clr=14
+		width=2
+	}
+	points {
+		(11,151)
+		(310,151)
+	}
+}
+polyline {
+	object {
+		x=0
+		y=100
+		width=399
+		height=2
+	}
+	"basic attribute" {
+		clr=14
+		width=2
+	}
+	points {
+		(1,101)
+		(398,101)
+	}
+}
 "text update" {
 	object {
 		x=10
-		y=90
+		y=130
 		width=100
 		height=20
 	}
@@ -410,7 +443,7 @@ polyline {
 "text update" {
 	object {
 		x=120
-		y=96
+		y=136
 		width=270
 		height=12
 	}
@@ -425,7 +458,7 @@ polyline {
 "text update" {
 	object {
 		x=170
-		y=73
+		y=113
 		width=150
 		height=14
 	}
@@ -439,9 +472,9 @@ polyline {
 }
 byte {
 	object {
-		x=340
-		y=75
-		width=43
+		x=317
+		y=122
+		width=70
 		height=10
 	}
 	monitor {
@@ -454,7 +487,7 @@ byte {
 "text update" {
 	object {
 		x=10
-		y=70
+		y=110
 		width=150
 		height=20
 	}
@@ -469,7 +502,7 @@ byte {
 "text update" {
 	object {
 		x=10
-		y=140
+		y=180
 		width=100
 		height=20
 	}
@@ -484,7 +517,7 @@ byte {
 "text update" {
 	object {
 		x=120
-		y=146
+		y=186
 		width=270
 		height=12
 	}
@@ -499,7 +532,7 @@ byte {
 "text update" {
 	object {
 		x=170
-		y=123
+		y=163
 		width=150
 		height=14
 	}
@@ -513,9 +546,9 @@ byte {
 }
 byte {
 	object {
-		x=340
-		y=125
-		width=43
+		x=317
+		y=165
+		width=71
 		height=10
 	}
 	monitor {
@@ -528,7 +561,7 @@ byte {
 "text update" {
 	object {
 		x=10
-		y=120
+		y=160
 		width=150
 		height=20
 	}
@@ -540,20 +573,19 @@ byte {
 	limits {
 	}
 }
-"related display" {
+polyline {
 	object {
-		x=340
-		y=163
-		width=55
-		height=20
+		x=0
+		y=200
+		width=399
+		height=2
 	}
-	display[0] {
-		label="Just the summary"
-		name="save_restoreStatus.adl"
-		args="P=$(P)"
-		policy="replace display"
+	"basic attribute" {
+		clr=14
+		width=2
 	}
-	clr=0
-	bclr=63
-	label="-Less"
+	points {
+		(1,201)
+		(398,201)
+	}
 }
