@@ -88,6 +88,10 @@ struct restoreList restoreFileList = {0, 0,
 			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 
+void myPrintErrno(char *s) {
+	errlogPrintf("%s(%d): [0x%x]=%s:%s", __FILE__, __LINE__, errno, s, strerror(errno));
+}
+
 STATIC float mySafeDoubleToFloat(double d)
 {
 	float f;
@@ -139,7 +143,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	errno = 0;
 	if ((source_fd = fopen(source,"r")) == NULL) {
 		errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", source);
-		if (errno) myPrintErrno("myCopy");
+		if (errno) myPrintErrno("myFileCopy");
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) 
 			save_restoreNFSOK = 0;
 		return(ERROR);
@@ -285,7 +289,7 @@ long SR_put_array_values(char *PVname, void *p_data, long num_values)
 		status = (*dbPutConvertRoutine[field_type][field_type])(paddr,p_data,num_values,max_elements,offset);
 	} else {
 		errlogPrintf("save_restore:SR_put_array_values: PV %s: bad field type '%d'\n",
-			PVname, field_type);
+			PVname, (int) field_type);
 		status = -1;
 	}
 	/* update array info */
@@ -591,8 +595,8 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
  */
 int reboot_restore(char *filename, initHookState init_state)
 {
-	char		PVname[80];
-	char		bu_filename[259], fname[256] = "";
+	char		PVname[81]; /* Must be greater than max field width ("%80s") in the sscanf format below */
+	char		bu_filename[PATH_SIZE+1], fname[PATH_SIZE+1] = "";
 	char		buffer[BUF_SIZE], *bp;
 	char		value_string[BUF_SIZE];
 	char		datetime[32];
@@ -645,7 +649,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* open file */
-	strncpy(fname, saveRestoreFilePath, sizeof(fname) -1);
+	strNcpy(fname, saveRestoreFilePath, sizeof(fname) -1);
 	strncat(fname, filename, MAX(sizeof(fname) -1 - strlen(fname),0));
 	errlogPrintf("*** restoring from '%s' at initHookState %d ***\n",
 		fname, (int)init_state);
@@ -677,8 +681,15 @@ int reboot_restore(char *filename, initHookState init_state)
 		 * xxx:interp.E 100
 		 * xxx:interp.C @array@ { "1" "0.99" }
 		 */
-		n = sscanf(bp,"%s%c%[^\n\r]", PVname, &c, value_string);
+		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
 		if (n<3) *value_string = 0;
+		if (PVname[0] == '#') /* user must have edited the file manually; accept this line as a comment */
+			continue;
+		if (strlen(PVname) >= 80) {
+			/* must a munged input line */
+			errlogPrintf("save_restore: '%s' is too long to be a PV name.\n", PVname);
+			continue;
+		}
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			if (strchr(PVname,'.') == 0) strcat(PVname,".VAL"); /* if no field name, add default */
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
@@ -741,11 +752,12 @@ int reboot_restore(char *filename, initHookState init_state)
 
 	if (write_backup) {
 		/* write  backup file*/
-		strcpy(bu_filename,fname);
 		if (save_restoreDatedBackupFiles && (fGetDateStr(datetime) == 0)) {
+			strNcpy(bu_filename, fname, sizeof(bu_filename) - 1 - strlen(datetime));
 			strcat(bu_filename, "_");
 			strcat(bu_filename, datetime);
 		} else {
+			strNcpy(bu_filename, fname, sizeof(bu_filename) - 3);
 			strcat(bu_filename, ".bu");
 		}
 		Debug(1, "save_restore: writing boot-backup file '%s'.\n", bu_filename);
@@ -798,7 +810,7 @@ int set_pass0_restoreFile( char *filename)
 		return(ERROR);
 	}
 	strcpy(cp, filename);
-	cp = (char *)calloc(40, 1);
+	cp = (char *)calloc(STRING_LEN, 1);
 	restoreFileList.pass0StatusStr[fileNum] = cp;
 	strcpy(cp, "Unknown, probably failed");
 	restoreFileList.pass0Status[fileNum] = SR_STATUS_INIT;
@@ -823,7 +835,7 @@ int set_pass1_restoreFile(char *filename)
 		return(ERROR);
 	}
 	strcpy(cp, filename);
-	cp = (char *)calloc(40, 1);
+	cp = (char *)calloc(STRING_LEN, 1);
 	restoreFileList.pass1StatusStr[fileNum] = cp;
 	strcpy(cp, "Unknown, probably failed");
 	restoreFileList.pass1Status[fileNum] = SR_STATUS_INIT;
@@ -831,7 +843,7 @@ int set_pass1_restoreFile(char *filename)
 	return(OK);
 }
 
-/* fil is ok if it ends in either of the two following ways:
+/* file is ok if it ends in either of the two following ways:
  * <END>?
  * <END>??
  * where '?' is any character - typically \n or \r
@@ -842,6 +854,7 @@ FILE *checkFile(const char *file)
 	char tmpstr[PATH_SIZE+50];
 	double version;
 	char datetime[32];
+	int status;
 
 	if ((inp_fd = fopen(file, "r")) == NULL) {
 		errlogPrintf("save_restore: Can't open file '%s'.\n", file);
@@ -854,17 +867,21 @@ FILE *checkFile(const char *file)
 		return(inp_fd);	/* file is ok. */
 	}
 	/* check out "successfully written" marker */
-	fseek(inp_fd, -6, SEEK_END);
+	status = fseek(inp_fd, -6, SEEK_END);
+	if (status) myPrintErrno("checkFile");
 	fgets(tmpstr, 6, inp_fd);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
-		fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		if (status) myPrintErrno("checkFile");
 		return(inp_fd);
 	}
 	
-	fseek(inp_fd, -7, SEEK_END);
+	status = fseek(inp_fd, -7, SEEK_END);
+	if (status) myPrintErrno("checkFile");
 	fgets(tmpstr, 7, inp_fd);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
-		fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		if (status) myPrintErrno("checkFile");
 		return(inp_fd);
 	}
 
@@ -885,7 +902,7 @@ FILE *checkFile(const char *file)
 FILE *fopen_and_check(const char *fname, long *status)
 {
 	FILE *inp_fd = NULL;
-	char file[256];
+	char file[PATH_SIZE+1];
 	int i, backup_sequence_num;
 	struct stat fileStat;
 	char *p;
@@ -893,7 +910,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 	double dTime, min_dTime;
 	
 	*status = 0;	/* presume success */
-	strncpy(file, fname, 255);
+	strncpy(file, fname, PATH_SIZE);
 	inp_fd = checkFile(file);
 	if (inp_fd) return(inp_fd);
 
@@ -1081,7 +1098,7 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 			n += fprintf(out_fd, "%1c ", ELEMENT_END);
 			break;
 		default:
-			errlogPrintf("save_restore: field_type %d not handled.\n", field_type);
+			errlogPrintf("save_restore: field_type %d not handled.\n", (int) field_type);
 			break;
 		}
 	}
