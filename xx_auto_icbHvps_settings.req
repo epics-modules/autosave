@@ -1,8 +1,0 @@
-$(P)$(H)STATUS
-$(P)$(H)VOLT_OUT
-$(P)$(H)VOLT_LIM
-$(P)$(H)FRAMP
-$(P)$(H)LATCH_INH
-$(P)$(H)LATCH_OVL
-$(P)$(H)INH_LEVEL
-$(P)$(H)READBACK.SCAN
