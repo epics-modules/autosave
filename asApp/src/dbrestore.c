@@ -174,7 +174,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				case DBF_DOUBLE:
 				case DBF_ENUM:
 					status = dbPutString(pdbentry, input_line);
-					Debug(5,"dbPutString() returns %d:", status);
+					Debug(5,"dbPutString() returns %d:\n", status);
 					if (reboot_restoreDebug >= 5) errMessage(status, "");
 					if ((s = dbVerify(pdbentry, input_line))) {
 						epicsPrintf("reboot_restore: for %s, dbVerify() says %s\n", channel, s);
@@ -187,7 +187,7 @@ int reboot_restore(char *filename, initHookState init_state)
 					/* Can't restore links after InitDatabase */
 					if (init_state < initHookAfterInitDatabase) {
 						status = dbPutString(pdbentry,input_line);
-						Debug(5,"dbPutString() returns %d:",status);
+						Debug(5,"dbPutString() returns %d:\n",status);
 						if (reboot_restoreDebug >= 5) errMessage(status,"");
 						if ((s = dbVerify(pdbentry,input_line))) {
 							epicsPrintf("reboot_restore: for %s, dbVerify() says %s\n", channel, s);
@@ -198,7 +198,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				case DBF_MENU:
 					n = (int)strtol(input_line,&endp,0);
 					status = dbPutMenuIndex(pdbentry, n);
-					Debug(5,"dbPutMenuIndex() returns %d:",status);
+					Debug(5,"dbPutMenuIndex() returns %d:\n",status);
 					if (reboot_restoreDebug >= 5) errMessage(status,"");
 					break;
 
