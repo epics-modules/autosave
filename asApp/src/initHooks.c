@@ -36,8 +36,15 @@
 
 
 #include	<vxWorks.h>
+#include	<stdio.h>
 #include	<initHooks.h>
+#include	<epicsPrint.h>
+#include	"save_restore.h"
 
+extern int reboot_restore(char *filename, initHookState init_state);
+extern int set_pass0_restoreFile( char *filename);
+extern int set_pass1_restoreFile( char *filename);
+extern struct restoreList restoreFileList;
 
 /*
  * INITHOOKS
@@ -51,6 +58,8 @@
  * at certain defined points during IOC initialization */
 void initHooks(initHookState state)
 {
+	int i;
+
 	switch (state) {
 	case INITHOOKatBeginning :
 	    break;
@@ -69,23 +78,33 @@ void initHooks(initHookState state)
 	case INITHOOKafterInitDevSup :
 	    break;
 	case INITHOOKafterTS_init :
-		/*
-		 * restore fields that require init_record() to send a value
-		 * down to the hardware.
+
+		/* For backward compatibility with earlier versions of save_restore,
+		 * if no restore files have been specified, set things up so we do
+		 * what we used to do.
 		 */
-		printf("*** restoring from 'auto_positions.sav' (pass 0) ***\n");
-		reboot_restore("auto_positions.sav", state, 0);
-		printf("*** restoring from 'auto_settings.sav' (pass 0) ***\n");
-		reboot_restore("auto_settings.sav", state, 0);
+		if ((restoreFileList.pass0cnt == 0) && (restoreFileList.pass1cnt == 0)) {
+			epicsPrintf("initHooks: set_pass[0,1]_restoreFile() were never called.\n");
+			epicsPrintf("initHooks: Specifying 'auto_settings.sav' and 'auto_positions.sav'\n");
+			epicsPrintf("initHooks: for backward compatibility with old autosave/restore.\n");
+			set_pass0_restoreFile("auto_positions.sav");
+			set_pass0_restoreFile("auto_settings.sav");
+			set_pass1_restoreFile("auto_settings.sav");
+		}
+
+		/* restore fields needed in init_record() */
+		for(i = 0; i < restoreFileList.pass0cnt; i++) {
+			reboot_restore(restoreFileList.pass0files[i], state);
+		}
 	    break;
 	case INITHOOKafterInitDatabase :
 		/*
 		 * restore fields that init_record() would have overwritten with
-		 * info from the dol (desired output location).  Don't make a
-		 * backup file this time.
+		 * info from the dol (desired output location).
 		 */ 
-		printf("*** restoring from 'auto_settings.sav' (pass 1) ***\n");
-		reboot_restore("auto_settings.sav", state, 1);
+		for(i = 0; i < restoreFileList.pass1cnt; i++) {
+			reboot_restore(restoreFileList.pass1files[i], state);
+		}
 	    break;
 	case INITHOOKafterFinishDevSup :
 	    break;
