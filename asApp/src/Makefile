@@ -26,8 +26,8 @@ DBD += asSupport.dbd
 
 LIBRARY_IOC += autosave
 
-autosave_SRCS += dbrestore.c save_restore.c fGetDateStr.c
-autosave_SRCS += initHooks.c
+autosave_SRCS += dbrestore.c save_restore.c
+autosave_SRCS += initHooks.c fGetDateStr.c
 
 # <name>_registerRecordDeviceDriver.cpp will be created from <name>.dbd
 autosave_SRCS += as_registerRecordDeviceDriver.cpp
