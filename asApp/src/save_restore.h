@@ -11,7 +11,7 @@
 #if DEBUG
 #define Debug(l,FMT,V...) {if (l <= save_restoreDebug) \
               { errlogPrintf("%s(%d):",__FILE__,__LINE__); \
-                errlogPrintf(FMT,##V); epicsThreadSleep(0.5); }}
+                errlogPrintf(FMT,##V); }}
 #else
 #define Debug(l,FMT,V...) ;
 #endif
