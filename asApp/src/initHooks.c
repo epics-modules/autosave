@@ -105,9 +105,9 @@ static void asInitHooks(initHookState state)
 	    break;
 	case initHookAfterScanInit :
 	    break;
-	case initHookAfterInterruptAccept :
-	    break;
 	case initHookAfterInitialProcess :
+	    break;
+	case initHookAfterInterruptAccept :
 	    break;
 	case initHookAtEnd :
 	    break;
