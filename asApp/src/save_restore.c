@@ -118,6 +118,7 @@ extern int logMsg(char *fmt, ...);
 struct chlist {								/* save set list element */
 	struct chlist	*pnext;					/* next list */
 	struct channel	*pchan_list;			/* channel list head */
+	struct channel	*plast_chan;		/* channel list tail */
 	char			reqFile[FN_LEN];		/* request file name */
 	char			saveFile[PATH_SIZE+1];	/* full save file name */	
 	char 			last_save_file[FN_LEN];	/* file name last used for save */
@@ -1867,7 +1868,7 @@ int do_manual_restore(char *filename, int file_type)
 
 STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostring)
 {
-	struct channel	*pchannel = NULL, *ptail = NULL;
+	struct channel	*pchannel = NULL;
 	FILE   			*inp_fd = NULL;
 	char			name[80] = "", *t=NULL, line[BUF_SIZE]="", eline[BUF_SIZE]="";
 	char            templatefile[FN_LEN] = "";
@@ -1969,14 +1970,15 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 				/* add new element to the list */
 #if BACKWARDS_LIST
 				pchannel->pnext = plist->pchan_list;
+				if (plist->pchan_list==NULL) plist->plast_chan = pchannel;
 				plist->pchan_list = pchannel;
 #else
-				if (ptail) {
-					ptail->pnext = pchannel;
+				if (plist->plast_chan) {
+					plist->plast_chan->pnext = pchannel;
 				} else {
 					plist->pchan_list = pchannel;
 				}
-				ptail = pchannel;
+				plist->plast_chan = pchannel;
 #endif
 				strcpy(pchannel->name, name);
 				strcpy(pchannel->value,"Not Connected");
