@@ -45,28 +45,36 @@
  *                set_XXXfile_path(), concatenated with first.
  * 05/28/03  tmm  v3.1 Merged in changes from (3.13-compatible) version 2.9a,
  *                intended to address bugs that have made save_restore() hang.
+ * 08/02/03  mlr  v3.2 Changes to make it work on R3.14.2 under Linux, vxWorks.
+ *                Fixed bug so that it will save non-local float and double PVs.
  */
-#define		SRVERSION "save/restore V3.1"
+#define		SRVERSION "save/restore V3.2"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
 #include	<stdioLib.h>
 #include	<usrLib.h>
+#include	<taskLib.h>
+#include	<nfsDrv.h>
+#include	<ioLib.h>
 extern int logMsg(char *fmt, ...);
 #else
+#define OK 0
+#define ERROR -1
 #define logMsg epicsPrintf
 #endif
 
 #include	<stdio.h>
-#include	<taskLib.h>
-#include	<nfsDrv.h>
-#include	<ioLib.h>
+#include	<stdlib.h>
+#include	<unistd.h>
 #include	<string.h>
 #include	<ctype.h>
 
-#include	<dbDefs.h>
 #include	<cadef.h>
 #include	<epicsPrint.h>
+#include	<epicsThread.h>
+#include	<epicsExport.h>
+#include	<iocsh.h>
 #include 	<tsDefs.h>
 #include    <macLib.h>
 #include	<callback.h>
@@ -136,6 +144,8 @@ struct channel {			/* database channel list element */
 	chid 		chid;		/* channel access id */
 	char 		value[64];	/* value string */
 	short		enum_val;	/* short value of an enumerated field */
+	float		float_val;	/* value of a float field */
+	double		double_val;	/* value of a double field */
 	short		valid;		/* we think we got valid data for this channel */
 };
 
@@ -151,7 +161,7 @@ static char 	*SRversion = SRVERSION;
 static struct pathListElement *reqFilePathList = NULL;
 char			*saveRestoreFilePath = NULL;	/* path to save files, also used by dbrestore.c */
 static int		taskPriority =  190;	/* initial task priority */
-static int		taskID = 0;				/* save_restore task tid */
+static epicsThreadId 	taskID=NULL;				/* save_restore task tid */
 static char		remove_filename[80];	/* name of list to delete */
 static int		remove_dset = 0;
 static int		remove_status = 0;
@@ -184,6 +194,10 @@ static int create_data_set(char *filename,	int save_method, int period,
 		char *trigger_channel, int mon_period, char *macrostring);
 int fdbrestore(char *filename);
 void fdblist(int verbose);
+#ifndef vxWorks
+static int copy(char *infile, char *outfile);
+#endif
+
 
 int set_requestfile_path(char *path, char *pathsub);
 int set_savefile_path(char *path, char *pathsub);
@@ -288,7 +302,8 @@ static int save_restore(void)
 {
 	struct chlist	*plist;
 
-	while(1) {
+	ca_context_create(ca_enable_preemptive_callback); 
+        while(1) {
 
 		/* look at each list */
 		epicsMutexLock(sr_mutex);
@@ -361,8 +376,6 @@ static int connect_list(struct channel	*pchannel)
 	struct channel	*sav_pchannel = pchannel;
 	int				errors = 0;
 	short			num_channels = 0;
-	float			fval;
-	double			dval;
 
 	/* connect all channels in the list */
 	while (pchannel != 0) {
@@ -382,11 +395,9 @@ static int connect_list(struct channel	*pchannel)
 		if (ca_state(pchannel->chid) == cs_conn) {
 			num_channels++;
 			if (ca_field_type(pchannel->chid) == DBF_FLOAT) {
-				ca_array_get(DBR_FLOAT,1,pchannel->chid,&fval);
-				sprintf(pchannel->value, FLOAT_FMT, fval);
+				ca_array_get(DBR_FLOAT,1,pchannel->chid,&pchannel->float_val);
 			} else if (ca_field_type(pchannel->chid) == DBF_DOUBLE) {
-				ca_array_get(DBR_DOUBLE,1,pchannel->chid,&dval);
-				sprintf(pchannel->value, DOUBLE_FMT, dval);
+				ca_array_get(DBR_DOUBLE,1,pchannel->chid, &pchannel->double_val);
 			} else {
 				ca_array_get(DBR_STRING,1,pchannel->chid,pchannel->value);
 			}
@@ -487,8 +498,6 @@ static int get_channel_list(struct channel *pchannel)
 	struct channel 	*tpchannel = pchannel;
 	int				not_connected = 0;
 	unsigned short	num_channels = 0;
-	float 			fval;
-	double 			dval;
 
 	/* attempt to fetch all channels that are connected */
 	while (pchannel != 0) {
@@ -496,11 +505,9 @@ static int get_channel_list(struct channel *pchannel)
 		if (ca_state(pchannel->chid) == cs_conn) {
 			strcpy(pchannel->value, INIT_STRING);
 			if (ca_field_type(pchannel->chid) == DBF_FLOAT) {
-				ca_array_get(DBR_FLOAT,1,pchannel->chid,&fval);
-				sprintf(pchannel->value, FLOAT_FMT, fval);
+				ca_array_get(DBR_FLOAT,1,pchannel->chid,&pchannel->float_val);
 			} else if (ca_field_type(pchannel->chid) == DBF_DOUBLE) {
-				ca_array_get(DBR_DOUBLE,1,pchannel->chid,&dval);
-				sprintf(pchannel->value, DOUBLE_FMT, dval);
+				ca_array_get(DBR_DOUBLE,1,pchannel->chid,&pchannel->double_val);
 			}
 			else {
 				ca_array_get(DBR_STRING,1,pchannel->chid,pchannel->value);
@@ -524,6 +531,12 @@ static int get_channel_list(struct channel *pchannel)
 	/* check to see which gets completed */
 	for (pchannel=tpchannel; pchannel; pchannel = pchannel->pnext) {
 		if (pchannel->valid) {
+			if (ca_field_type(pchannel->chid) == DBF_FLOAT) {
+				sprintf(pchannel->value, FLOAT_FMT, pchannel->float_val);
+                        }
+			if (ca_field_type(pchannel->chid) == DBF_DOUBLE) {
+				sprintf(pchannel->value, DOUBLE_FMT, pchannel->double_val);
+                        }
 			/* then we at least had a CA connection.  Did it produce? */
 			pchannel->valid = strcmp(pchannel->value, INIT_STRING);
 		}
@@ -569,7 +582,11 @@ static int write_it(char *filename, struct chlist	*plist)
 #endif
 	fprintf(out_fd, "<END>\n");
 	fflush(out_fd);
+#ifdef vxWorks
 	ioctl(fileno(out_fd),FIOSYNC,0);	/* NFS flush needs a little extra push */
+#else
+        fsync(fileno(out_fd));
+#endif
 	fclose(out_fd);
 	return(OK);
 }
@@ -765,9 +782,9 @@ static int create_data_set(
 			return(ERROR);
 		}
 		epicsMutexLock(sem_remove);
-		if ((taskID = taskSpawn("save_restore",taskPriority,VX_FP_TASK,
-			10000, save_restore,0,0,0,0,0,0,0,0,0,0))
-		  == ERROR) {
+                taskID = epicsThreadCreate("save_restore",epicsThreadPriorityMedium,
+                                        10000, (EPICSTHREADFUNC)save_restore, 0);
+		if (taskID == NULL) {
 			epicsPrintf("create_data_set: could not create save_restore task");
 			return(ERROR);
 		}
@@ -809,6 +826,7 @@ static int create_data_set(
 	epicsMutexUnlock(sr_mutex);
 
 	/* create a new channel list */
+        ca_context_create(ca_enable_preemptive_callback);
 	if ((plist = (struct chlist *)calloc(1,sizeof (struct chlist)))
 	  == (struct chlist *)0) {
 		epicsPrintf("create_data_set: channel list calloc failed");
@@ -1101,11 +1119,8 @@ int set_saveTask_priority(int priority)
 		return(ERROR);
 	}
 	taskPriority = priority;
-	if (taskIdVerify(taskID) == OK) {
-	    if (taskPrioritySet(taskID, priority) != OK) {
-			epicsPrintf("save_restore - Couldn't set task priority to %d\n", priority);
-			return(ERROR);
-	    }
+	if (taskID != NULL) {
+            epicsThreadSetPriority(taskID, priority);
 	}
 	return(OK);
 }
@@ -1416,3 +1431,52 @@ static int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	return(OK);
 }
 
+#ifndef vxWorks
+static int copy(char *infile, char *outfile) {
+   FILE *in_fd, *out_fd;
+   char buffer[120];
+
+   if ((in_fd = fopen(infile,"r")) == NULL) {
+           epicsPrintf("save_file - unable to open file %s", infile);
+           return(ERROR);
+   }
+   if ((out_fd = fopen(outfile,"w")) == NULL) {
+           epicsPrintf("save_file - unable to open file %s", outfile);
+           fclose(in_fd);
+           return(ERROR);
+   }
+   while (fgets(buffer, 120, in_fd) != NULL) fputs(buffer, out_fd);
+   fclose(out_fd);
+   fclose(in_fd);
+   return(OK);
+}
+#endif
+
+static const iocshArg create_monitorArg0 = { "filename",iocshArgString};
+static const iocshArg create_monitorArg1 = { "period",iocshArgInt};
+static const iocshArg create_monitorArg2 = { "macro string",iocshArgString};
+static const iocshArg * const create_monitorArgs[3] = {&create_monitorArg0,
+                                                       &create_monitorArg1,
+                                                       &create_monitorArg2};
+static const iocshFuncDef create_monitorFuncDef = {"create_monitor_set",3,create_monitorArgs};
+static void create_monitorCallFunc(const iocshArgBuf *args)
+{
+    create_monitor_set(args[0].sval, args[1].ival, args[2].sval);
+}
+static const iocshArg set_request_pathArg0 = { "path",iocshArgString};
+static const iocshArg set_request_pathArg1 = { "subpath",iocshArgString};
+static const iocshArg * const set_request_pathArgs[2] = {&set_request_pathArg0,
+                                                        &set_request_pathArg1};
+static const iocshFuncDef set_request_pathFuncDef = {"set_requestfile_path",2,set_request_pathArgs};
+static void set_request_pathCallFunc(const iocshArgBuf *args)
+{
+    set_requestfile_path(args[0].sval, args[1].sval);
+}
+
+void save_restoreRegister(void)
+{
+    iocshRegister(&create_monitorFuncDef, create_monitorCallFunc);
+    iocshRegister(&set_request_pathFuncDef, set_request_pathCallFunc);
+}
+
+epicsExportRegistrar(save_restoreRegister);

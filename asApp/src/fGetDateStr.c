@@ -57,16 +57,10 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
  * -----------------
  * .01  11-18-98	mrk	removed from writeSub.c and save_restore.c
  */
-#include <vxWorks.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ioLib.h>
-#include <fioLib.h>
-#include <memLib.h>
-#include <devLib.h>
 #include <string.h>
-#include <usrLib.h>
-#include <iosLib.h>
+
 #include <callback.h>
 #include <dbDefs.h>
 #include <dbAccess.h>
@@ -87,30 +81,30 @@ int	fGetDateStr( char datetime[])
 	tsLocalTime(&now);
 	p = tsStampToText( &now, TS_TEXT_MMDDYY, time_text);
 	p2 = tmp;
-	if ((p1 = strchr(p, (int) '/'))) {
-		*p1= NULL;
+	if((p1 = strchr(p, (int) '/'))) {
+		*p1= 0;
 		strcpy(p2, p);
 	} else {
 		printf("Couldn't crack time: %s\n", p);
 		return(-1);
 	}	
 	p = ++p1;
-	if ((p1 = strchr(p, (int) '/'))) {
-		*p1= NULL;
+	if((p1 = strchr(p, (int) '/'))) {
+		*p1= 0;
 		strncat(p2, p, 2);
 	} else {
 		printf("Couldn't crack time: %s\n", p);
 		return(-1);
 	}	
 	p = ++p1;
-	if ((p1 = strchr(p, (int) ' '))) {
-		*p1= NULL;
+	if((p1 = strchr(p, (int) ' '))) {
+		*p1= 0;
 		strncat(p2, p, 2);
 	} else {
 		printf("Couldn't crack time: %s\n", p);
 		return(-1);
 	}	
-	if (strlen(p2) != 6) {
+	if(strlen(p2) != 6) {
 		printf("Oops, MM/DD/YY format error: %s\n", p2);
 		return(-1);
 	}
@@ -125,16 +119,16 @@ int	fGetDateStr( char datetime[])
 	datetime[7] = 0;
 	
 	p = ++p1;
-	if ((p1 = strchr(p, (int) ':'))) {
-		*p1= NULL;
+	if((p1 = strchr(p, (int) ':'))) {
+		*p1= 0;
 		strncat(datetime, p, 2);
 	} else {
 		printf("Couldn't crack time: %s\n", p);
 		return(-1);
 	}	
 	p = ++p1;
-	if ((p1 = strchr(p, (int) ':'))) {
-		*p1= NULL;
+	if((p1 = strchr(p, (int) ':'))) {
+		*p1= 0;
 		strncat(datetime, p, 2);
 	} else {
 		printf("Couldn't crack time: %s\n", p);

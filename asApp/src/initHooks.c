@@ -34,9 +34,7 @@
  *
  */
 
-#ifdef vxWorks
-#include	<vxWorks.h>
-#endif
+
 #include	<stdio.h>
 #include	<initHooks.h>
 #include	<epicsPrint.h>
@@ -48,7 +46,7 @@ extern int set_pass1_restoreFile( char *filename);
 extern struct restoreList restoreFileList;
 
 /*
- * initHooks
+ * INITHOOKS
  *
  * called by iocInit at various points during initialization
  *
@@ -73,6 +71,7 @@ void initHooks(initHookState state)
 	case initHookAfterInitRecSup :
 	    break;
 	case initHookAfterInitDevSup :
+
 		/* For backward compatibility with earlier versions of save_restore,
 		 * if no restore files have been specified, set things up so we do
 		 * what we used to do.
@@ -104,9 +103,9 @@ void initHooks(initHookState state)
 	    break;
 	case initHookAfterScanInit :
 	    break;
-	case initHookAfterInitialProcess :
-	    break;
 	case initHookAfterInterruptAccept :
+	    break;
+	case initHookAfterInitialProcess :
 	    break;
 	case initHookAtEnd :
 	    break;

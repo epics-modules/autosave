@@ -16,17 +16,13 @@
  * 03/15/02  tmm  v2.5 check saveRestoreFilePath before using it.
  * 03/19/02  tmm  v2.6 initialize fname before using it.
  * 04/05/02  tmm  v2.7 Don't use copy for backup file.  It uses mode 640.
+ * 08/01/03  mlr  v3.0 Convert to R3.14.2
  */
-#define VERSION "2.7"
+#define VERSION "3.0"
 
-#ifdef vxWorks
-#include	<vxWorks.h>
-#include	<stdioLib.h>
+#include	<stdio.h>
 #include	<stdlib.h>
 #include	<sys/stat.h>
-#include	<usrLib.h>
-#endif
-#include	<stdio.h>
 #include	<string.h>
 #include	<ctype.h>
 #include	<time.h>
@@ -36,6 +32,11 @@
 #include	<initHooks.h>
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
+
+#ifndef vxWorks
+#define OK 0
+#define ERROR -1
+#endif
 
 extern	DBBASE *pdbbase;
 
