@@ -830,10 +830,16 @@ FILE *checkFile(const char *file)
 		return(inp_fd);	/* file is ok. */
 	}
 	/* check out "successfully written" marker */
+	fseek(inp_fd, -6, SEEK_END);
+	fgets(tmpstr, 6, inp_fd);
+	if (strncmp(tmpstr, "<END>", 5) == 0) {
+		fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		return(inp_fd);
+	}
+	
 	fseek(inp_fd, -7, SEEK_END);
 	fgets(tmpstr, 7, inp_fd);
-	if ((strncmp(&tmpstr[1], "<END>", 5) == 0) ||
-			(strncmp(tmpstr, "<END>", 5) == 0)) {
+	if (strncmp(tmpstr, "<END>", 5) == 0) {
 		fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
 		return(inp_fd);
 	}
