@@ -19,3 +19,4 @@ struct restoreList {
 };
 
 FILE *fopen_and_check(const char *file, const char *mode);
+

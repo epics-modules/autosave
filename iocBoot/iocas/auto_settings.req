@@ -1,0 +1,2 @@
+file "sample_settings.req", P=as:, N=sample_positioner
+$(P)sample_positioner.PREC

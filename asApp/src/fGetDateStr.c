@@ -1,4 +1,4 @@
-/* fGetDateStr.c -  */
+/* fGetDateStr.c - */
 /*
  * Author:      Frank Lenkszus
  * Date:        08/30/94

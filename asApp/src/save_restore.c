@@ -556,7 +556,7 @@ static int write_it(char *filename, struct chlist	*plist)
 	struct channel	*pchannel;
 
 	if ((out_fd = fopen(filename,"w")) == NULL) {
-		epicsPrintf("save_file - unable to open file %s", filename);
+		epicsPrintf("save_file - unable to open file %s\n", filename);
 		return(ERROR);
 	}
 	fprintf(out_fd,"# %s\tAutomatically generated - DO NOT MODIFY\n", SRversion);
