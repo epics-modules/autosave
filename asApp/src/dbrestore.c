@@ -40,8 +40,11 @@
  *                '\n' was stripped.)
  * 01/28/05  tmm  v4.5 Filenames specified in set_pass<n>_restoreFile() now
  *                initialized with status SR_STATUS_INIT ('No Status')
- * 02/02/05  tmm  v4.6 copy VERSION to a variable, instead of using it directly
- *                as a string arg.  The old way crashed under some circumstances.
+ * 02/03/05  tmm  v4.6 copy VERSION to a variable, instead of using it directly
+ *                as a string arg.  Check that restoreFileList.pass<n>files[i]
+ *                is not NULL before comparing the string it's supposed to be
+ *                pointing to.  Neither of those things fixed the crash, but
+ *                replacing errlogPrintf with printf in reboot_restore did.
  */
 #define VERSION "4.6"
 
@@ -603,7 +606,8 @@ int reboot_restore(char *filename, initHookState init_state)
 	long		*pStatusVal = 0;
 	char		*statusStr = 0;
 	
-	errlogPrintf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
+	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
+	printf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
 	/* initialize database access routines */
 	if (!pdbbase) {
 		errlogPrintf("No Database Loaded\n");
@@ -615,7 +619,8 @@ int reboot_restore(char *filename, initHookState init_state)
 	if (init_state >= initHookAfterInitDatabase) {
 		pass = 1;
 		for (i = 0; i < restoreFileList.pass1cnt; i++) {
-			if (strcmp(filename, restoreFileList.pass1files[i]) == 0) {
+			if (restoreFileList.pass1files[i] &&
+				(strcmp(filename, restoreFileList.pass1files[i]) == 0)) {
 				pStatusVal = &(restoreFileList.pass1Status[i]);
 				statusStr = restoreFileList.pass1StatusStr[i];
 			}
@@ -623,7 +628,8 @@ int reboot_restore(char *filename, initHookState init_state)
 	} else {
 		pass = 0;
 		for (i = 0; i < restoreFileList.pass0cnt; i++) {
-			if (strcmp(filename, restoreFileList.pass0files[i]) == 0) {
+			if (restoreFileList.pass0files[i] &&
+				(strcmp(filename, restoreFileList.pass0files[i]) == 0)) {
 				pStatusVal = &(restoreFileList.pass0Status[i]);
 				statusStr = restoreFileList.pass0StatusStr[i];
 			}
@@ -632,6 +638,9 @@ int reboot_restore(char *filename, initHookState init_state)
 
 	if ((pStatusVal == 0) || (statusStr == 0)) {
 		errlogPrintf("reboot_restore: Can't find filename '%s' in list.\n",
+			filename);
+	} else {
+		errlogPrintf("reboot_restore: Found filename '%s' in restoreFileList.\n",
 			filename);
 	}
 
