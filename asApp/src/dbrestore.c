@@ -108,7 +108,7 @@ void dbrestoreShow(void)
 	}
 }
 
-STATIC int myFileCopy(char *source, char *dest)
+STATIC int myFileCopy(const char *source, const char *dest)
 {
 	FILE 	*source_fd, *dest_fd;
 	char	buffer[BUF_SIZE], *bp;
@@ -625,7 +625,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	strncat(fname, filename, MAX(sizeof(fname) -1 - strlen(fname),0));
 	errlogPrintf("*** restoring from '%s' at initHookState %d ***\n",
 		fname, (int)init_state);
-	if ((inp_fd = fopen_and_check(fname, "r", &status)) == NULL) {
+	if ((inp_fd = fopen_and_check(fname, &status)) == NULL) {
 		errlogPrintf("save_restore: Can't open save file.");
 		if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
 		if (statusStr) strcpy(statusStr, "Can't open save file.");
@@ -807,74 +807,74 @@ int set_pass1_restoreFile(char *filename)
 	return(OK);
 }
 
-
-FILE *fopen_and_check(const char *fname, const char *mode, long *status)
+/* fil is ok if it ends in either of the two following ways:
+ * <END>?
+ * <END>??
+ * where '?' is any character - typically \n or \r
+ */
+FILE *checkFile(const char *file)
 {
 	FILE *inp_fd = NULL;
 	char tmpstr[PATH_SIZE+50];
-	char file[256];
+	double version;
 	char datetime[32];
+
+	if ((inp_fd = fopen(file, "r")) == NULL) {
+		errlogPrintf("save_restore: Can't open file '%s'.\n", file);
+		return(0);
+	}
+	fgets(tmpstr, 29, inp_fd);
+	version = atof(strchr(tmpstr,(int)'V')+1);
+	/* <END> check started in v1.8 */
+	if (version < 1.8) {
+		return(inp_fd);	/* file is ok. */
+	}
+	/* check out "successfully written" marker */
+	fseek(inp_fd, -7, SEEK_END);
+	fgets(tmpstr, 7, inp_fd);
+	if ((strncmp(&tmpstr[1], "<END>", 5) == 0) ||
+			(strncmp(tmpstr, "<END>", 5) == 0)) {
+		fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
+		return(inp_fd);
+	}
+
+	/* file is bad */
+	fclose(inp_fd);
+	errlogPrintf("save_restore: File '%s' is not trusted.\n", file);
+	strcpy(tmpstr, file);
+	strcat(tmpstr, "_RBAD_");
+	if (save_restoreDatedBackupFiles) {
+		fGetDateStr(datetime);
+		strcat(tmpstr, datetime);
+	}
+	(void)myFileCopy(file, tmpstr);
+	return(0);
+}
+
+
+FILE *fopen_and_check(const char *fname, long *status)
+{
+	FILE *inp_fd = NULL;
+	char file[256];
 	int i, backup_sequence_num;
 	struct stat fileStat;
 	char *p;
 	time_t currTime;
 	double dTime, min_dTime;
-	double version;
 	
 	*status = 0;	/* presume success */
 	strncpy(file, fname, 255);
-	if ((inp_fd = fopen(file, "r")) == NULL) {
-		errlogPrintf("save_restore: Can't open file '%s'.\n", file);
-	} else {
-		fgets(tmpstr, 29, inp_fd);
-		version = atof(strchr(tmpstr,(int)'V')+1);
-		/* check out "successfully written" marker */
-		if ((version > 1.79) && ((fseek(inp_fd, -6, SEEK_END)) ||
-				(fgets(tmpstr, 6, inp_fd) == 0) ||
-				(strncmp(tmpstr, "<END>", 5) != 0))) {
-			fclose(inp_fd);
-			/* File doesn't look complete, make a copy of it */
-			errlogPrintf("save_restore: File '%s' is not trusted.\n",
-					file);
-			strcpy(tmpstr, file);
-			strcat(tmpstr, "_RBAD_");
-			if (save_restoreDatedBackupFiles) {
-				fGetDateStr(datetime);
-				strcat(tmpstr, datetime);
-			}
-			(void)myFileCopy(file, tmpstr);
-		} else {
-			fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
-			return(inp_fd);
-		}
-	}
+	inp_fd = checkFile(file);
+	if (inp_fd) return(inp_fd);
 
 	/* Still here?  Try the backup file. */
 	strncat(file, "B", 1);
 	errlogPrintf("save_restore: Trying backup file '%s'\n", file);
-	if ((inp_fd = fopen(file, "r")) == NULL) {
-		errlogPrintf("save_restore: Can't open file '%s'\n", file);
-	} else {
-		fgets(tmpstr, 29, inp_fd);
-		version = atof(strchr(tmpstr,(int)'V')+1);
-		if ((version > 1.79) && ((fseek(inp_fd, -6, SEEK_END)) ||
-				(fgets(tmpstr, 6, inp_fd) == 0) ||
-				(strncmp(tmpstr, "<END>", 5) != 0))) {
-			fclose(inp_fd);
-			errlogPrintf("save_restore: File '%s' is not trusted.\n",
-				file);
-			fGetDateStr(datetime);
-			strcpy(tmpstr, file);
-			strcat(tmpstr, "_RBAD_");
-			strcat(tmpstr, datetime);
-			(void)myFileCopy(file, tmpstr);
-		} else {
-			fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
-			return(inp_fd);
-		}
-	}
+	inp_fd = checkFile(file);
+	if (inp_fd) return(inp_fd);
 
-	/* Still haven't found a good file?  Try the sequenced backups */
+	/*** Still haven't found a good file?  Try the sequenced backups ***/
+	/* Find the most recent one. */
 	*status = 1;
 	strcpy(file, fname);
 	backup_sequence_num = -1;
@@ -884,7 +884,13 @@ FILE *fopen_and_check(const char *fname, const char *mode, long *status)
 	for (i=0; i<save_restoreNumSeqFiles; i++) {
 		sprintf(p, "%1d", i);
 		if (stat(file, &fileStat) == 0) {
-			dTime = difftime(currTime, fileStat.st_mtime);
+			/*
+			 * Clocks might be unsynchronized, so it's possible
+			 * the most recent file has a time in the future.
+			 * For now, just choose the file whose date/time is
+			 * closest to the current date/time.
+			 */
+			dTime = fabs(difftime(currTime, fileStat.st_mtime));
 			if (save_restoreDebug >= 5) {
 				errlogPrintf("'%s' modified at %s\n", file,
 					ctime(&fileStat.st_mtime));
@@ -897,33 +903,22 @@ FILE *fopen_and_check(const char *fname, const char *mode, long *status)
 		}
 	}
 
-	/*
-	 * Try the backup file. 
-	 * Note these didn't exist before version 3.0, so no need
-	 * to qualify the "<END>" test with a version number.
-	 */
+	if (backup_sequence_num == -1) {
+		/* Clock are way messed up.  Just try backup 0. */
+		backup_sequence_num = 0;
+		sprintf(p, "%1d", backup_sequence_num);
+		errlogPrintf("save_restore: Can't figure out which seq file is most recent,\n");
+		errlogPrintf("save_restore: so I'm just going to start with '%s'.\n", file);
+	}
+
+	/* Try the sequenced backup files. */
 	for (i=0; i<save_restoreNumSeqFiles; i++) {
 		sprintf(p, "%1d", backup_sequence_num);
 		errlogPrintf("save_restore: Trying backup file '%s'\n", file);
-		if ((inp_fd = fopen(file, "r")) == NULL) {
-			errlogPrintf("save_restore: Can't open file '%s'\n", file);
-		} else {
-			if ((fseek(inp_fd, -6, SEEK_END)) ||
-					(fgets(tmpstr, 6, inp_fd) == 0) ||
-					(strncmp(tmpstr, "<END>", 5) != 0)) {
-				fclose(inp_fd);
-				errlogPrintf("save_restore: File '%s' is not trusted.\n",
-					file);
-				fGetDateStr(datetime);
-				strcpy(tmpstr, file);
-				strcat(tmpstr, "_RBAD_");
-				strcat(tmpstr, datetime);
-				(void)myFileCopy(file, tmpstr);
-			} else {
-				fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
-				return(inp_fd);
-			}
-		}
+		inp_fd = checkFile(file);
+		if (inp_fd) return(inp_fd);
+
+		/* Next.  Order might be, e.g., "1,2,0", if 1 is most recent of 3 files */
 		if (++backup_sequence_num >= save_restoreNumSeqFiles)
 			backup_sequence_num = 0;
 	}
