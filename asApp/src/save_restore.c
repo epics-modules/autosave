@@ -20,6 +20,8 @@
  * 01/05/01  tmm  v1.9 proper treatment of event_handler_args in function
  *                argument list.
  * 05/11/01  tmm  v2.0 defend against null trigger channel.
+ * 12/20/01  tmm  v2.1 Test file open only if save_restore_test_fopen != 0
+ * 02/22/02  tmm  v2.2 Work around for problems with USHORT fields 
  */
 
 #include	<stdioLib.h>
@@ -45,6 +47,8 @@ extern int	logMsg (char *fmt, ...);
 			{ printf("%s(%d):",__FILE__,__LINE__); printf(FMT,V); } }
 #endif
 volatile int    save_restoreDebug = 0;
+
+volatile int save_restore_test_fopen = 0;
 
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"
@@ -93,7 +97,7 @@ struct channel {					/* database channel list element */
  * module global variables
  */
 static short		save_restore_init = 0;
-static char 		*sr_version = {"save/restore V2.0"};
+static char 		*sr_version = {"save/restore V2.2"};
 
 /* configuration parameters */
 double	min_period	= 4.0;	/* save no more frequently than every 4 seconds */
@@ -163,7 +167,10 @@ int on_change_timer(struct chlist *plist)
  */
 void on_change_save(struct event_handler_args event)
 {
-    struct chlist *plist = (struct chlist *) event.usr;
+    struct chlist *plist;
+	if (save_restoreDebug >= 10) logMsg("on_change_save: event = 0x%x, event.usr=0x%x\n",
+		event, event.usr);
+    plist = (struct chlist *) event.usr;
 
     plist->save_status |= CHANGE;
 }
@@ -207,7 +214,7 @@ int save_restore(void)
 	semTake(sr_mutex,WAIT_FOREVER);
 	plist = lptr;
 	while (plist != 0) {
-		Debug(10, "save_restore: save_status = 0x%x\n", plist->save_status);
+		Debug(30, "save_restore: save_status = 0x%x\n", plist->save_status);
 		/* connect the channels on the first instance of this set */
 		if (plist->enabled_method == 0) {
 			plist->not_connected = connect_list(plist->pchan_list);
@@ -353,8 +360,13 @@ int enable_list(struct chlist *plist)
 	if ((plist->save_method & MONITORED) && !(plist->enabled_method & MONITORED)) {
 		for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 			Debug(10, "enable_list: calling ca_add_event for '%s'\n", pchannel->name);
-			if (ca_add_event(DBR_LONG, pchannel->chid, on_change_save, (void *)plist, 0)
-			  != ECA_NORMAL) {
+			if (save_restoreDebug >= 10) logMsg("enable_list: arg = 0x%x\n", plist);
+			/*
+			 * Work around obscure problem affecting USHORTS by making DBR type different from any
+			 * possible field type.  This avoids tickling a bug that causes dbGet to overwrite the
+			 * source field with its own value converted to LONG.  (Changed DBR_LONG to DBR_TIME_LONG.)
+			 */
+			if (ca_add_event(DBR_TIME_LONG, pchannel->chid, on_change_save, (void *)plist, 0) != ECA_NORMAL) {
 				logMsg("could not add event for %s in %s\n",pchannel->name,plist->filename);
 			}
 		}
@@ -488,17 +500,21 @@ int write_it(char *filename, struct chlist	*plist)
 int save_file(struct chlist	*plist)
 {
 	FILE	*inp_fd, *out_fd;
-	char	save_file_backup[80], tmpstr[80];
+	char	save_file_backup[80], tmpstr[20], tmpfile[80];
 	int		backup_state = BS_OK, cant_open=0;
 
-	/* Ensure that we can create a new file in the current directory */
-	(void)tmpnam(tmpstr);
-	if ((out_fd = fopen(tmpstr, "w")) == NULL) {
-		cant_open = 1;
-		logMsg("save_file:  Can't open new file in current working directory.\n");
-	} else {
-		fclose(out_fd);
-		remove(tmpstr);
+	if (save_restore_test_fopen) {
+		/* Ensure that we can create a new file in the current directory */
+		(void)tmpnam(tmpstr);
+		strcpy(tmpfile, "save_restore_"); strcat(tmpfile, tmpstr);
+		if ((out_fd = fopen(tmpfile, "w")) == NULL) {
+			cant_open = 1;
+			logMsg("save_file:  Can't open new file in current directory.\n");
+		} else {
+			fclose(out_fd);
+			remove(tmpfile);
+			if (save_restoreDebug) printf("fopen('%s') succeeded\n", tmpfile);
+		}
 	}
 
 	/*
