@@ -31,6 +31,8 @@
 #include	<dbDefs.h>
 #include	<dbStaticLib.h>
 #include	<initHooks.h>
+#include	<epicsExport.h>
+#include	<iocsh.h>
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
 
@@ -333,3 +335,27 @@ FILE *fopen_and_check(const char *fname, const char *mode)
 	}
 	return(inp_fd);
 }
+
+static const iocshArg set_pass0_Arg0 = { "file",iocshArgString};
+static const iocshArg * const set_pass0_Args[1] = {&set_pass0_Arg0};
+static const iocshFuncDef set_pass0_FuncDef = {"set_pass0_restoreFile",1,set_pass0_Args};
+static void set_pass0_CallFunc(const iocshArgBuf *args)
+{
+    set_pass0_restoreFile(args[0].sval);
+}
+
+static const iocshArg set_pass1_Arg0 = { "file",iocshArgString};
+static const iocshArg * const set_pass1_Args[1] = {&set_pass1_Arg0};
+static const iocshFuncDef set_pass1_FuncDef = {"set_pass1_restoreFile",1,set_pass1_Args};
+static void set_pass1_CallFunc(const iocshArgBuf *args)
+{
+    set_pass1_restoreFile(args[0].sval);
+}
+
+void dbrestoreRegister(void)
+{
+    iocshRegister(&set_pass0_FuncDef, set_pass0_CallFunc);
+    iocshRegister(&set_pass1_FuncDef, set_pass1_CallFunc);
+}
+
+epicsExportRegistrar(dbrestoreRegister);
