@@ -81,8 +81,10 @@
  *                time save_restore looked at the PV.
  * 12/13/04  tmm  v4.4 Use epicsThreadGetStackSize(epicsThreadStackMedium)
  *                instead of hard-coded stack size.
+ * 01/28/05  tmm  v4.5 Increased size of status-prefix to 29 bytes+NULL.  Added
+ *                new status value: 'No Status'
  */
-#define		SRVERSION "save/restore V4.4"
+#define		SRVERSION "save/restore V4.5"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
