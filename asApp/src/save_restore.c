@@ -79,8 +79,10 @@
  *                save_restore tracks changes in curr_elements.  Previously,
  *                if dbGet() set num_elements to zero for a PV, that was the last
  *                time save_restore looked at the PV.
+ * 12/13/04  tmm  v4.4 Use epicsThreadGetStackSize(epicsThreadStackMedium)
+ *                instead of hard-coded stack size.
  */
-#define		SRVERSION "save/restore V4.3"
+#define		SRVERSION "save/restore V4.4"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -210,7 +212,7 @@ STATIC struct pathListElement
 char			saveRestoreFilePath[PATH_SIZE] = "";	/* path to save files, also used by dbrestore.c */
 STATIC unsigned int
 				taskPriority = 20; /* epicsThreadPriorityCAServerLow -- initial task priority */
-STATIC int		taskStackSize = 10000;
+				
 STATIC epicsThreadId
 				taskID = 0;					/* save_restore task ID */
 STATIC char		remove_filename[FN_LEN] = "";	/* name of list to delete */
@@ -1338,7 +1340,8 @@ STATIC int create_data_set(
 			return(ERROR);
 		}
 		taskID = epicsThreadCreate("save_restore", taskPriority,
-			taskStackSize, (EPICSTHREADFUNC)save_restore, 0);
+			epicsThreadGetStackSize(epicsThreadStackMedium),
+			(EPICSTHREADFUNC)save_restore, 0);
 		if (taskID == NULL) {
 			errlogPrintf("create_data_set: could not create save_restore task");
 			return(ERROR);
