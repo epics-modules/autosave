@@ -85,8 +85,13 @@
  *                new status value: 'No Status'
  * 02/16/05  tmm  v4.6 Fixed faulty building of PV-name strings for status PV's
  *                Post selected save-set status strings promptly.
+ * 06/27/05  tmm  v4.7 Request-file parsing fixed.  Previously, blank but not
+ *                empty lines (e.g., containing a space character) seemed to
+ *                contain the first word of the previous line, because name[]
+ *                was not cleared before parsing a new line.
+
  */
-#define		SRVERSION "save/restore V4.6"
+#define		SRVERSION "save/restore V4.7"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -2003,12 +2008,15 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	/* place all of the channels in the group */
 	while (fgets(line, BUF_SIZE, inp_fd)) {
 		/* Expand input line. */
+		name[0] = '\0';
+		eline[0] = '\0';
 		if (handle && pairs) {
 			macExpandString(handle, line, eline, BUF_SIZE-1);
 		} else {
 			strcpy(eline, line);
 		}
 		sscanf(eline, "%s", name);
+		Debug(2, "save_restore:readReqFile: line='%s', eline='%s', name='%s'\n", line, eline, name);
 		if (name[0] == '#') {
 			/* take the line as a comment */
 		} else if (strncmp(eline, "file", 4) == 0) {
