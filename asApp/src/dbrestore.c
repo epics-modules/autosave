@@ -45,8 +45,12 @@
  *                is not NULL before comparing the string it's supposed to be
  *                pointing to.  Neither of those things fixed the crash, but
  *                replacing errlogPrintf with printf in reboot_restore did.
+ * 06/27/05  tmm  v4.7 Dirk Zimoch (SLS) found and fixed problems with .sav
+ *                files that lack header lines, or lack a version number.
+ *                Check return codes from some calls to fseek().
+ *                
  */
-#define VERSION "4.6"
+#define VERSION "4.7"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -666,6 +670,9 @@ int reboot_restore(char *filename, initHookState init_state)
 
 	(void)fgets(buffer, BUF_SIZE, inp_fd); /* discard header line */
 	Debug(1, "reboot_restore: header line '%s'\n", buffer);
+	status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
+	if (status) myPrintErrno("checkFile");
+
 	/* restore from data file */
 	num_errors = 0;
 	while ((bp=fgets(buffer, BUF_SIZE, inp_fd))) {
@@ -851,7 +858,7 @@ int set_pass1_restoreFile(char *filename)
 FILE *checkFile(const char *file)
 {
 	FILE *inp_fd = NULL;
-	char tmpstr[PATH_SIZE+50];
+	char tmpstr[PATH_SIZE+50], *versionstr;
 	double version;
 	char datetime[32];
 	int status;
@@ -860,11 +867,26 @@ FILE *checkFile(const char *file)
 		errlogPrintf("save_restore: Can't open file '%s'.\n", file);
 		return(0);
 	}
+
+	/* Get the version number of the code that wrote the file */
 	fgets(tmpstr, 29, inp_fd);
-	version = atof(strchr(tmpstr,(int)'V')+1);
+	versionstr = strchr(tmpstr,(int)'V');
+	if (!versionstr) {
+		/* file has no version number */
+		status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
+		if (status) myPrintErrno("checkFile");
+		return(inp_fd);	/* Assume file is ok */
+	}
+	if (isdigit((int)versionstr[1]))
+		version = atof(versionstr+1);
+	else
+		version = 0;
+
 	/* <END> check started in v1.8 */
 	if (version < 1.8) {
-		return(inp_fd);	/* file is ok. */
+		status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
+		if (status) myPrintErrno("checkFile");
+		return(inp_fd);	/* Assume file is ok. */
 	}
 	/* check out "successfully written" marker */
 	status = fseek(inp_fd, -6, SEEK_END);
