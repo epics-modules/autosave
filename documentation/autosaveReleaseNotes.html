@@ -10,6 +10,27 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.1.2</h3>
+<ul>
+
+<li>Request-file parsing fixed.  Previously, blank but not empty lines (e.g.,
+containing a space character) seemed to contain the first word of the previous
+line, because name[] was not cleared before parsing a new line.
+
+<li>Dirk Zimoch (SLS) found and fixed problems with .sav files that lack a
+header line, or a version number.  Check return code from selected fseek()
+calls.
+
+</ul>
+
+<h3>4.1.1</h3>
+<UL>
+
+<li>Cleaned up asApp/src/Makefile so it did not put as_registerRecordDeviceDriver
+in all applications using autosave.
+
+</ul>
+
 <h3>v4.1</h3>
 <ul>
 

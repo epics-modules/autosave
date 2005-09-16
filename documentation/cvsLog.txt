@@ -86,10 +86,19 @@ New status PV's
 
 support/autosave/asApp/src/Makefile
 
+Cleaned up; it was putting as_registerRecordDeviceDriver in all applications
+that used autosave
+
 more robust 3.13 version, with array support, ported to 3.14
+
+
 =============================================================================
 
 support/autosave/asApp/src/dbrestore.c
+
+v4.7  Dirk Zimoch (SLS) found and fixed problems with .sav files that lack a
+header line, or a version number.  Check return code from selected fseek()
+calls.
 
 Added myPrintErrno() function
 
@@ -135,6 +144,10 @@ case initialProcess now before case interruptAccept
 =============================================================================
 
 support/autosave/asApp/src/save_restore.c
+
+v4.7  Request-file parsing fixed.  Previously, blank but not empty lines (e.g.,
+containing a space character) seemed to contain the first word of the previous
+line, because name[] was not cleared before parsing a new line.
 
 Post selected save-set status strings promptly
 
