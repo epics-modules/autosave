@@ -5,7 +5,7 @@
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=/home/oxygen/MOONEY/epics/base-3.14.7
+EPICS_BASE=/APSshare/epics/base-3.14.7
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
