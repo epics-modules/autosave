@@ -108,7 +108,9 @@ extern int logMsg(char *fmt, ...);
 #include	<stdio.h>
 #include	<errno.h>
 #include	<stdlib.h>
+#ifndef _WIN32
 #include	<unistd.h>
+#endif
 #include	<string.h>
 #include	<ctype.h>
 #include	<sys/stat.h>
@@ -773,7 +775,7 @@ STATIC int enable_list(struct chlist *plist)
 	struct channel	*pchannel;
 	chid 			chid;			/* channel access id */
 
-	Debug(4, "enable_list: entry\n");
+	if (save_restoreDebug >= 4) errlogPrintf("enable_list: entry\n");
 
 	epicsMutexLock(sr_mutex);
 
@@ -803,7 +805,7 @@ STATIC int enable_list(struct chlist *plist)
 	/* enable a monitored set */
 	if ((plist->save_method & MONITORED) && !(plist->enabled_method & MONITORED)) {
 		for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-			Debug(10, "enable_list: calling ca_add_event for '%s'\n", pchannel->name);
+			if (save_restoreDebug >= 10) errlogPrintf("enable_list: calling ca_add_event for '%s'\n", pchannel->name);
 			if (save_restoreDebug >= 10) errlogPrintf("enable_list: arg = %p\n", plist);
 			/*
 			 * Work around obscure problem affecting USHORTS by making DBR type different
@@ -817,7 +819,7 @@ STATIC int enable_list(struct chlist *plist)
 					pchannel->name,plist->reqFile);
 			}
 		}
-		Debug(4 ,"enable_list: done calling ca_add_event for list channels\n");
+		if (save_restoreDebug >= 4) errlogPrintf("enable_list: done calling ca_add_event for list channels\n");
 		if (ca_pend_io(5.0) != ECA_NORMAL) {
 			errlogPrintf("timeout on monitored set: %s to monitored scan\n",plist->reqFile);
 		}
@@ -880,12 +882,12 @@ STATIC int get_channel_values(struct chlist *plist)
 		} else {
 			not_connected++;
 			if (pchannel->chid == NULL) {
-				Debug(1 ,"get_channel_values: no CHID for '%s'\n", pchannel->name);
+				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: no CHID for '%s'\n", pchannel->name);
 			} else if (ca_state(pchannel->chid) != cs_conn) {
-				Debug(1 ,"get_channel_values: %s not connected\n", pchannel->name);
+				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: %s not connected\n", pchannel->name);
 			}
 			if ((pchannel->max_elements < 1)) {
-				Debug(1 ,"get_channel_values: %s has, at most, %ld elements\n",
+				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: %s has, at most, %ld elements\n",
 					pchannel->name, pchannel->max_elements);
 			}
 		}
@@ -906,7 +908,7 @@ STATIC int get_channel_values(struct chlist *plist)
 			/* then we at least had a CA connection.  Did it produce? */
 			pchannel->valid = strcmp(pchannel->value, INIT_STRING);
 		} else {
-			Debug(1 ,"get_channel_values: invalid channel %s\n", pchannel->name);
+			if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: invalid channel %s\n", pchannel->name);
 		}
 	}
 
@@ -1023,9 +1025,11 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	}
 
 	errno = 0;
-#ifdef vxWorks
+#if defined(vxWorks)
 	n = ioctl(fileno(out_fd),FIOSYNC,0);	/* NFS flush to disk */
 	if (n == ERROR) errlogPrintf("save_restore: ioctl(,FIOSYNC,) returned %d\n", n);
+#elif defined(_WIN32)
+        /* WIN32 has no real equivalent to fsync? */
 #else
 	n = fsync(fileno(out_fd));
 	if (n != 0) errlogPrintf("save_restore:write_it: fsync returned %d\n", n);
@@ -1148,7 +1152,7 @@ STATIC int write_save_file(struct chlist *plist)
 	}
 
 	/*** Write the save file ***/
-	Debug(1, "write_save_file: saving to %s\n", save_file);
+	if (save_restoreDebug >= 1) errlogPrintf("write_save_file: saving to %s\n", save_file);
 	if (write_it(save_file, plist) == ERROR) {
 		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		errlogPrintf("save_restore:write_save_file: Can't write save file.\n");
@@ -2016,12 +2020,12 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			strcpy(eline, line);
 		}
 		sscanf(eline, "%s", name);
-		Debug(2, "save_restore:readReqFile: line='%s', eline='%s', name='%s'\n", line, eline, name);
+		if (save_restoreDebug >= 2) errlogPrintf("save_restore:readReqFile: line='%s', eline='%s', name='%s'\n", line, eline, name);
 		if (name[0] == '#') {
 			/* take the line as a comment */
 		} else if (strncmp(eline, "file", 4) == 0) {
 			/* handle include file */
-			Debug(2, "save_restore:readReqFile: preparing to include file: eline='%s'\n", eline);
+			if (save_restoreDebug >= 2) errlogPrintf("save_restore:readReqFile: preparing to include file: eline='%s'\n", eline);
 
 			/* parse template-file name and fix obvious problems */
 			templatefile[0] = '\0';
