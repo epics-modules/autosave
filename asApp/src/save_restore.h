@@ -9,11 +9,11 @@
 #endif
 
 #if DEBUG
-#define Debug(l,FMT,V...) {if (l <= save_restoreDebug) \
-              { errlogPrintf("%s(%d):",__FILE__,__LINE__); \
-                errlogPrintf(FMT,##V); }}
+#define Debug(l) if (l <= save_restoreDebug) \
+                 { errlogPrintf("%s(%d):",__FILE__,__LINE__); \
+                   errlogPrintf(
 #else
-#define Debug(l,FMT,V...) ;
+#define Debug(l) ;
 #endif
 
 #define     TATTLE(CA_ERROR_CODE, FMT, ARG) \

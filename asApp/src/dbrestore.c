@@ -70,17 +70,16 @@
 #include	<dbConvertFast.h>	/* dbFastPutConvertRoutine */
 #include	<initHooks.h>
 #include	<epicsThread.h>
-#include	<epicsExport.h>
 #include	<iocsh.h>
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
+#include	<epicsExport.h>
 
 #ifndef vxWorks
 #define OK 0
 #define ERROR -1
 #endif
 
-extern	DBBASE *pdbbase;
 STATIC char 	*RESTORE_VERSION = VERSION;
 
 struct restoreList restoreFileList = {0, 0, 
@@ -141,7 +140,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	struct stat fileStat;
 	int		chars_printed, size=0;
 
-	Debug(5, "myFileCopy: copying '%s' to '%s'\n", source, dest);
+	Debug(5) "myFileCopy: copying '%s' to '%s'\n", source, dest);}
 
 	if (stat(source, &fileStat) == 0) size = (int)fileStat.st_size;
 	errno = 0;
@@ -191,7 +190,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	DBADDR	*paddr = &dbaddr;
 	dbfType field_type = pdbentry->pflddes->field_type;
 	
-	Debug(15,"scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);
+	Debug(15) "scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);}
 	switch (field_type) {
 	case DBF_STRING: case DBF_ENUM:
 	case DBF_CHAR:   case DBF_UCHAR:
@@ -199,7 +198,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	case DBF_LONG:   case DBF_ULONG:
 	case DBF_FLOAT:  case DBF_DOUBLE:
 		status = dbPutString(pdbentry, value_string);
-		Debug(15,"dbPutString() returns %ld:", status);
+		Debug(15) "dbPutString() returns %ld:", status);}
 		if (save_restoreDebug >= 15) errMessage(status, " ");
 		if ((s = dbVerify(pdbentry, value_string))) {
 			errlogPrintf("save_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
@@ -211,21 +210,21 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 		/* Can't restore links in pass 1 */
 		if (pass == 0) {
 			status = dbPutString(pdbentry, value_string);
-			Debug(15,"dbPutString() returns %ld:",status);
+			Debug(15) "dbPutString() returns %ld:",status);}
 			if (save_restoreDebug >= 15) errMessage(status," ");
 			if ((s = dbVerify(pdbentry, value_string))) {
 				errlogPrintf("save_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
 				status = -1;
 			}
 		} else {
-			Debug(1,"Can't restore link field (%s) in pass 1.\n", PVname);
+			Debug(1) "Can't restore link field (%s) in pass 1.\n", PVname);}
 		}
 		break;
 
 	case DBF_MENU:
 		n = (int)atol(value_string);
 		status = dbPutMenuIndex(pdbentry, n);
-		Debug(15,"dbPutMenuIndex() returns %ld:",status);
+		Debug(15) "dbPutMenuIndex() returns %ld:",status);}
 		if (save_restoreDebug >= 15) errMessage(status," ");
 		break;
 
@@ -245,13 +244,13 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 				}
 			}
 		} else {
-			Debug(1,"Can't restore DBF_NOACCESS field (%s) in pass 0.\n", PVname);
+			Debug(1) "Can't restore DBF_NOACCESS field (%s) in pass 0.\n", PVname);}
 		}
 		break;
 
 	default:
 		status = -1;
-		Debug(1,"field_type '%d' not handled\n", field_type);
+		Debug(1) "field_type '%d' not handled\n", field_type);}
 		break;
 	}
 	if (status) {
@@ -259,7 +258,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 			value_string, PVname);
 		errMessage(status," ");
 	}
-	Debug(15,"dbGetString() returns '%s'\n",dbGetString(pdbentry));
+	Debug(15) "dbGetString() returns '%s'\n",dbGetString(pdbentry));}
 	return(status);
 }
 
@@ -288,7 +287,7 @@ long SR_put_array_values(char *PVname, void *p_data, long num_values)
 	} else {
 		offset = 0;
 	}
-	Debug(1, "restoring %ld values to %s (max_elements=%ld)\n", num_values, PVname, max_elements);
+	Debug(1) "restoring %ld values to %s (max_elements=%ld)\n", num_values, PVname, max_elements);}
 	if (VALID_DB_REQ(field_type)) {
 		status = (*dbPutConvertRoutine[field_type][field_type])(paddr,p_data,num_values,max_elements,offset);
 	} else {
@@ -349,7 +348,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 	float			*p_float = NULL;
 	double			*p_double = NULL;
 
-	Debug(1,"array_restore:entry: PV = '%s'\n", PVname);
+	Debug(1) "array_restore:entry: PV = '%s'\n", PVname);}
 	if ((status = dbNameToAddr(PVname, paddr)) != 0) {
 		errlogPrintf("save_restore: dbNameToAddr can't find PV '%s'\n", PVname);
 	} else {
@@ -359,15 +358,15 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 		field_size = paddr->field_size;
 		/* if we've already allocated a big enough memory block, use it */
 		if ((p_data == NULL) || ((max_elements * field_size) > p_data_size)) {
-			Debug(1,"array_restore:p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
+			Debug(1) "array_restore:p_data = %p, p_data_size = %ld\n", p_data, p_data_size);}
 			if (p_data) free(p_data);
 			p_data = (void *)calloc(max_elements, field_size);
 			p_data_size = p_data ? max_elements * field_size : 0;
 		} else {
 			memset(p_data, 0, p_data_size);
 		}
-		Debug(10,"Looking for up to %ld elements of field-size %d\n", max_elements, field_size);
-		Debug(9,"save_restore: field_type is '%s' (%d)\n", pamapdbfType[field_type].strvalue, field_type);
+		Debug(10) "Looking for up to %ld elements of field-size %d\n", max_elements, field_size);}
+		Debug(9) "save_restore: field_type is '%s' (%d)\n", pamapdbfType[field_type].strvalue, field_type);}
 		switch (field_type) {
 		case DBF_STRING: case DBF_CHAR:                p_char = (char *)p_data;             break;
 		case DBF_UCHAR:                                p_uchar = (unsigned char *)p_data;   break;
@@ -385,15 +384,15 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 			break;
 		}
 		/** read array values **/
-		Debug(11,"parsing buffer '%s'\n", value_string);
+		Debug(11) "parsing buffer '%s'\n", value_string);}
 		if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
 			begin_mark_found = 1;
-			Debug(10,"parsing array buffer '%s'\n", bp);
+			Debug(10) "parsing array buffer '%s'\n", bp);}
 			for (num_read=0; (num_read<max_elements) && bp && !end_mark_found; ) {
 				/* Find beginning of array element */
-				Debug(10,"looking for element[%ld] \n", num_read);
+				Debug(10) "looking for element[%ld] \n", num_read);}
 				while ((*bp != ELEMENT_BEGIN) && !end_mark_found && !end_of_file) {
-					Debug(12,"...buffer contains '%s'\n", bp);
+					Debug(12) "...buffer contains '%s'\n", bp);}
 					switch (*bp) {
 					case '\0':
 						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
@@ -415,7 +414,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 				 */
 				if (bp && !end_mark_found && !end_of_file) {
 					/* *bp == ELEMENT_BEGIN */
-					Debug(11,"Found element-begin; buffer contains '%s'\n", bp);
+					Debug(11) "Found element-begin; buffer contains '%s'\n", bp);}
 					for (bp++, j=0; (j < MAX_STRING_SIZE-1) && (*bp != ELEMENT_END); bp++) {
 						if (*bp == '\0') {
 							if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
@@ -423,7 +422,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 								end_of_file = 1;
 								break;
 							}
-							Debug(11,"new buffer: '%s'\n", bp);
+							Debug(11) "new buffer: '%s'\n", bp);}
 							if (*bp == ELEMENT_END) break;
 						} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
 							/* escaped character */
@@ -432,8 +431,8 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 						if (isprint((int)(*bp))) string[j++] = *bp; /* Ignore, e.g., embedded newline */
 					}
 					string[j] = '\0';
-					Debug(10,"element[%ld] value = '%s'\n", num_read, string);
-					if (bp) Debug(11,"look for element-end: buffer contains '%s'\n", bp);
+					Debug(10) "element[%ld] value = '%s'\n", num_read, string);}
+					if (bp) Debug(11) "look for element-end: buffer contains '%s'\n", bp);}
 					/*
 					 * We've accumulated all the characters, or all we can handle in string[].
 					 * If there are more characters than we can handle, just pretend we read them.
@@ -528,10 +527,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 	/* leave the file pointer ready for next PV (next fgets() should yield next PV) */
 	if (begin_mark_found) {
 		/* find ARRAY_END (but ARRAY_END inside an element is just another character) */
-		Debug(10, "looking for ARRAY_END\n");
+		Debug(10) "looking for ARRAY_END\n");}
 		in_element = 0;
 		while (!end_mark_found && !end_of_file) {
-			Debug(11,"...buffer contains '%s'\n", bp);
+			Debug(11) "...buffer contains '%s'\n", bp);}
 			switch (*bp) {
 			case ESCAPE:
 				if (in_element && (bp[1] == ELEMENT_END)) bp++; /* two chars treated as one */
@@ -553,7 +552,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 			if (bp) ++bp;
 		}
 	} else {
-		Debug(10, "ARRAY_BEGIN wasn't found; going to next line of input file\n");
+		Debug(10) "ARRAY_BEGIN wasn't found; going to next line of input file\n");}
 		status = -1;
 		/* just get next line, assuming it contains the next PV */
 		if (!end_of_file) {
@@ -562,13 +561,13 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 	}
 	if (!status && end_of_file) status = end_of_file;
 	if (pass == 0) {
-		Debug(1, "No array write in pass 0.\n");
+		Debug(1) "No array write in pass 0.\n");}
 	} else {
 		if (!status && p_data) {
-			Debug(1, "Writing array to database\n");
+			Debug(1) "Writing array to database\n");}
 			status = SR_put_array_values(PVname, p_data, num_read);
 		} else {
-			Debug(1, "No array write to database attempted because of error condition\n");
+			Debug(1) "No array write to database attempted because of error condition\n");}
 		}
 	}
 	if (p_data == NULL) status = -1;
@@ -669,7 +668,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	(void)fgets(buffer, BUF_SIZE, inp_fd); /* discard header line */
-	Debug(1, "reboot_restore: header line '%s'\n", buffer);
+	Debug(1) "reboot_restore: header line '%s'\n", buffer);}
 	status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
 	if (status) myPrintErrno("checkFile");
 
@@ -701,7 +700,7 @@ int reboot_restore(char *filename, initHookState init_state)
 			if (strchr(PVname,'.') == 0) strcat(PVname,".VAL"); /* if no field name, add default */
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (save_restoreDebug > 9) errlogPrintf("\n");
-			Debug(10,"Attempting to put %s '%s' to '%s'\n", is_scalar?"scalar":"array", value_string, PVname);
+			Debug(10) "Attempting to put %s '%s' to '%s'\n", is_scalar?"scalar":"array", value_string, PVname);}
 			found_field = 1;
 			if ((status = dbFindRecord(pdbentry, PVname)) != 0) {
 				errlogPrintf("dbFindRecord for '%s' failed\n", PVname);
@@ -767,7 +766,7 @@ int reboot_restore(char *filename, initHookState init_state)
 			strNcpy(bu_filename, fname, sizeof(bu_filename) - 3);
 			strcat(bu_filename, ".bu");
 		}
-		Debug(1, "save_restore: writing boot-backup file '%s'.\n", bu_filename);
+		Debug(1) "save_restore: writing boot-backup file '%s'.\n", bu_filename);}
 		status = (long)myFileCopy(fname,bu_filename);
 		if (status) {
 			errlogPrintf("save_restore: Can't write backup file.\n");
@@ -1042,7 +1041,7 @@ long SR_get_array(char *PVname, void *pArray, long *pnum_elements)
 		request_field_type = DBF_USHORT;
 	}
 	status = dbGet(paddr, request_field_type, pArray, NULL, pnum_elements, NULL);
-	Debug(10, "SR_get_array: '%s' currently has %ld elements\n", PVname, *pnum_elements);
+	Debug(10) "SR_get_array: '%s' currently has %ld elements\n", PVname, *pnum_elements);}
 	dbScanUnlock((dbCommon *)paddr->precord);
 	return(status);
 }
