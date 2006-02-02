@@ -89,9 +89,12 @@
  *                empty lines (e.g., containing a space character) seemed to
  *                contain the first word of the previous line, because name[]
  *                was not cleared before parsing a new line.
-
+ * 02/02/06  tmm  v4.8 Don't quit trying to write file just because errno got set.
+ *                Status PV's were being restricted to STRING_LEN chars, instead
+ *                of PV_NAME_LEN chars.  (Thanks to Kay Kasemir for diagnosing and
+ *                fixing these problems.)
  */
-#define		SRVERSION "save/restore V4.7"
+#define		SRVERSION "save/restore V4.8"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -426,7 +429,7 @@ STATIC int mountFileSystem()
 			strncpy(SR_recentlyStr, "nfsMount succeeded", (STRING_LEN-1));
 			return(1);
 		} else {
-			errlogPrintf("save_restore: Can't nfsMount file system\n");
+			errlogPrintf("save_restore: Can't nfsMount '%s'\n", saveRestoreFilePath);
 		}
 	}
 #else
@@ -642,7 +645,7 @@ STATIC int save_restore(void)
 			if (plist->status_PV[0] == '\0') {
 				/*** Build PV names ***/
 				/* make common portion of PVname strings */
-				n = (STRING_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
+				n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
 				strcpy(plist->name_PV, plist->status_PV);
 				strcpy(plist->save_state_PV, plist->status_PV);
 				strcpy(plist->statusStr_PV, plist->status_PV);
@@ -945,20 +948,21 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 	n = fprintf(out_fd,"# %s\tAutomatically generated - DO NOT MODIFY - %s\n",
 			SRversion, datetime);
-	if (n <= 0 || errno) {
-		if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-		if (errno) myPrintErrno("write_it");
+	if (errno) myPrintErrno("write_it");
+	if (n <= 0) {
+		errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 		goto trouble;
 	}
+
 	if (plist->not_connected) {
 		errno = 0;
 		n = fprintf(out_fd,"! %d channel(s) not connected - or not all gets were successful\n",
-			plist->not_connected);
-			if (n <= 0 || errno) {
-				if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-				if (errno) myPrintErrno("write_it");
-				goto trouble;
-			}
+				plist->not_connected);
+		if (errno) myPrintErrno("write_it");
+		if (n <= 0) {
+			errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
+			goto trouble;
+		}
 	}
 
 	/* write PV names and values */
@@ -969,9 +973,9 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			n = fprintf(out_fd, "#%s ", pchannel->name);
 		}
-		if (n <= 0 || errno) {
-			if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-			if (errno) myPrintErrno("write_it");
+		if (errno) myPrintErrno("write_it");
+		if (n <= 0) {
+			errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 			goto trouble;
 		}
 
@@ -983,17 +987,17 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-			if (n <= 0 || errno) {
-				if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-				if (errno) myPrintErrno("write_it");
+			if (errno) myPrintErrno("write_it");
+			if (n <= 0) {
+				errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 				goto trouble;
 			}
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
-			if (n <= 0 || errno) {
-				if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-				if (errno) myPrintErrno("write_it");
+			if (errno) myPrintErrno("write_it");
+			if (n <= 0) {
+				errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 				goto trouble;
 			}
 		}
@@ -1010,19 +1014,17 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* write file-is-ok marker */
 	errno = 0;
 	n = fprintf(out_fd, "<END>\n");
-	if (n <= 0 || errno) {
-		if (n <= 0) errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
-		if (errno) myPrintErrno("write_it");
+	if (errno) myPrintErrno("write_it");
+	if (n <= 0) {
+		errlogPrintf("save_restore:write_it: fprintf returned %d.\n", n);
 		goto trouble;
 	}
 
 	/* flush everything to disk */
 	errno = 0;
 	n = fflush(out_fd);
-	if (n != 0 || errno) {
-		if (n != 0) errlogPrintf("save_restore:write_it: fflush returned %d\n", n);
-		if (errno) myPrintErrno("write_it");
-	}
+	if (errno) myPrintErrno("write_it");
+	if (n != 0) errlogPrintf("save_restore:write_it: fflush returned %d\n", n);
 
 	errno = 0;
 #if defined(vxWorks)
@@ -1039,9 +1041,9 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* close the file */
 	errno = 0;
 	n = fclose(out_fd);
-	if (n != 0 || errno) {
-		if (n != 0) errlogPrintf("save_restore:write_it: fclose returned %d\n", n);
-		if (errno) myPrintErrno("write_it");
+	if (errno) myPrintErrno("write_it");
+	if (n != 0) {
+		errlogPrintf("save_restore:write_it: fclose returned %d\n", n);
 		goto trouble;
 	}
 	epicsMutexUnlock(sr_mutex);
