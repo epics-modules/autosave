@@ -93,8 +93,9 @@
  *                Status PV's were being restricted to STRING_LEN chars, instead
  *                of PV_NAME_LEN chars.  (Thanks to Kay Kasemir for diagnosing and
  *                fixing these problems.)
+ * 03/24/06  tmm  v4.9 Use epicsThreadGetStackSize(epicsThreadStackBig)
  */
-#define		SRVERSION "save/restore V4.8"
+#define		SRVERSION "save/restore V4.9"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -1370,7 +1371,7 @@ STATIC int create_data_set(
 			return(ERROR);
 		}
 		taskID = epicsThreadCreate("save_restore", taskPriority,
-			epicsThreadGetStackSize(epicsThreadStackMedium),
+			epicsThreadGetStackSize(epicsThreadStackBig),
 			(EPICSTHREADFUNC)save_restore, 0);
 		if (taskID == NULL) {
 			errlogPrintf("create_data_set: could not create save_restore task");
