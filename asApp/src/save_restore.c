@@ -1035,6 +1035,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
         /* WIN32 has no real equivalent to fsync? */
 #else
 	n = fsync(fileno(out_fd));
+	if ((n != 0) && (errno == ENOTSUP)) { n = 0; errno = 0; }
 	if (n != 0) errlogPrintf("save_restore:write_it: fsync returned %d\n", n);
 #endif
 	if (errno) myPrintErrno("write_it");
