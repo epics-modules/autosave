@@ -94,6 +94,7 @@
  *                of PV_NAME_LEN chars.  (Thanks to Kay Kasemir for diagnosing and
  *                fixing these problems.)
  * 03/24/06  tmm  v4.9 Use epicsThreadGetStackSize(epicsThreadStackBig)
+ * 03/28/06  tmm  Replaced all Debug macros with straight code
  */
 #define		SRVERSION "save/restore V4.9"
 
@@ -398,7 +399,7 @@ int manual_save(char *request_file)
 	if (plist != 0)
 		plist->save_state |= MANUAL;
 	else
-		errlogPrintf("saveset %s not found", request_file);
+		errlogPrintf("save_restore:manual_save: saveset %s not found", request_file);
 	epicsMutexUnlock(sr_mutex);
 	return(OK);
 }
@@ -664,7 +665,7 @@ STATIC int save_restore(void)
 				TATTLE(ca_search(plist->statusStr_PV, &plist->statusStr_chid), "save_restore: ca_search(%s) returned %s", plist->statusStr_PV);
 				TATTLE(ca_search(plist->time_PV, &plist->time_chid), "save_restore: ca_search(%s) returned %s", plist->time_PV);
 				if (ca_pend_io(0.5)!=ECA_NORMAL) {
-					errlogPrintf("Can't connect to status PV(s) for list '%s'\n", plist->save_file);
+					errlogPrintf("save_restore: Can't connect to status PV(s) for list '%s'\n", plist->save_file);
 				}
 			}
 
@@ -779,7 +780,7 @@ STATIC int enable_list(struct chlist *plist)
 	struct channel	*pchannel;
 	chid 			chid;			/* channel access id */
 
-	if (save_restoreDebug >= 4) errlogPrintf("enable_list: entry\n");
+	if (save_restoreDebug >= 4) errlogPrintf("save_restore:enable_list: entry\n");
 
 	epicsMutexLock(sr_mutex);
 
@@ -792,15 +793,15 @@ STATIC int enable_list(struct chlist *plist)
 	/* enable a triggered set */
 	if ((plist->save_method & TRIGGERED) && !(plist->enabled_method & TRIGGERED)) {
 		if (ca_search(plist->trigger_channel, &chid) != ECA_NORMAL) {
-			errlogPrintf("trigger %s search failed\n", plist->trigger_channel);
+			errlogPrintf("save_restore:enable_list: trigger %s search failed\n", plist->trigger_channel);
 		} else if (ca_pend_io(2.0) != ECA_NORMAL) {
-			errlogPrintf("timeout on search of %s\n", plist->trigger_channel);
+			errlogPrintf("save_restore:enable_list: timeout on search of %s\n", plist->trigger_channel);
 		} else if (chid == NULL) {
-			errlogPrintf("no CHID for trigger channel '%s'\n", plist->trigger_channel);
+			errlogPrintf("save_restore:enable_list: no CHID for trigger channel '%s'\n", plist->trigger_channel);
 		} else if (ca_state(chid) != cs_conn) {
-			errlogPrintf("trigger %s search not connected\n", plist->trigger_channel);
+			errlogPrintf("save_restore:enable_list: trigger %s search not connected\n", plist->trigger_channel);
 		} else if (ca_add_event(DBR_FLOAT, chid, triggered_save, (void *)plist, 0) !=ECA_NORMAL) {
-			errlogPrintf("trigger event for %s failed\n", plist->trigger_channel);
+			errlogPrintf("save_restore:enable_list: trigger event for %s failed\n", plist->trigger_channel);
 		} else{
 			plist->enabled_method |= TRIGGERED;
 		}
@@ -809,8 +810,10 @@ STATIC int enable_list(struct chlist *plist)
 	/* enable a monitored set */
 	if ((plist->save_method & MONITORED) && !(plist->enabled_method & MONITORED)) {
 		for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-			if (save_restoreDebug >= 10) errlogPrintf("enable_list: calling ca_add_event for '%s'\n", pchannel->name);
-			if (save_restoreDebug >= 10) errlogPrintf("enable_list: arg = %p\n", plist);
+			if (save_restoreDebug >= 10) {
+				errlogPrintf("save_restore:enable_list: calling ca_add_event for '%s'\n", pchannel->name);
+				errlogPrintf("save_restore:enable_list: arg = %p\n", plist);
+			}
 			/*
 			 * Work around obscure problem affecting USHORTS by making DBR type different
 			 * from any possible field type.  This avoids tickling a bug that causes dbGet
@@ -819,13 +822,13 @@ STATIC int enable_list(struct chlist *plist)
 			 */
 			if (ca_add_event(DBR_TIME_LONG, pchannel->chid, on_change_save,
 					(void *)plist, 0) != ECA_NORMAL) {
-				errlogPrintf("could not add event for %s in %s\n",
+				errlogPrintf("save_restore:enable_list: could not add event for %s in %s\n",
 					pchannel->name,plist->reqFile);
 			}
 		}
-		if (save_restoreDebug >= 4) errlogPrintf("enable_list: done calling ca_add_event for list channels\n");
+		if (save_restoreDebug >= 4) errlogPrintf("save_restore:enable_list: done calling ca_add_event for list channels\n");
 		if (ca_pend_io(5.0) != ECA_NORMAL) {
-			errlogPrintf("timeout on monitored set: %s to monitored scan\n",plist->reqFile);
+			errlogPrintf("save_restore:enable_list: timeout on monitored set: %s to monitored scan\n",plist->reqFile);
 		}
 		callbackRequestDelayed(&plist->monitorCb, (double)plist->monitor_period);
 		plist->enabled_method |= MONITORED;
@@ -886,18 +889,18 @@ STATIC int get_channel_values(struct chlist *plist)
 		} else {
 			not_connected++;
 			if (pchannel->chid == NULL) {
-				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: no CHID for '%s'\n", pchannel->name);
+				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: no CHID for '%s'\n", pchannel->name);
 			} else if (ca_state(pchannel->chid) != cs_conn) {
-				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: %s not connected\n", pchannel->name);
+				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s not connected\n", pchannel->name);
 			}
 			if ((pchannel->max_elements < 1)) {
-				if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: %s has, at most, %ld elements\n",
+				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has, at most, %ld elements\n",
 					pchannel->name, pchannel->max_elements);
 			}
 		}
 	}
 	if (ca_pend_io(MIN(10.0, .1*num_channels)) != ECA_NORMAL) {
-		errlogPrintf("get_channel_values: not all gets completed");
+		errlogPrintf("save_restore:get_channel_values: not all gets completed");
 		not_connected++;
 	}
 
@@ -912,7 +915,7 @@ STATIC int get_channel_values(struct chlist *plist)
 			/* then we at least had a CA connection.  Did it produce? */
 			pchannel->valid = strcmp(pchannel->value, INIT_STRING);
 		} else {
-			if (save_restoreDebug >= 1) errlogPrintf("get_channel_values: invalid channel %s\n", pchannel->name);
+			if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: invalid channel %s\n", pchannel->name);
 		}
 	}
 
@@ -1030,7 +1033,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 #if defined(vxWorks)
 	n = ioctl(fileno(out_fd),FIOSYNC,0);	/* NFS flush to disk */
-	if (n == ERROR) errlogPrintf("save_restore: ioctl(,FIOSYNC,) returned %d\n", n);
+	if (n == ERROR) errlogPrintf("save_restore:write_it: ioctl(,FIOSYNC,) returned %d\n", n);
 #elif defined(_WIN32)
         /* WIN32 has no real equivalent to fsync? */
 #else
@@ -1120,7 +1123,7 @@ STATIC int write_save_file(struct chlist *plist)
 	/* Ensure that backup is ok before we overwrite .sav file. */
 	backup_state = check_file(backup_file);
 	if (backup_state != BS_OK) {
-		errlogPrintf("write_save_file: Backup file (%s) bad or not found.  Writing a new one.\n", 
+		errlogPrintf("save_restore:write_save_file: Backup file (%s) bad or not found.  Writing a new one.\n", 
 			backup_file);
 		if (backup_state == BS_BAD) {
 			/* make a backup copy of the corrupted file */
@@ -1301,7 +1304,7 @@ int set_savefile_name(char *filename, char *save_filename)
 		}
 		plist = plist->pnext;
 	}
-	errlogPrintf("No save set enabled for %s\n",filename);
+	errlogPrintf("save_restore:set_savefile_name: No save set enabled for %s\n",filename);
 	epicsMutexUnlock(sr_mutex);
 	return(ERROR);
 }
@@ -1319,7 +1322,7 @@ int create_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 		return(create_data_set(filename, TRIGGERED, 0, trigger_channel, 0, macrostring));
 	}
 	else {
-		errlogPrintf("create_triggered_set: Error: trigger-channel name is required.\n");
+		errlogPrintf("save_restore:create_triggered_set: Error: trigger-channel name is required.\n");
 		return(ERROR);
 	}
 }
@@ -1353,29 +1356,29 @@ STATIC int create_data_set(
 	int				inx;			/* i/o status 	       */
 
 	if (save_restoreDebug) {
-		errlogPrintf("create_data_set: file '%s', method %x, period %d, trig_chan '%s', mon_period %d\n",
+		errlogPrintf("save_restore:create_data_set: file '%s', method %x, period %d, trig_chan '%s', mon_period %d\n",
 			filename, save_method, period, trigger_channel ? trigger_channel : "NONE", mon_period);
 	}
 
 	/* initialize save_restore routines */
 	if (!save_restore_init) {
 		if ((sr_mutex = epicsMutexCreate()) == 0) {
-			errlogPrintf("create_data_set: could not create list header mutex");
+			errlogPrintf("save_restore:create_data_set: could not create list header mutex");
 			return(ERROR);
 		}
 		if ((sem_remove = epicsEventCreate(epicsEventEmpty)) == 0) {
-			errlogPrintf("create_data_set: could not create delete-list semaphore\n");
+			errlogPrintf("save_restore:create_data_set: could not create delete-list semaphore\n");
 			return(ERROR);
 		}
 		if ((sem_do_manual_op = epicsEventCreate(epicsEventEmpty)) == 0) {
-			errlogPrintf("create_data_set: could not create do_manual_op semaphore\n");
+			errlogPrintf("save_restore:create_data_set: could not create do_manual_op semaphore\n");
 			return(ERROR);
 		}
 		taskID = epicsThreadCreate("save_restore", taskPriority,
 			epicsThreadGetStackSize(epicsThreadStackBig),
 			(EPICSTHREADFUNC)save_restore, 0);
 		if (taskID == NULL) {
-			errlogPrintf("create_data_set: could not create save_restore task");
+			errlogPrintf("save_restore:create_data_set: could not create save_restore task");
 			return(ERROR);
 		}
 
@@ -1388,7 +1391,7 @@ STATIC int create_data_set(
 	while (plist != 0) {
 		if (!strcmp(plist->reqFile,filename)) {
 			if (plist->save_method & save_method) {
-				errlogPrintf("create_data_set: '%s' already in %x mode",filename,save_method);
+				errlogPrintf("save_restore:create_data_set: '%s' already in %x mode",filename,save_method);
 				epicsMutexUnlock(sr_mutex);
 				return(ERROR);
 			} else {
@@ -1397,7 +1400,7 @@ STATIC int create_data_set(
 					if (trigger_channel) {
 						strcpy(plist->trigger_channel,trigger_channel);
 					} else {
-						errlogPrintf("create_data_set: no trigger channel");
+						errlogPrintf("save_restore:create_data_set: no trigger channel");
 						epicsMutexUnlock(sr_mutex);
 						return(ERROR);
 					}
@@ -1424,7 +1427,7 @@ STATIC int create_data_set(
 
 	/* create a new channel list */
 	if ((plist = (struct chlist *)calloc(1,sizeof (struct chlist))) == (struct chlist *)0) {
-		errlogPrintf("create_data_set: channel list calloc failed");
+		errlogPrintf("save_restore:create_data_set: channel list calloc failed");
 		return(ERROR);
 	}
 	callbackSetCallback(periodic_save, &plist->periodicCb);
@@ -1574,7 +1577,7 @@ int set_requestfile_path(char *path, char *pathsub)
 	if (path && *path) path_len = strlen(path);
 	if (pathsub && *pathsub) pathsub_len = strlen(pathsub);
 	if (path_len + pathsub_len > (PATH_SIZE-1)) {	/* may have to add '/' */
-		errlogPrintf("set_requestfile_path: 'path'+'pathsub' is too long\n");
+		errlogPrintf("save_restore:set_requestfile_path: 'path'+'pathsub' is too long\n");
 		return(ERROR);
 	}
 
@@ -1594,7 +1597,7 @@ int set_requestfile_path(char *path, char *pathsub)
 		/* return(set_requestfile_path(fullpath)); */
 		pnew = (struct pathListElement *)calloc(1, sizeof(struct pathListElement));
 		if (pnew == NULL) {
-			errlogPrintf("set_requestfile_path: calloc failed\n");
+			errlogPrintf("save_restore:set_requestfile_path: calloc failed\n");
 			return(ERROR);
 		}
 		strcpy(pnew->path, fullpath);
@@ -1625,7 +1628,7 @@ int set_savefile_path(char *path, char *pathsub)
 	if (path && *path) path_len = strlen(path);
 	if (pathsub && *pathsub) pathsub_len = strlen(pathsub);
 	if (path_len + pathsub_len > (PATH_SIZE-1)) {	/* may have to add '/' */
-		errlogPrintf("set_requestfile_path: 'path'+'pathsub' is too long\n");
+		errlogPrintf("save_restore:set_savefile_path: 'path'+'pathsub' is too long\n");
 		return(ERROR);
 	}
 
@@ -1694,13 +1697,13 @@ int remove_data_set(char *filename)
 		pchannel = plist->pchan_list;
 		while (pchannel) {
 			if (ca_clear_channel(pchannel->chid) != ECA_NORMAL) {
-				errlogPrintf("remove_data_set: couldn't remove ca connection for %s\n", pchannel->name);
+				errlogPrintf("save_restore:remove_data_set: couldn't remove ca connection for %s\n", pchannel->name);
 			}
 			pchannel = pchannel->pnext;
 			numchannels++;
 		}
 		if (ca_pend_io(MIN(10.0, numchannels*0.1)) != ECA_NORMAL) {
-		       errlogPrintf("remove_data_set: ca_pend_io() timed out\n");
+		       errlogPrintf("save_restore:remove_data_set: ca_pend_io() timed out\n");
 		}
 		pchannel = plist->pchan_list;
 		while (pchannel) {
@@ -1719,7 +1722,7 @@ int remove_data_set(char *filename)
 		epicsMutexUnlock(sr_mutex);
 
 	} else {
-		errlogPrintf("remove_data_set: Couldn't find '%s'\n", filename);
+		errlogPrintf("save_restore:remove_data_set: Couldn't find '%s'\n", filename);
 		sprintf(SR_recentlyStr, "Can't remove data set '%s'", filename);
 		return(ERROR);
 	}
@@ -1734,9 +1737,9 @@ int reload_periodic_set(char *filename, int period, char *macrostring)
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
 	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
-	if (s) errlogPrintf("reload_periodic_set: epicsEventWaitWithTimeout -> %d\n", (int)s);
+	if (s) errlogPrintf("save_restore:reload_periodic_set: epicsEventWaitWithTimeout -> %d\n", (int)s);
 	if (s || remove_status) {
-		errlogPrintf("reload_periodic_set: error removing %s\n", filename);
+		errlogPrintf("save_restore:reload_periodic_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
 		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
@@ -1751,9 +1754,9 @@ int reload_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 	strncpy(remove_filename, filename, sizeof(remove_filename) -1);
 	remove_dset = 1;
 	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
-	if (s) errlogPrintf("reload_triggered_set: epicsEventWaitWithTimeout -> %d\n", s);
+	if (s) errlogPrintf("save_restore:reload_triggered_set: epicsEventWaitWithTimeout -> %d\n", s);
 	if (s || remove_status) {
-		errlogPrintf("reload_triggered_set: error removing %s\n", filename);
+		errlogPrintf("save_restore:reload_triggered_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
 		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
@@ -1771,7 +1774,7 @@ int reload_monitor_set(char * filename, int period, char *macrostring)
 	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
 	if (s) epicsPrintf("reload_monitor_set: epicsEventWaitWithTimeout -> %d\n", s);
 	if (s || remove_status) {
-		errlogPrintf("reload_monitor_set: error removing %s\n", filename);
+		errlogPrintf("save_restore:reload_monitor_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
 		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
@@ -1788,7 +1791,7 @@ int reload_manual_set(char * filename, char *macrostring)
 	s = epicsEventWaitWithTimeout(sem_remove, (double)TIME2WAIT);
 	if (s) epicsPrintf("reload_manual_set: epicsEventWaitWithTimeout -> %d\n", s);
 	if (s || remove_status) {
-		errlogPrintf("reload_manual_set: error removing %s\n", filename);
+		errlogPrintf("save_restore:reload_manual_set: error removing %s\n", filename);
 		return(ERROR);
 	} else {
 		sprintf(SR_recentlyStr, "Reloaded data set '%s'", filename);
@@ -1817,7 +1820,7 @@ int request_manual_restore(char *filename, int file_type)
 	s = epicsEventWaitWithTimeout(sem_do_manual_op, (double)TIME2WAIT);
 	if (s) epicsPrintf("request_manual_restore: epicsEventWaitWithTimeout -> %d\n", s);
 	if (s || manual_restore_status) {
-		errlogPrintf("request_manual_restore: error restoring %s\n", filename);
+		errlogPrintf("save_restore:request_manual_restore: error restoring %s\n", filename);
 		return(ERROR);
 	} else {
 		sprintf(SR_recentlyStr, "Restored data set '%s'", filename);
@@ -1861,10 +1864,10 @@ int do_manual_restore(char *filename, int file_type)
 		if (found) {
 			/* verify quality of the save set */
 			if (plist->not_connected > 0) {
-				errlogPrintf("do_manual_restore: %d channel(s) not connected or fetched\n",
+				errlogPrintf("save_restore:do_manual_restore: %d channel(s) not connected or fetched\n",
 					plist->not_connected);
 				if (!save_restoreIncompleteSetsOk) {
-					errlogPrintf("do_manual_restore: aborting restore\n");
+					errlogPrintf("save_restore:do_manual_restore: aborting restore\n");
 					epicsMutexUnlock(sr_mutex);
 					strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 					return(ERROR);
@@ -1880,7 +1883,7 @@ int do_manual_restore(char *filename, int file_type)
 			}
 			if (status) num_errs++;
 			if (ca_pend_io(1.0) != ECA_NORMAL) {
-				errlogPrintf("do_manual_restore: not all channels restored\n");
+				errlogPrintf("save_restore:do_manual_restore: not all channels restored\n");
 			}
 			epicsMutexUnlock(sr_mutex);
 			if (num_errs == 0) {
@@ -1903,7 +1906,7 @@ int do_manual_restore(char *filename, int file_type)
 		inp_fd = fopen(restoreFile, "r");
 	}
 	if (inp_fd == NULL) {
-		errlogPrintf("do_manual_restore: Can't open save file.");
+		errlogPrintf("save_restore:do_manual_restore: Can't open save file.");
 		strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 		return(ERROR);
 	}
@@ -1923,21 +1926,21 @@ int do_manual_restore(char *filename, int file_type)
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (is_scalar) {
 				if (ca_search(PVname, &chanid) != ECA_NORMAL) {
-					errlogPrintf("do_manual_restore: ca_search for %s failed\n", PVname);
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
-					errlogPrintf("do_manual_restore: ca_search for %s timeout\n", PVname);
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", PVname);
 				} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
-					errlogPrintf("do_manual_restore: ca_put of %s to %s failed\n", value_string,PVname);
+					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,PVname);
 				}
 			} else {
 				status = SR_array_restore(1, inp_fd, PVname, value_string);
 			}
 		} else if (PVname[0] == '!') {
 			n = atoi(value_string);	/* value_string actually contains 2nd word of error msg */
-			errlogPrintf("do_manual_restore: %d PV%c had no saved value\n",
+			errlogPrintf("save_restore:do_manual_restore: %d PV%c had no saved value\n",
 				n, (n==1) ? ' ':'s');
 			if (!save_restoreIncompleteSetsOk) {
-				errlogPrintf("do_manual_restore: aborting restore\n");
+				errlogPrintf("save_restore:do_manual_restore: aborting restore\n");
 				fclose(inp_fd);
 				strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 				return(ERROR);
@@ -2067,7 +2070,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 					ca_flush_io();
 				}
-				errlogPrintf("readReqFile: channel calloc failed");
+				errlogPrintf("save_restore:readReqFile: channel calloc failed");
 			} else {
 				/* add new element to the list */
 #if BACKWARDS_LIST
