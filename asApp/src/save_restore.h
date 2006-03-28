@@ -8,14 +8,6 @@
 #define STATIC static
 #endif
 
-#if DEBUG
-#define Debug(l) if (l <= save_restoreDebug) \
-                 { errlogPrintf("%s(%d):",__FILE__,__LINE__); \
-                   errlogPrintf(
-#else
-#define Debug(l) ;
-#endif
-
 #define     TATTLE(CA_ERROR_CODE, FMT, ARG) \
 { \
     int err_code = (CA_ERROR_CODE); \
