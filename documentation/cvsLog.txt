@@ -96,6 +96,11 @@ more robust 3.13 version, with array support, ported to 3.14
 
 support/autosave/asApp/src/dbrestore.c
 
+
+Replaced Debug macros with straight code
+
+Changes for WIN32; redefined Debug macro, but I don't like it
+
 v4.7  Dirk Zimoch (SLS) found and fixed problems with .sav files that lack a
 header line, or a version number.  Check return code from selected fseek()
 calls.
@@ -145,6 +150,20 @@ case initialProcess now before case interruptAccept
 
 support/autosave/asApp/src/save_restore.c
 
+Modified debug messages
+
+Don't treat an unsupported fsync() as an error.
+
+Increase stack size to epicsThreadStackBig.  Ron Sluiter found an instance of
+save_restore that crashed on a MV162 with a very small stack margin.
+
+v4.8 Don't quit trying to write file just because errno got set.
+Status PV's were being restricted to STRING_LEN chars, instead
+of PV_NAME_LEN chars.  (Thanks to Kay Kasemir for diagnosing and
+fixing these problems.)
+
+Changed for WIN32; eliminated Debug macro
+
 v4.7  Request-file parsing fixed.  Previously, blank but not empty lines (e.g.,
 containing a space character) seemed to contain the first word of the previous
 line, because name[] was not cleared before parsing a new line.
@@ -180,6 +199,10 @@ more robust 3.13 version, with array support, ported to 3.14
 =============================================================================
 
 support/autosave/asApp/src/save_restore.h
+
+Deleted Debug macro
+
+Changes for WIN32; redefined Debug macro, but I don't like it
 
 Status-PV name strings were restricted in length by a programming error
 Added TATTLE macro to report CA error
