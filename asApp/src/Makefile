@@ -5,12 +5,10 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
-#PROD_HOST += caExample
-#caExample_SRCS	+= caExample.c
-#caExample_LIBS	+= ca
-#caExample_LIBS	+= Com
-#ca_DIR           = $(EPICS_BASE_LIB)
-#Com_DIR          = $(EPICS_BASE_LIB)
+PROD_HOST += asVerify
+asVerify_SRCS	+= asVerify.c
+asVerify_LIBS	+= ca
+asVerify_LIBS	+= Com
 
 
 #=============================
