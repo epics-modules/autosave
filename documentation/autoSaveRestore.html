@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v4.1.3</h1>
+<h1 align="center">autosave v4.2</h1>
 
 This software automatically saves the values of EPICS process variables (PVs),
 to files on a server, and can automatically restore those values when the VME
@@ -20,6 +20,8 @@ and Pete Jemian (APS), Markus Janousch and David Maden (SLS), and I'm not sure
 who else.
 
 <h2> Module contents</h2>
+
+<h3>asApp/src</h3>
 <dl>
 <dt>save_restore.c
 <dd>saves PV values in files on a file server according to preset rules.
@@ -36,13 +38,15 @@ who else.
 <dt>save_restore.h, fGetDateStr.h
 <dd>headers
 
+<dt>asVerify.c
+<dd>Client-side tool to compare autosaved file with current PV values.
+Can also write an autosave file.
+</dl>
+
+<p><h3>asApp/Db</h3>
+<dl>
 <dt>auto_settings.req, auto_positions.req 
 <dd>Sample request files
-
-<dt>save_restoreStatus*.adl, save_restoreStatusLegend.adl,
-save_restoreStatus_more.adl, save_restoreStatus_tiny.adl,
-SR_X_Status.adl
-<dd>MEDM displays of save_restore status.
 
 <dt>save_restoreStatus.db
 <dd>database containing records save_restore uses to report status.
@@ -51,22 +55,62 @@ SR_X_Status.adl
 <dd>Test database for array save_restore.
 </dl>
 
+<p><h3>asApp/op/adl</h3>
+<dl>
+<dt>save_restoreStatus*.adl, save_restoreStatusLegend.adl,
+save_restoreStatus_more.adl, save_restoreStatus_tiny.adl,
+SR_X_Status.adl
+<dd>MEDM displays of save_restore status.
+</dl>
+
+
 <hr>
 <h2>How to use this software</h2>
 
 This software can be used in many different ways.  I'll describe what you have
 to do to use it as it's commonly used at APS beamlines to save PV values
-periodically, and restore them on reboot.
+periodically, and restore them on reboot.  A complete example of how
+autosave is used at APS can be found in the synApps xxx module.  The relevant
+files in that module are the following:
 
 <ul>
-<li><P> (required) Build save_restore.o, dbrestore.o, initHooks.o, and
-fGetDateStr.o.  Don't use an old copy of initHooks.o.   Although initHooks.c
-hasn't changed since save_restore v2.6, it uses a data structure from
-save_restore.h, which has changed, and if initHooks doesn't get recompiled, it
-will corrupt that data structure.
+<dl>
+<dt>xxx/configure/RELEASE
+<dd>look for "AUTOSAVE"
+<dt>xxx/xxxApp/src/Makefile
+<dd>look for "autosave"
+<dt>xxx/xxxApp/src/xxxCommonInclude.dbd
+<dd>look for "asSupport.dbd"
+<dt>xxx/iocBoot/iocvxWorks/save_restore.cmd
+<dd>the whole file
+<dt>xxx/iocBoot/iocvxWorks/auto_positions.req
+<dd>the whole file
+<dt>xxx/iocBoot/iocvxWorks/auto_settings.req
+<dd>the whole file
+<dt>xxx/iocBoot/iocvxWorks/st.cmd
+<dd>look for "save_restore.cmd" before the call to iocInit, and
+"create_monitor_set" after the call to iocInit.
+<dt>xxx/iocBoot/iocvxWorks/autosave
+<dd>a directory to hold autosave .sav files
+</dl>
+</ul>
 
+Here's a step-by-step program for deploying autosave.  Some of the steps
+are optional:
 
-<li><P> (required) Create "request" files (e.g., auto_settings.req,
+<h4>1. Build (required)</h4>
+Build the module and include the resulting library,
+libautosave.a, and database-definition file, asSupport.dbd, in an IOC's
+build.  For example, add
+<pre>	AUTOSAVE=&lt;path to the autosave module&gt;</pre>
+to xxx/configure/RELEASE, add
+<pre>	xxx_LIBS += autosave</pre>
+to xxxApp/src/Makefile, and add
+<pre>	include "asSupport.dbd"</pre>
+to iocxxxInclude.dbd.
+
+<h4>2. Write request files (required)</h4>
+Create "request" files (e.g., auto_settings.req,
 auto_positions.req) specifying the PVs whose values you want to save and
 restore.  The save files corresponding to these request files will have the
 ".req" suffix replaced by ".sav".
@@ -93,50 +137,61 @@ substitution is performed on the entire line, so it's possible to parameterize
 names of included files, as well as PV names.  It is also possible to define a
 macro that replaces its target with nothing.
 
+<p>Most synApps modules contain autosave-request files that are
+intended to be included in an ioc's autosave-request file(s).  For example,
+calc/calcApp/Db/scalcout_settings.req contains a list of the fields one
+might want to autosave for a single scalcout record.  This file is
+<i>include</i>d in calc/calcApp/Db/userStringCalcs10_settings.req, which,
+in turn, is included in xxx/iocBoot/iocvxWorks/auto_settings.req.
 
-<li><P> (optional, recommended) Specify one or more directories to be searched for
+<h4>3. Set request-file path (optional, recommended)</h4>
+Specify one or more directories to be searched for
 request files, using one or more invocations of the function
 <pre>
 	set_requestfile_path()
 </pre>
 
-<li><P> (optional, only on vxWorks) Specify the NFS host from which save files
-will be read at restore time, and to which they will be written at save time,
-by calling the function
+<h4>4. Set NFS host (optional, only available on vxWorks)</h4>
+Specify the NFS host from which save files will be read at restore time,
+and to which they will be written at save time, by calling the function
 <pre>
 	save_restoreSet_NFSHost()
 </pre>
 
-<li><P> (only on vxWorks) Use NFS, preferably as described above, or by
-including an nfsMount() command in your startup script.  Save_restore is only
-tested with NFS, though it has in the past and may still work with vxWorks'
-netDrv (ftp or rsh).
+<P>When autosave manages its own NFS mount, as this command directs it to do, it
+can fix a stale file handle by dismounting and remounting the file system.   
 
+<h4>5. Use NFS (recommended, only available on vxWorks) </h4>
 
-<li><P> (optional, recommended) Specify the directory in which you want save
+Use NFS, preferably as described above, or by including an nfsMount() command in
+your startup script.  Save_restore is only tested with NFS, though it has in the
+past and may still work with vxWorks' netDrv (ftp or rsh).
+
+<P>When autosave runs under operating systems other than vxWorks, it simply uses
+whatever mount the operating system, or a system administrator, has provided.
+
+<h4>6. Set save-file path (optional, recommended)</h4>
+Specify the directory in which you want save
 files to be written, by calling the function
 <pre>
 	set_savefile_path()
 </pre>
 in your startup script, before the create_xxx_set() commands, to specify the
-path to the directory.  If you are using NFS (strongly recommended), ensure that
-the path does not contain symbolic links.  If save_restore is managing its own
-NFS mount (if save_restoreSet_NFSHost() succeeded), this will be the mount
-point, so in this case the path must be specified as it exists on the NFS host. 
-<p>In my experience, VxWorks cannot write through a symbolic link.  (I don't
-understand all the ins and outs of this limitation.  It may be that symbolic
-links are OK if they contain absolute path names.)
+path to the directory.  If you are using NFS (strongly recommended), ensure
+that the path does not contain symbolic links.  In my experience, VxWorks
+cannot write through a symbolic link.  (I don't understand all the ins and outs
+of this limitation.  It may be that symbolic links are OK if they contain
+absolute path names.)
 
+<h4>7. Give write permission (required)</h4>
+Give the IOC write permission to the directory in which the save
+files are to be written.  If you forget this step, save_restore may be able to
+write save files, but the files will be corrupted because save_restore will not
+be permitted to change their lengths.  Save_restore attempts to detect this
+condition, but cannot work around it if the file length must increase.
 
-<li><P> (required) Give the IOC write permission to the directory in which the
-save files are to be written.  If you forget this step, save_restore may be able
-to write save files, but the files will eventually be corrupted because
-save_restore will not be permitted to change their lengths.  Save_restore
-attempts to detect this condition, but cannot work around it if the file length
-must increase.
-
-
-<li><P> (optional, recommended) Specify which save files are to be restored before
+<h4>8. Set restore conditions (optional, recommended)</h4>
+Specify which save files are to be restored before
 record initialization (pass 0) and which are to be restored after record
 initialization (pass 1), using the commands
 <pre>
@@ -172,21 +227,20 @@ overwrite any values read from the hardware.)
 
 </ol>
 
-<li><P> (required) Load a copy of initHooks that calls reboot_restore() to restore
+<h4>9. Load initHook routine (required)</h4>
+Load a copy of initHooks that calls reboot_restore() to restore
 saved parameter values.  The copy of initHooks included in this distribution is
-recommended.
+recommended.  This will happen automatically if the ioc's executable is built
+as described above.
 
-
-<li><P> (optional, recommended) Tell save_restore to writed dated backup files.
+<h4>10. Select save-file options (optional, recommended)</h4>
+Tell save_restore to writed dated backup files.
 At boot time, the restore software writes a backup copy of the ".sav" file from
 which it restored PV's.  This file can either be named xxx.sav.bu, and be
 rewritten every reboot, or named xxx.sav_YYMMDD-HHMMSS, where "YY..." is a
 date.  Dated backups are not overwritten.  If you want dated backup files, put
-either of the following two lines to your st.cmd file before the call to
-iocInit():
+the following line in your st.cmd file before the call toiocInit():
 <pre>
-	save_restoreDatedBackupFiles=1
-OR
 	save_restoreSet_DatedBackupFiles(1)
 </pre>
 
@@ -194,8 +248,17 @@ OR
   If a save file is restored in both pass 0 and pass 1, the boot-backup file
   will be written only during pass 0.
 
+<P>Tell save_restore to save sequence files.  The
+commands:
+<pre>
+	save_restoreSet_NumSeqFiles(3)
+	save_restoreSet_SeqPeriodInSeconds(600)
+</pre>
+will cause save_restore to maintain three copies of each .sav file, at
+ten-minute intervals.
 
-<li><P> (required) Invoke the "save" part of this software as part of the EPICS
+<h4>11. Start the save process (required)</h4>
+Invoke the "save" part of this software as part of the EPICS
 startup sequence, by calling create_XXX_set() -- e.g., adding lines of the form
 <pre>
 	create_monitor_set("auto_positions.req", 5, "P=xxx:")
@@ -206,9 +269,9 @@ want, but note that the file names "auto_positions" and "auto_settings" receive
 special treatment: they are default restore-file names specified by initHooks()
 if set_pass&lt;n&gt;_restoreFile() were never called.  The third argument to
 create_monitor_set()  is a macro-substitution string, as described above in the
-discussion of request files.  If supplied, this macro-substitution string
-supplements any macro strings supplied in include-file directives of request
-files read for this save set.
+discussion of request files (step 2).  If supplied, this macro-substitution
+string supplements any macro strings supplied in include-file directives of
+request files read for this save set.
 
 <P>For each "create_monitor_set(&lt;name&gt;.req, &lt;time&gt;, &lt;macro&gt;)" command, the
 save_restore process will write the files &lt;name&gt;.sav and &lt;name&gt;.savB every
@@ -228,10 +291,70 @@ Under vxWorks, you can avoid this by putting a
 	taskDelay(&lt;number_of_60_Hz_clock_ticks&gt;)
 </pre>
 before create_monitor_set().
-</ul>
 
+<h4>12. Maintain save files (recommended)</h4>
+Autosave is not completely bulletproof.  Most APS beamlines have
+at least one autosave problem every year.  If autosave fails you might be able
+to detect it, or work around it, using asVerify.  This client-side tool reads
+an autosave .sav file and independently verifies that the values it contains
+agree with current PV values.  The tool can also be used to write a .sav file.
+Type asVerify without command-line options for usage and examples.
 
+<P>Note that asVerify cannot read an autosave request file; it must have a
+.sav file to work from.
+
+<hr>
 <h2>About save files</h2>
+PV values in a save file have been converted to strings, in most cases simply
+by having been read as strings -- e.g., <code>ca_get(DBR_STRING,...)</code>.
+Most data types are read using channel access and written using dbStaticLib
+calls.  Four data types get special attention:
+<dl>
+<dt>double
+<dd>read as double, converted to string with the format "%.14g".  (Otherwise,
+the record's .PREC field would limit the precision.)
+<dt>float
+<dd>Same as double, but the formst is "%.7g".
+<dt>menu and enum
+<dd>Channel access does not distinguish these types.  dbStaticLib cannot write
+enums as strings, because enum strings may not be defined until after
+record initialization--long after the values must have been restored.
+<dt>arrays of any kind
+<dd>Arrays are read and written using database access.  Channel access cannot
+read only the defined portion of an array, dbStaticLib cannot write an array.
+(However, asVerify uses channel access to read arrays.)
+</dl>
+
+<P>Here is a sample save file.  Characters in <font color=blue>blue</font> are
+documentation comments, and are not part of the file:
+<P>
+<pre>
+# save/restore V4.9	Automatically generated - DO NOT MODIFY - 060720-154526
+! 1 channel(s) not connected - or not all gets were successful
+xxx:SR_ao.DISP 0 <font color=blue>(uchar)</font>
+xxx:SR_ao.PREC 1 <font color=blue>(short)</font>
+xxx:SR_bo.IVOV 2 <font color=blue>(ushort)</font>
+xxx:SR_ao.SCAN 3 <font color=blue>(enum - saved/restored as a short)</font>
+xxx:SR_ao.VAL 4.1234567890123 <font color=blue>(double, printed with format "%.14g")</font>
+xxx:SR_scaler.RATE 1.234568 <font color=blue>(float, printed with format "%.7g")</font>
+xxx:SR_ao.DESC description <font color=blue>(string)</font>
+xxx:SR_ao.OUT xxx:SR_bo.VAL NPP NMS <font color=blue>(link)</font>
+xxx:SR_ao.RVAL 4 <font color=blue>(long)</font>
+xxx:SR_bi.SVAL 2 <font color=blue>(ulong)</font>
+#i_dont_exist.VAL Search Issued <font color=blue>(no such PV)</font>
+xxx:SR_char_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_double_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_float_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_long_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_short_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_string_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_uchar_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_ulong_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+xxx:SR_ushort_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+&lt;END&gt;
+
+</pre>
+
 Save files are not intended to be edited manually.  If you, nevertheless, do
 edit a save file, you must end it with the text
 <pre>
@@ -245,8 +368,9 @@ successfully, save_restore will not overwrite the file unless a good ".savB"
 backup file exists. Similarly, it will not overwrite the ".savB" file unless
 the save file was successfully written.
 
-Also, you can comment out lines in a .sav file by beginning them with '#'.
+<P>You can comment out lines in a .sav file by beginning them with '#'.
 
+<hr>
 <h2>User-callable functions</h2>
 
 <dl>
@@ -371,7 +495,7 @@ every <code>period</code> seconds.
 <dd>This function specifies a save file to be restored during iocInit,
 	before record initialization. Up to eight files can be specified using calls to this function.
 
-<P><dt><code>int set_pass1_restoreFile(char *save_file)
+<P><dt><code>int set_pass1_restoreFile(char *save_file)</code>
 <dd>This function specifies a save file to be restored during iocInit,
 	after record initialization.
 	Up to eight files can be specified using calls to this function.
@@ -423,15 +547,14 @@ every <code>period</code> seconds.
 <h2>Example of use</h2>
 
 
+
 ---------- begin excerpt from st.cmd ----------------------
 
 <pre>
-### Load custom EPICS software [including save_restore and initHooks]
-ld < xxxLib
 .
 .
 .
-### autoSaveRestore setup
+<font color="blue">### autoSaveRestore setup
 save_restoreSet_Debug(0)
 
 # status-PV prefix, so save_restore can find its status PV's.
@@ -476,16 +599,18 @@ set_pass1_restoreFile("auto_settings.sav")
 save_restoreSet_NumSeqFiles(3)
 
 # Time interval between sequenced backups
-save_restoreSet_SeqPeriodInSeconds(60)
+save_restoreSet_SeqPeriodInSeconds(600)
 
 # NFS host name and IP address
-save_restoreSet_NFSHost("oxygen", "164.54.52.4")
+save_restoreSet_NFSHost("oxygen", "164.54.52.4")</font>
+.
 .
 .
 dbLoadDatabase("../../dbd/xxxApp.dbd")
-dbLoadRecords("xxxApp/Db/whatever.db"...
-
-dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=xxx:")
+.
+.
+.
+<font color="blue">dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=xxx:")</font>
 .
 .
 .
@@ -493,13 +618,13 @@ iocInit
 .
 .
 .
-### Start up the save_restore task and tell it what to do.
+<font color="blue">### Start up the save_restore task and tell it what to do.
 # The task is actually named "save_restore".
 #
 # save positions every five seconds
 create_monitor_set("auto_positions.req", 5, "P=xxx:")
 # save other things every thirty seconds
-create_monitor_set("auto_settings.req", 30, "P=xxx:")
+create_monitor_set("auto_settings.req", 30, "P=xxx:")</font>
 .
 .
 .
@@ -510,7 +635,7 @@ create_monitor_set("auto_settings.req", 30, "P=xxx:")
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: April 7, 2006 
+    Last modified: July 20, 2006 
 </address>
 </body>
 </html>

@@ -10,17 +10,24 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.2</h3>
+<ul>
+<li>Added asVerify, a client-side tool to compare autosave .sav files
+with current PV values.  Also can write a .sav file useable for restoring
+values.
+</ul>
+
 <h3>4.1.3</h3>
 <ul>
-<li>Don't quit trying to write file just because errno got set.
-Status PV's were being restricted to STRING_LEN chars, instead
-of PV_NAME_LEN chars.  (Thanks to Kay Kasemir for diagnosing and
-fixing these problems.)
-<li>Increase stack size to epicsThreadStackBig.  Ron Sluiter found an
-instance of save_restore that crashed on a MV162 with a very small stack margin.
-<li>Don't treat an unsupported fsync() as an error.  (Thanks to Eric Norum for
-identifying and fixing this problem.)
-<li>Modified debugging messages.
+<li>Debug macros made more compliant with various compilers.
+<li>save_restore made less sensitive to errors.  Previously, any file
+write that set errno would abort the save, but this was just stupid,
+and caused way more problems than it solved.
+
+<li>Status PV's were restricted to STRING_LEN (30) characters, instead
+of PV_NAME_LEN (61).
+<li>Increased stack size to epicsThreadStackBig.
+<li>Don't treat unsupported fsync() as an error.
 </ul>
 
 <h3>4.1.2</h3>
@@ -346,4 +353,3 @@ or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy" command.
 </address>
 </body>
 </html>
-
