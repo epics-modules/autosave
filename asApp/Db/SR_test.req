@@ -1,0 +1,33 @@
+# uchar
+$(P)SR_ao.DISP
+# short
+$(P)SR_ao.PREC
+# ushort
+$(P)SR_bo.IVOV
+# enum
+$(P)SR_ao.SCAN
+# double
+$(P)SR_ao.VAL
+# float
+$(P)SR_scaler.RATE
+# string
+$(P)SR_ao.DESC
+# link
+$(P)SR_ao.OUT
+# long
+$(P)SR_ao.RVAL
+# ulong
+$(P)SR_bi.SVAL
+# no such PV
+i_dont_exist.VAL
+# arrays
+$(P)SR_char_array
+$(P)SR_double_array
+$(P)SR_float_array
+$(P)SR_long_array
+$(P)SR_short_array
+$(P)SR_string_array
+$(P)SR_uchar_array
+$(P)SR_ulong_array
+$(P)SR_ushort_array
+<END>

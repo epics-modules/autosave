@@ -1,0 +1,53 @@
+record(ao, "$(P)SR_ao") {
+}
+record(bo, "$(P)SR_bo") {
+}
+record(bi, "$(P)SR_bi") {
+}
+record(scaler, "$(P)SR_scaler") {
+}
+# arrays
+record(waveform, "$(P)SR_char_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "CHAR")
+}
+
+record(waveform, "$(P)SR_double_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "DOUBLE")
+}
+
+record(waveform, "$(P)SR_float_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "FLOAT")
+}
+
+record(waveform, "$(P)SR_long_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "LONG")
+}
+
+record(waveform, "$(P)SR_short_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "SHORT")
+}
+
+record(waveform, "$(P)SR_string_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "STRING")
+}
+
+record(waveform, "$(P)SR_uchar_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "UCHAR")
+}
+
+record(waveform, "$(P)SR_ulong_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "ULONG")
+}
+
+record(waveform, "$(P)SR_ushort_array") {
+  field(NELM, "$(N)")
+  field(FTVL, "USHORT")
+}
