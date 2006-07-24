@@ -10,14 +10,26 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave v4.2</h1>
 
-This software automatically saves the values of EPICS process variables (PVs),
-to files on a server, and can automatically restore those values when the VME
-crate is rebooted.  The original author is Bob Dalesio; I made some
-improvements; Frank Lenkszus made some more improvements, which I folded into
-the version I've been maintaining.  A bunch of people contributed to getting
-the software running on PPC hardware, including Ron Sluiter, Andrew Johnson,
-and Pete Jemian (APS), Markus Janousch and David Maden (SLS), and I'm not sure
-who else.
+Autosave automatically saves the values of EPICS process variables (PVs) to
+files on a server, and restores those values when the IOC is rebooted.  The
+original author is Bob Dalesio; I made some improvements; Frank Lenkszus made
+some more improvements, which I folded into the version I've been maintaining. 
+A bunch of people contributed to getting the software running on PPC hardware,
+including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus Janousch
+and David Maden (SLS), and I'm not sure who else.
+
+<P>Autosave is a two-part operation: run-time save, and boot-time restore.  The
+run-time part (save_restore.c) is started by commands in the IOC startup file,
+and persists while the IOC is running.  Its primary job is to save PV values to
+files on a server, but it also supports manual restore and other management
+operations.  The boot-time part (dbrestore.c) is invoked during iocInit, via an
+EPICS initHook.  It restores PV values from files written by the run-time part,
+and does not persist after iocInit returns.
+
+<P>In addition to the autosave software, the autosave module contains a client
+program, asVerify, to compare written autosave files with current PV values.
+This program can also write an autosave file from which PV values can be
+restored.
 
 <h2> Module contents</h2>
 
@@ -51,8 +63,8 @@ Can also write an autosave file.
 <dt>save_restoreStatus.db
 <dd>database containing records save_restore uses to report status.
 
-<dt>SR_array_test.vdb
-<dd>Test database for array save_restore.
+<dt>SR_test.db
+<dd>Test database for autosave and asVerify.
 </dl>
 
 <p><h3>asApp/op/adl</h3>
@@ -65,7 +77,7 @@ SR_X_Status.adl
 
 
 <hr>
-<h2>How to use this software</h2>
+<h2>How to use autosave</h2>
 
 This software can be used in many different ways.  I'll describe what you have
 to do to use it as it's commonly used at APS beamlines to save PV values
@@ -292,16 +304,45 @@ Under vxWorks, you can avoid this by putting a
 </pre>
 before create_monitor_set().
 
-<h4>12. Maintain save files (recommended)</h4>
-Autosave is not completely bulletproof.  Most APS beamlines have
-at least one autosave problem every year.  If autosave fails you might be able
-to detect it, or work around it, using asVerify.  This client-side tool reads
-an autosave .sav file and independently verifies that the values it contains
-agree with current PV values.  The tool can also be used to write a .sav file.
-Type asVerify without command-line options for usage and examples.
+<h4>12. Maintain save files</h4>
 
-<P>Note that asVerify cannot read an autosave request file; it must have a
-.sav file to work from.
+Autosave is not completely bulletproof.  Most APS beamlines have at least one
+autosave related problem every year.  If autosave fails, you might be able to
+detect it, or work around it, using asVerify.  This client-side program reads an
+autosave .sav file and independently verifies that the values it contains agree
+with current PV values.  The program can also be used to write a .sav file,
+given a list of PVs.  The list of PVs is normally an autosave .sav file, but a
+file containing nothing but PV names, one per line, would also work. 
+
+Here's asVerify's command line:
+<pre>
+usage: asVerify [-vrd] <autosave_file>
+         -v (verbose) causes all PV's to be printed out
+             Otherwise, only PV's whose values differ are printed.
+         -r (restore_file) causes a restore file named
+            '<autosave_file>.asVerify' to be written.
+         -d (debug) increment debug level by one.
+         -rv (or -vr) does both
+examples:
+    asVerify auto_settings.sav
+        (reports only PVs whose values differ from saved values)
+    asVerify -v auto_settings.sav
+        (reports all PVs, marking differences with '***'.)
+    asVerify -vr auto_settings.sav
+        (reports all PVs, and writes a restore file.)
+    asVerify auto_settings.sav
+    caput &lt;myStatusPV&gt; $?
+        (writes number of differences found to a PV.)
+
+NOTE: For the purpose of writing a restore file, you can specify a .req
+file (or any file that contains PV names, one per line) instead of a
+.sav file.  However, this program will misunderstand any 'file' commands
+that occur in a .req file.  (It will look for a PV named 'file'.)
+</pre>
+
+<P>Note that asVerify cannot read an autosave request file; it will understand
+any PV names contained in the file, but it cannot parse the "file" command,
+perform macro substitutions, or include other request files.
 
 <hr>
 <h2>About save files</h2>
@@ -635,7 +676,7 @@ create_monitor_set("auto_settings.req", 30, "P=xxx:")</font>
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: July 20, 2006 
+    Last modified: July 24, 2006 
 </address>
 </body>
 </html>
