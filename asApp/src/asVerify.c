@@ -9,13 +9,13 @@
 
 #include <ctype.h> /* isalpha */
 #include <math.h> /* fabs */
-#include	<float.h>	/* for safeDoubleToFloat() */
-
+#include <float.h>	/* for safeDoubleToFloat() */
 #include "cadef.h"
 
-#define FSMALL 1.e-6
-#define DSMALL 1.e-8
-#define BUF_SIZE 1000
+#if 1
+#include "save_restore.h"
+#else
+#define BUF_SIZE 120
 #define ARRAY_BEGIN '{'
 #define ARRAY_END '}'
 #define ELEMENT_BEGIN '\"'
@@ -25,10 +25,18 @@
 #define ARRAY_MARKER_LEN 7
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"
-#define WRITE_HEADER if (!wrote_head) {printf("PVname (type) saved_value live_value\n"); \
-printf("====================================\n"); wrote_head=1;}
-#define PEND_TIME 10.0
-#define		ASVERSION "asVerify V1.1"
+#define PV_NAME_LEN 80	/* string containing a PV name */
+#define PATH_SIZE 255	/* max size of the complete path to one file */
+#endif
+
+#define FSMALL (10*FLT_MIN)
+#define DSMALL (10*DBL_MIN)
+
+#define WRITE_HEADER if (!wrote_head) {printf("    PVname saved_value live_value\n"); \
+printf("    =============================\n"); wrote_head=1;}
+#define PEND_TIME 5.0
+
+#define	ASVERSION "asVerify V1.1"
 
 #ifndef PVNAME_STRINGSZ
 #define PVNAME_STRINGSZ 61	/* includes terminating null */
@@ -36,6 +44,20 @@ printf("====================================\n"); wrote_head=1;}
 
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count,
 	char *read_buffer, int debug);
+
+void printUsage(void) {
+	fprintf(stderr,"usage: asVerify [-vr] <autosave_file>\n");
+	fprintf(stderr,"         -v (verbose) causes all PV's to be printed out\n");
+	fprintf(stderr,"             Otherwise, only PV's whose values differ are printed.\n");
+	fprintf(stderr,"         -r (restore_file) causes a restore file named\n");
+	fprintf(stderr,"            '<autosave_file>.asVerify' to be written.\n");
+	fprintf(stderr,"         -rv (or -vr) does both\n");
+	fprintf(stderr,"example: asVerify -v auto_settings.sav\n\n");
+	fprintf(stderr,"NOTE: For the purpose of writing a restore file, you can specify a .req\n");
+	fprintf(stderr,"file (or any file that consists of a list of PV names, one per line)\n");
+	fprintf(stderr,"instead of a .sav file.  However, this program will misunderstand any\n");
+	fprintf(stderr,"'file' commands that occur in a .req file.  (It will look for a PV named 'file'.)\n");
+}
 
 int main(int argc,char **argv)
 {
@@ -45,32 +67,25 @@ int main(int argc,char **argv)
 	char	*svalue, *svalue_read;
 	chid	chid;
 	FILE	*fp=NULL, *ftmp=NULL, *fr=NULL;
-	char	c, s[BUF_SIZE], *bp, PVname[70], value_string[BUF_SIZE], filename[300];
-	char	restore_filename[300], *tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
+	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE], filename[PATH_SIZE];
+	char	restore_filename[PATH_SIZE], *tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
-	int		i, j, n, is_scalar, numPVs, numDifferences, numPVsNotConnected;
+	int		i, j, n, is_scalar, numPVs, numDifferences, numPVsNotConnected, nspace;
 	int		different, wrote_head=0, status, file_ok=0;
 	int		verbose = 0, debug=0, write_restore_file=0;
 	long 	element_count=0, storageBytes=0, alloc_CA_buffer=0;
 
 	/* Parse args */
 	if (argc == 1) {
-		fprintf(stderr,"usage: asVerify [-vr] <autosave_file>\n");
-		fprintf(stderr,"         -v (verbose) causes all PV's to be printed out\n");
-		fprintf(stderr,"             Otherwise, only PV's whose values differ are printed.\n");
-		fprintf(stderr,"         -r (restore_file) causes a restore file named\n");
-		fprintf(stderr,"            '<autosave_file>.asVerify' to be written.\n");
-		fprintf(stderr,"         -rv (or -vr) does both\n");
-		fprintf(stderr,"example: asVerify -v auto_settings.sav\n");
-		fprintf(stderr,"NOTE: Don't specify a .req file as the autosave file.\n");
-		fprintf(stderr,"This program is not smart enough to parse a request file.\n");
+		printUsage();
 		exit(1);
 	}
 	if (*argv[1] == '-') {
 		for (n=1; n<strlen(argv[1]); n++) {
 			if (argv[1][n] == 'v') verbose = 1;
 			if (argv[1][n] == 'r') write_restore_file = 1;
-			if (argv[1][n] == 'd') {printf("debug on\n"); debug = 1;}
+			if (argv[1][n] == 'd') printf("debug=%d\n", ++debug);
+			if (argv[1][n] == 'h') {printUsage(); exit(1);}
 		}
 		strcpy(filename, argv[2]);
 	} else {
@@ -123,7 +138,6 @@ int main(int argc,char **argv)
 	status = fseek(fp, 0, SEEK_SET); /* file is ok.  go to beginning */
 	if (status) printf("Can't go back to beginning of file.");
 
-	bp = fgets(s, BUF_SIZE, fp); /* skip over header line */
 	numDifferences = numPVs = numPVsNotConnected = 0;
 
 	/* init CA buffer space */
@@ -137,47 +151,54 @@ int main(int argc,char **argv)
 		return(-1);
 	}
 
-	SEVCHK(ca_context_create(ca_disable_preemptive_callback),"ca_context_create");
+	status = ca_context_create(ca_disable_preemptive_callback);
+	if (!(status & CA_M_SUCCESS)) {
+		printf("Can't create CA context.  I quit.\n");
+		fclose(fp); fp = NULL;
+		remove(tempname);
+		if (write_restore_file) fclose(fr); fr = NULL;
+		return(-1);
+	}
 	while ((bp=fgets(s, BUF_SIZE, fp))) {
 		if (debug) printf("\nasVerify: buffer '%s'\n", bp);
+		if (bp[0] == '#') {
+			/* A PV to which autosave could not connect, or just a comment in the file. */
+			if (strstr(bp, "Search Issued")) numPVsNotConnected++;
+			if (write_restore_file) fprintf(fr, "%s", bp);
+			continue;
+		}
 		/* NOTE value_string must have room for nearly  BUF_SIZE characters */
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
 		if (debug) printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n",
 				PVname, strlen(value_string), value_string);
 		if (n<3) *value_string = 0;
-		if (PVname[0] == '#') {
-			/* A PV to which autosave could not connect, or just a comment in the file. */
-			if (strncmp(value_string, "Search Issued", 13) == 0) numPVsNotConnected++;
-			if (write_restore_file) fprintf(fr, "%s", bp);
-			continue;
-		}
 		if (strlen(PVname) >= PVNAME_STRINGSZ) {
 			/* Impossible PV name */
 			if (write_restore_file) fprintf(fr, "#? %s", bp);
 			continue;
 		}
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
-			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;;
-			if (debug) printf("asVerify: is_scalar=%d\n", is_scalar);
-			SEVCHK(ca_create_channel(PVname,NULL,NULL,10,&chid),"ca_create_channel failure");
-			SEVCHK(ca_pend_io(PEND_TIME),"ca_pend_io failure");
+			status = ca_create_channel(PVname,NULL,NULL,10,&chid);
+			if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 			if ((chid == NULL) || (ca_state(chid) != cs_conn)) {
-				printf("***%s not connected.  Saved value='%s'\n", PVname, value_string);
+				printf("*** '%s' not connected.  Saved value='%s'\n", PVname, value_string);
 				numPVsNotConnected++;
 				if (chid) ca_clear_channel(chid);
-				if (write_restore_file) fprintf(fr, "#%s not connected", PVname);
+				if (write_restore_file) fprintf(fr, "#'%s' not connected\n", PVname);
 				continue;
 			}
 			numPVs++;
 			field_type = ca_field_type(chid);
-			if (debug) printf("%s native field_type=%d\n", PVname, field_type);
-			/* If string will work, use string */
+			if (debug) printf("'%s' native field_type=%d\n", PVname, field_type);
+			/* If DBF_STRING will work, use it. */
 			if (field_type!=DBF_FLOAT && field_type!=DBF_DOUBLE && field_type!=DBF_ENUM)
 				field_type = DBF_STRING;
 			if (field_type==DBF_ENUM) field_type = DBF_SHORT;
 
-
-			element_count = is_scalar ? 1 : ca_element_count(chid);
+			element_count = ca_element_count(chid);
+			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
+			if (element_count > 1) is_scalar = 0;
+			if (debug) printf("asVerify: is_scalar=%d\n", is_scalar);
 
 			/* allocate storage for CA and for reading the file */
 			storageBytes = dbr_size_n(field_type, element_count);
@@ -207,8 +228,9 @@ int main(int argc,char **argv)
 			switch (field_type) {
 			case DBF_FLOAT:
 				pfvalue = (float *)CA_buffer;
-				SEVCHK(ca_array_get(DBR_FLOAT,element_count,chid,(void *)pfvalue),"ca_get failure");
-				SEVCHK(ca_pend_io(PEND_TIME),"ca_pend_io failure");
+				status = ca_array_get(DBR_FLOAT,element_count,chid,(void *)pfvalue);
+				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
+				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
 				if (is_scalar) {
 					different = fabs((float)(atof(value_string)) - *pfvalue) > FSMALL;
 				} else {
@@ -223,9 +245,9 @@ int main(int argc,char **argv)
 				if (different || verbose) {
 					WRITE_HEADER;
 					if (is_scalar) {
-						printf("%s%s (float) %f %f\n", different?"*** ":"", PVname, (float)(atof(value_string)), *pfvalue);
+						printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, (float)(atof(value_string)), *pfvalue);
 					} else {
-						printf("%s%s (float array) %d diff%1c", different?"*** ":"", PVname, different, different==1?' ':'s');
+						printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
 						if (different) printf(", maxDiff=%f", max_diff);
 						printf("\n");
 					}
@@ -244,8 +266,9 @@ int main(int argc,char **argv)
 				break;
 			case  DBF_DOUBLE:
 				pdvalue = (double *)CA_buffer;
-				SEVCHK(ca_array_get(DBR_DOUBLE,element_count,chid,(void *)pdvalue),"ca_get failure");
-				SEVCHK(ca_pend_io(PEND_TIME),"ca_pend_io failure");
+				status = ca_array_get(DBR_DOUBLE,element_count,chid,(void *)pdvalue);
+				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
+				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
 				if (is_scalar) {
 					different = fabs(atof(value_string) - *pdvalue) > DSMALL;
 				} else {
@@ -260,9 +283,9 @@ int main(int argc,char **argv)
 				if (different || verbose) {
 					WRITE_HEADER;
 					if (is_scalar) {
-						printf("%s%s (double) %f %f\n", different?"*** ":"", PVname, atof(value_string), *pdvalue);
+						printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, atof(value_string), *pdvalue);
 					} else {
-						printf("%s%s (double array) %d diff%1c", different?"*** ":"", PVname, different, different==1?' ':'s');
+						printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
 						if (different) printf(", maxDiff=%f", max_diff);
 						printf("\n");
 					}
@@ -281,8 +304,9 @@ int main(int argc,char **argv)
 				break;
 			case  DBF_SHORT:
 				penum_value = (short *)CA_buffer;
-				SEVCHK(ca_array_get(DBR_SHORT,element_count,chid,(void *)penum_value),"ca_get failure");
-				SEVCHK(ca_pend_io(PEND_TIME),"ca_pend_io failure");
+				status = ca_array_get(DBR_SHORT,element_count,chid,(void *)penum_value);
+				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
+				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
 				if (is_scalar) {
 					different = atoi(value_string) != *penum_value;
 				} else {
@@ -295,9 +319,9 @@ int main(int argc,char **argv)
 				if (different || verbose) {
 					WRITE_HEADER;
 					if (is_scalar) {
-						printf("%s%s (enum) %d %d\n", different?"*** ":"", PVname, atoi(value_string), *penum_value);
+						printf("%s%-25s %-25d %d\n", different?"*** ":"    ", PVname, atoi(value_string), *penum_value);
 					} else {
-						printf("%s%s (enum array) %d diff%1c\n", different?"*** ":"", PVname, different, different==1?' ':'s');
+						printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
 					}
 				}
 				if (write_restore_file) {
@@ -314,8 +338,9 @@ int main(int argc,char **argv)
 				break;
 			case  DBF_STRING:
 				svalue = (char *)CA_buffer;
-				SEVCHK(ca_array_get(DBR_STRING,element_count,chid,(void *)svalue),"ca_get failure");
-				SEVCHK(ca_pend_io(PEND_TIME),"ca_pend_io failure");
+				status = ca_array_get(DBR_STRING,element_count,chid,(void *)svalue);
+				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
+				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
 				if (is_scalar) {
 					different = strcmp(value_string, svalue);
 				} else {
@@ -330,9 +355,10 @@ int main(int argc,char **argv)
 				if (different || verbose) {
 					WRITE_HEADER;
 					if (is_scalar) {
-						printf("%s%s (string) '%s' '%s'\n", different?"*** ":"", PVname, value_string, svalue);
+						nspace = 24-strlen(value_string); if (nspace < 1) nspace = 1;
+						printf("%s%-24s '%s'%*s'%s'\n", different?"*** ":"    ", PVname, value_string, nspace, "", svalue);
 					} else {
-						printf("%s%s (string array) %d diff%1c\n", different?"*** ":"", PVname, different, different==1?' ':'s');
+						printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
 					}
 				}
 				if (write_restore_file) {
