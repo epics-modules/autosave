@@ -29,8 +29,13 @@
 #define PATH_SIZE 255	/* max size of the complete path to one file */
 #endif
 
+#if 0
 #define FSMALL (10*FLT_MIN)
 #define DSMALL (10*DBL_MIN)
+#else
+#define FSMALL 1.e-6
+#define DSMALL 1.e-8
+#endif
 
 #define WRITE_HEADER if (!wrote_head) {printf("    PVname saved_value live_value\n"); \
 printf("    =============================\n"); wrote_head=1;}
