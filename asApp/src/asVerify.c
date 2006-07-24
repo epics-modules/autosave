@@ -56,12 +56,22 @@ void printUsage(void) {
 	fprintf(stderr,"             Otherwise, only PV's whose values differ are printed.\n");
 	fprintf(stderr,"         -r (restore_file) causes a restore file named\n");
 	fprintf(stderr,"            '<autosave_file>.asVerify' to be written.\n");
+	fprintf(stderr,"         -d (debug) increment debug level by one.\n");
 	fprintf(stderr,"         -rv (or -vr) does both\n");
-	fprintf(stderr,"example: asVerify -v auto_settings.sav\n\n");
+	fprintf(stderr,"examples:\n");
+	fprintf(stderr,"    asVerify auto_settings.sav\n");
+	fprintf(stderr,"        (reports only PVs whose values differ from saved values)\n");
+	fprintf(stderr,"    asVerify -v auto_settings.sav\n");
+	fprintf(stderr,"        (reports all PVs, marking differences with '***'.)\n");
+	fprintf(stderr,"    asVerify -vr auto_settings.sav\n");
+	fprintf(stderr,"        (reports all PVs, and writes a restore file.)\n");
+	fprintf(stderr,"    asVerify auto_settings.sav\n");
+	fprintf(stderr,"    caput <myStatusPV> $?\n");
+	fprintf(stderr,"        (writes number of differences found to a PV.)\n\n");
 	fprintf(stderr,"NOTE: For the purpose of writing a restore file, you can specify a .req\n");
-	fprintf(stderr,"file (or any file that consists of a list of PV names, one per line)\n");
-	fprintf(stderr,"instead of a .sav file.  However, this program will misunderstand any\n");
-	fprintf(stderr,"'file' commands that occur in a .req file.  (It will look for a PV named 'file'.)\n");
+	fprintf(stderr,"file (or any file that contains PV names, one per line) instead of a\n");
+	fprintf(stderr,".sav file.  However, this program will misunderstand any 'file' commands\n");
+	fprintf(stderr,"that occur in a .req file.  (It will look for a PV named 'file'.)\n");
 }
 
 int main(int argc,char **argv)
@@ -75,7 +85,7 @@ int main(int argc,char **argv)
 	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE], filename[PATH_SIZE];
 	char	restore_filename[PATH_SIZE], *tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
-	int		i, j, n, is_scalar, numPVs, numDifferences, numPVsNotConnected, nspace;
+	int		i, j, n, is_scalar, is_scalar_in_file, numPVs, numDifferences, numPVsNotConnected, nspace;
 	int		different, wrote_head=0, status, file_ok=0;
 	int		verbose = 0, debug=0, write_restore_file=0;
 	long 	element_count=0, storageBytes=0, alloc_CA_buffer=0;
@@ -201,9 +211,10 @@ int main(int argc,char **argv)
 			if (field_type==DBF_ENUM) field_type = DBF_SHORT;
 
 			element_count = ca_element_count(chid);
-			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
+			is_scalar_in_file = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
+			is_scalar = is_scalar_in_file;
 			if (element_count > 1) is_scalar = 0;
-			if (debug) printf("asVerify: is_scalar=%d\n", is_scalar);
+			if (debug) printf("asVerify: is_scalar=%d, is_scalar_in_file=%d\n", is_scalar, is_scalar_in_file);
 
 			/* allocate storage for CA and for reading the file */
 			storageBytes = dbr_size_n(field_type, element_count);
@@ -224,7 +235,7 @@ int main(int argc,char **argv)
 			/* use second half of CA_buffer for values read from .sav file */
 			read_buffer = CA_buffer+storageBytes;
 
-			if (!is_scalar) {
+			if (!is_scalar_in_file) {
 				if (debug) printf("asVerify: calling read_array\n");
 				memset(read_buffer, 0, storageBytes);
 				read_array(fp, PVname, value_string, field_type, element_count, read_buffer, debug);
@@ -236,26 +247,31 @@ int main(int argc,char **argv)
 				status = ca_array_get(DBR_FLOAT,element_count,chid,(void *)pfvalue);
 				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
-				if (is_scalar) {
-					different = fabs((float)(atof(value_string)) - *pfvalue) > FSMALL;
-				} else {
-					pf_read = (float *)read_buffer;
-					for (i=0, different=0, max_diff=0.; i<element_count; i++) {
-						diff = fabs(pf_read[i] - pfvalue[i]);
-						if (diff > max_diff) max_diff = diff;
-						different += diff > FSMALL;
-					}
-				}
-				if (different) numDifferences++;
-				if (different || verbose) {
-					WRITE_HEADER;
+				if (is_scalar == is_scalar_in_file) {
 					if (is_scalar) {
-						printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, (float)(atof(value_string)), *pfvalue);
+						different = fabs((float)(atof(value_string)) - *pfvalue) > FSMALL;
 					} else {
-						printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
-						if (different) printf(", maxDiff=%f", max_diff);
-						printf("\n");
+						pf_read = (float *)read_buffer;
+						for (i=0, different=0, max_diff=0.; i<element_count; i++) {
+							diff = fabs(pf_read[i] - pfvalue[i]);
+							if (diff > max_diff) max_diff = diff;
+							different += diff > FSMALL;
+						}
 					}
+					if (different) numDifferences++;
+					if (different || verbose) {
+						WRITE_HEADER;
+						if (is_scalar) {
+							printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, (float)(atof(value_string)), *pfvalue);
+						} else {
+							printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+							if (different) printf(", maxDiff=%f", max_diff);
+							printf("\n");
+						}
+					}
+				} else {
+					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
+						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				}
 				if (write_restore_file) {
 					if (is_scalar) {
@@ -274,26 +290,31 @@ int main(int argc,char **argv)
 				status = ca_array_get(DBR_DOUBLE,element_count,chid,(void *)pdvalue);
 				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
-				if (is_scalar) {
-					different = fabs(atof(value_string) - *pdvalue) > DSMALL;
-				} else {
-					pd_read = (double *)read_buffer;
-					for (i=0, different=0, max_diff=0.; i<element_count; i++) {
-						diff = fabs(pd_read[i] - pdvalue[i]);
-						if (diff > max_diff) max_diff = diff;
-						different += diff > DSMALL;
-					}
-				}
-				if (different) numDifferences++;
-				if (different || verbose) {
-					WRITE_HEADER;
+				if (is_scalar == is_scalar_in_file) {
 					if (is_scalar) {
-						printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, atof(value_string), *pdvalue);
+						different = fabs(atof(value_string) - *pdvalue) > DSMALL;
 					} else {
-						printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
-						if (different) printf(", maxDiff=%f", max_diff);
-						printf("\n");
+						pd_read = (double *)read_buffer;
+						for (i=0, different=0, max_diff=0.; i<element_count; i++) {
+							diff = fabs(pd_read[i] - pdvalue[i]);
+							if (diff > max_diff) max_diff = diff;
+							different += diff > DSMALL;
+						}
 					}
+					if (different) numDifferences++;
+					if (different || verbose) {
+						WRITE_HEADER;
+						if (is_scalar) {
+							printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, atof(value_string), *pdvalue);
+						} else {
+							printf("%s%-25s (array) %d diff%1c", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+							if (different) printf(", maxDiff=%f", max_diff);
+							printf("\n");
+						}
+					}
+				} else {
+					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
+						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				}
 				if (write_restore_file) {
 					if (is_scalar) {
@@ -312,22 +333,27 @@ int main(int argc,char **argv)
 				status = ca_array_get(DBR_SHORT,element_count,chid,(void *)penum_value);
 				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
-				if (is_scalar) {
-					different = atoi(value_string) != *penum_value;
-				} else {
-					penum_value_read = (short *)read_buffer;
-					for (i=0, different=0; i<element_count; i++) {
-						different += (penum_value_read[i] != penum_value[i]);
-					}
-				}
-				if (different) numDifferences++;
-				if (different || verbose) {
-					WRITE_HEADER;
+				if (is_scalar == is_scalar_in_file) {
 					if (is_scalar) {
-						printf("%s%-25s %-25d %d\n", different?"*** ":"    ", PVname, atoi(value_string), *penum_value);
+						different = atoi(value_string) != *penum_value;
 					} else {
-						printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+						penum_value_read = (short *)read_buffer;
+						for (i=0, different=0; i<element_count; i++) {
+							different += (penum_value_read[i] != penum_value[i]);
+						}
 					}
+					if (different) numDifferences++;
+					if (different || verbose) {
+						WRITE_HEADER;
+						if (is_scalar) {
+							printf("%s%-25s %-25d %d\n", different?"*** ":"    ", PVname, atoi(value_string), *penum_value);
+						} else {
+							printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+						}
+					}
+				} else {
+					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
+						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				}
 				if (write_restore_file) {
 					if (is_scalar) {
@@ -346,25 +372,30 @@ int main(int argc,char **argv)
 				status = ca_array_get(DBR_STRING,element_count,chid,(void *)svalue);
 				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
-				if (is_scalar) {
-					different = strcmp(value_string, svalue);
-				} else {
-					svalue_read = (char *)read_buffer;
-					for (i=0, different=0; i<element_count; i++) {
-						j = strncmp(&svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE], MAX_STRING_SIZE);
-						different += (j != 0);
-						if (debug) printf("'%40s' != '%40s'\n", &svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE]);
-					}
-				}
-				if (different) numDifferences++;
-				if (different || verbose) {
-					WRITE_HEADER;
+				if (is_scalar == is_scalar_in_file) {
 					if (is_scalar) {
-						nspace = 24-strlen(value_string); if (nspace < 1) nspace = 1;
-						printf("%s%-24s '%s'%*s'%s'\n", different?"*** ":"    ", PVname, value_string, nspace, "", svalue);
+						different = strcmp(value_string, svalue);
 					} else {
-						printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+						svalue_read = (char *)read_buffer;
+						for (i=0, different=0; i<element_count; i++) {
+							j = strncmp(&svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE], MAX_STRING_SIZE);
+							different += (j != 0);
+							if (debug) printf("'%40s' != '%40s'\n", &svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE]);
+						}
 					}
+					if (different) numDifferences++;
+					if (different || verbose) {
+						WRITE_HEADER;
+						if (is_scalar) {
+							nspace = 24-strlen(value_string); if (nspace < 1) nspace = 1;
+							printf("%s%-24s '%s'%*s'%s'\n", different?"*** ":"    ", PVname, value_string, nspace, "", svalue);
+						} else {
+							printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
+						}
+					}
+				} else {
+					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
+						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				}
 				if (write_restore_file) {
 					if (is_scalar) {
