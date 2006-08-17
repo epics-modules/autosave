@@ -54,8 +54,8 @@ void printUsage(void) {
 	fprintf(stderr,"usage: asVerify [-vr] <autosave_file>\n");
 	fprintf(stderr,"         -v (verbose) causes all PV's to be printed out\n");
 	fprintf(stderr,"             Otherwise, only PV's whose values differ are printed.\n");
-	fprintf(stderr,"         -r (restore_file) causes a restore file named\n");
-	fprintf(stderr,"            '<autosave_file>.asVerify' to be written.\n");
+	fprintf(stderr,"         -r (restore_file) causes restore files named\n");
+	fprintf(stderr,"            '<autosave_file>.asVerify' and '...B'to be written.\n");
 	fprintf(stderr,"         -d (debug) increment debug level by one.\n");
 	fprintf(stderr,"         -rv (or -vr) does both\n");
 	fprintf(stderr,"examples:\n");
@@ -81,9 +81,10 @@ int main(int argc,char **argv)
 	short	*penum_value, *penum_value_read;
 	char	*svalue, *svalue_read;
 	chid	chid;
-	FILE	*fp=NULL, *ftmp=NULL, *fr=NULL;
+	FILE	*fp=NULL, *ftmp=NULL, *fr=NULL, *fr1=NULL;
 	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE], filename[PATH_SIZE];
-	char	restore_filename[PATH_SIZE], *tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
+	char	restore_filename[PATH_SIZE], trial_restore_filename[PATH_SIZE];
+	char	*tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
 	int		i, j, n, is_scalar, is_scalar_in_file, numPVs, numDifferences, numPVsNotConnected, nspace;
 	int		different, wrote_head=0, status, file_ok=0;
@@ -109,6 +110,8 @@ int main(int argc,char **argv)
 	if (write_restore_file) {
 		strcpy(restore_filename, filename);
 		strcat(restore_filename, ".asVerify");
+		strcpy(trial_restore_filename, restore_filename);
+		strcat(trial_restore_filename, "B");
 	}
 
 	/*
@@ -129,9 +132,9 @@ int main(int argc,char **argv)
 	fp = fopen(tempname,"r");
 	if (fp == NULL) {printf("Can't open copy of %s.\n", filename); return(-1);}
 	if (write_restore_file) {
-		fr = fopen(restore_filename,"w");
+		fr = fopen(trial_restore_filename,"w");
 		if (fr == NULL) {
-			printf("Can't open restore_file '%s' for writing.\n", restore_filename);
+			printf("Can't open trial restore_file '%s' for writing.\n", trial_restore_filename);
 			write_restore_file = 0;
 		} else {
 			fprintf(fr,"# %s\tAutomatically generated - DO NOT MODIFY - datetime\n", ASVERSION);
@@ -428,6 +431,16 @@ int main(int argc,char **argv)
 	if (write_restore_file) {
 		fprintf(fr, "<END>\n");
 		fclose(fr);
+		if (numPVsNotConnected < numPVs/2)  {
+			/* copy trial restore file to real restore file */
+			fr = fopen(trial_restore_filename,"r");
+			fr1 = fopen(restore_filename,"w");
+			while ((bp=fgets(s, BUF_SIZE, fr))) {
+				fputs(s, fr1);
+			}
+			fclose(fr);
+			fclose(fr1);
+		}
 	}
 	if (CA_buffer) free(CA_buffer);
 	ca_context_destroy();
