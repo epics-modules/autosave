@@ -56,7 +56,7 @@ struct restoreList {
 		char *pass1StatusStr[MAXRESTOREFILES];
 };
 
-extern void myPrintErrno(char *s);
+extern void myPrintErrno(char *s, char *file, int line);
 extern FILE *fopen_and_check(const char *file, long *status);
 
 extern long SR_get_array_info(char *name, long *num_elements, long *field_size, long *field_type);

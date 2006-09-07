@@ -949,7 +949,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if ((out_fd = fopen(filename,"w")) == NULL) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
-		if (errno) myPrintErrno("write_it");
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
 			save_restoreNFSOK = 0;
 			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
@@ -962,7 +962,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 	n = fprintf(out_fd,"# %s\tAutomatically generated - DO NOT MODIFY - %s\n",
 			SRversion, datetime);
-	if (errno) myPrintErrno("write_it");
+	if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 		goto trouble;
@@ -972,7 +972,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		errno = 0;
 		n = fprintf(out_fd,"! %d channel(s) not connected - or not all gets were successful\n",
 				plist->not_connected);
-		if (errno) myPrintErrno("write_it");
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 			goto trouble;
@@ -987,7 +987,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			n = fprintf(out_fd, "#%s ", pchannel->name);
 		}
-		if (errno) myPrintErrno("write_it");
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 			goto trouble;
@@ -1001,7 +1001,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-			if (errno) myPrintErrno("write_it");
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 				goto trouble;
@@ -1009,7 +1009,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
-			if (errno) myPrintErrno("write_it");
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d [%s].\n", n, datetime);
 				goto trouble;
@@ -1028,7 +1028,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* write file-is-ok marker */
 	errno = 0;
 	n = fprintf(out_fd, "<END>\n");
-	if (errno) myPrintErrno("write_it");
+	if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 		goto trouble;
@@ -1037,29 +1037,37 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* flush everything to disk */
 	errno = 0;
 	n = fflush(out_fd);
-	if (errno) myPrintErrno("write_it");
-	if (n != 0) errlogPrintf("save_restore:write_it: fflush returned %d [%s]\n", n, datetime);
+	if (n != 0){
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		errlogPrintf("save_restore:write_it: fflush returned %d [%s]\n", n, datetime);
+	}
+
 
 	errno = 0;
 #if defined(vxWorks)
 	n = ioctl(fileno(out_fd),FIOSYNC,0);	/* NFS flush to disk */
-	if (n == ERROR) errlogPrintf("save_restore:write_it: ioctl(,FIOSYNC,) returned %d [%s]\n",
-		n, datetime);
+	if (n == ERROR) {
+		errlogPrintf("save_restore:write_it: ioctl(,FIOSYNC,) returned %d [%s]\n",
+			n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+	}
 #elif defined(_WIN32)
         /* WIN32 has no real equivalent to fsync? */
 #else
 	n = fsync(fileno(out_fd));
 	if ((n != 0) && (errno == ENOTSUP)) { n = 0; errno = 0; }
-	if (n != 0) errlogPrintf("save_restore:write_it: fsync returned %d [%s]\n", n, datetime);
+	if (n != 0) {
+		errlogPrintf("save_restore:write_it: fsync returned %d [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+	}
 #endif
-	if (errno) myPrintErrno("write_it");
 
 	/* close the file */
 	errno = 0;
 	n = fclose(out_fd);
-	if (errno) myPrintErrno("write_it");
 	if (n != 0) {
 		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		goto trouble;
 	}
 	epicsMutexUnlock(sr_mutex);
