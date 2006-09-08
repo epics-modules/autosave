@@ -1,11 +1,11 @@
 /* save_restore.h */
-#define STATIC_VARS 1
+#define STATIC_VARS 0
 #define DEBUG 1
 
 #if STATIC_VARS
-#define STATIC
-#else
 #define STATIC static
+#else
+#define STATIC
 #endif
 
 #define     TATTLE(CA_ERROR_CODE, FMT, ARG) \
