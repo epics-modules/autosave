@@ -16,6 +16,12 @@ content="text/html; charset=iso-8859-1">
 <li>If asVerify is directed to create a restore file, it now writes a trial
 restore file first, and overwrites the real restore file only if more than half
 of the PV's were actually connected. 
+<li>myPrintErrno modified to print the line and file of caller, and called only
+if there was an actual error.
+<li>Don't hold epicsMutex for a long time, because any priority inheritance
+that occurs while the mutex is held will persist until the mutex is released,
+even if it's no longer needed.  Now, the mutex is used to protect a variable
+which, in turn, protects save_restore's save-set list.
 </ul>
 
 <h3>4.2</h3>
@@ -357,7 +363,7 @@ or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy" command.
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: December 22, 2004 
+    Last modified: September 8, 2006 
 </address>
 </body>
 </html>
