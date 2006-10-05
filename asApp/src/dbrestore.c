@@ -49,9 +49,12 @@
  *                files that lack header lines, or lack a version number.
  *                Check return codes from some calls to fseek().
  * 03/28/06  tmm  Replaced all Debug macros with straight code
+ * 10/05/06  tmm  v4.8 Use binary mode for fopen() calls in myFileCopy, to avoid
+ *                file-size differences caused by different line terminators
+ *                on different operating systems.  (Thanks to Kay Kasemir.)
  *                
  */
-#define VERSION "4.7"
+#define VERSION "4.8"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -146,7 +149,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 
 	if (stat(source, &fileStat) == 0) size = (int)fileStat.st_size;
 	errno = 0;
-	if ((source_fd = fopen(source,"r")) == NULL) {
+	if ((source_fd = fopen(source,"rb")) == NULL) {
 		errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", source);
 		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) 
@@ -158,7 +161,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	 * to S_nfsLib_NFSERR_NOENT even though it succeeds.  Probably this means
 	 * a failed attempt was retried. (System calls never set errno to zero.)
 	 */
-	if ((dest_fd = fopen(dest,"w")) == NULL) {
+	if ((dest_fd = fopen(dest,"wb")) == NULL) {
 		errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", dest);
 		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
 		fclose(source_fd);
