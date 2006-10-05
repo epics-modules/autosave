@@ -22,6 +22,9 @@ if there was an actual error.
 that occurs while the mutex is held will persist until the mutex is released,
 even if it's no longer needed.  Now, the mutex is used to protect a variable
 which, in turn, protects save_restore's save-set list.
+<li>Use binary mode for fopen() calls in myFileCopy() (dbrestore.c) to avoid
+file-size differences resulting from different line terminators on different
+operating systems.  (Thanks to Kay Kasemir for this fix.)
 </ul>
 
 <h3>4.2</h3>
