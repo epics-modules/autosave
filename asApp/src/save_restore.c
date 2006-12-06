@@ -100,8 +100,11 @@
  *                variable listLock, which we can hold.  (vxWorks nversion-safe
  *                mutex was keeping save_restore task at high priority for
  *                much lomger than necessary.)
+ * 12/06/06  tmm  v5.1 Don't even print the value of errno if fprintf() sets it.
+ *                In tornado 2.2.1, fprintf() is setting errno every time, so
+ *                the info is useless for diagnostic purposes.
  */
-#define		SRVERSION "save/restore V5.0"
+#define		SRVERSION "save/restore V5.1"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -1037,7 +1040,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			n = fprintf(out_fd, "#%s ", pchannel->name);
 		}
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 			goto trouble;
@@ -1051,7 +1054,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+			/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 				goto trouble;
