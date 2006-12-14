@@ -1,8 +1,11 @@
 record(ao, "$(P)SR_ao") {
+	field(DTYP,"Soft Channel")
 }
 record(bo, "$(P)SR_bo") {
+	field(DTYP,"Soft Channel")
 }
 record(bi, "$(P)SR_bi") {
+	field(DTYP,"Soft Channel")
 }
 record(scaler, "$(P)SR_scaler") {
 }
