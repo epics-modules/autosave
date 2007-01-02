@@ -52,9 +52,10 @@
  * 10/05/06  tmm  v4.8 Use binary mode for fopen() calls in myFileCopy, to avoid
  *                file-size differences caused by different line terminators
  *                on different operating systems.  (Thanks to Kay Kasemir.)
+ * 01/02/07  tmm  v4.9 Convert empty SPC_CALC fields to "0" before restoring.
  *                
  */
-#define VERSION "4.8"
+#define VERSION "4.9"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -78,6 +79,7 @@
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
 #include	<epicsExport.h>
+#include	<special.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -200,14 +202,23 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	DBADDR	dbaddr;
 	DBADDR	*paddr = &dbaddr;
 	dbfType field_type = pdbentry->pflddes->field_type;
+	short special = pdbentry->pflddes->special;
 	
-	if (save_restoreDebug >= 15) errlogPrintf("dbrestore:scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);
+	if (save_restoreDebug >= 5) errlogPrintf("dbrestore:scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);
 	switch (field_type) {
 	case DBF_STRING: case DBF_ENUM:
 	case DBF_CHAR:   case DBF_UCHAR:
 	case DBF_SHORT:  case DBF_USHORT:
 	case DBF_LONG:   case DBF_ULONG:
 	case DBF_FLOAT:  case DBF_DOUBLE:
+		/*
+		 * check SPC_CALC fields against new (3.13.9) requirement that CALC
+		 * fields not be empty.
+		 */
+		if ((field_type==DBF_STRING) && (special==SPC_CALC)){
+			if (*value_string == 0) strcpy(value_string, "0");
+		}
+
 		status = dbPutString(pdbentry, value_string);
 		if (save_restoreDebug >= 15) {
 			errlogPrintf("dbrestore:scalar_restore: dbPutString() returns %ld:", status);
