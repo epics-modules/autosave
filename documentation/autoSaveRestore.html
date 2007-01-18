@@ -173,11 +173,11 @@ and to which they will be written at save time, by calling the function
 <P>When autosave manages its own NFS mount, as this command directs it to do, it
 can fix a stale file handle by dismounting and remounting the file system.   
 
-<h4>5. Use NFS (recommended, only available on vxWorks) </h4>
+<h4>5. Use NFS (required on vxWorks) </h4>
 
 Use NFS, preferably as described above, or by including an nfsMount() command in
-your startup script.  Save_restore is only tested with NFS, though it has in the
-past and may still work with vxWorks' netDrv (ftp or rsh).
+your startup script.  Save_restore is only tested with NFS, and probably will
+not work with vxWorks' netDrv .
 
 <P>When autosave runs under operating systems other than vxWorks, it simply uses
 whatever mount the operating system, or a system administrator, has provided.
