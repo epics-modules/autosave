@@ -701,10 +701,15 @@ STATIC int save_restore(void)
 		}
 
 		/*** set up list-specific status PV's for any new lists ***/
-/* BEGIN: This should be done with list locked */
+		while (waitForListLock(5) == 0) {
+			if (save_restoreDebug) errlogPrintf("save_restore: '%s' waiting for listLock()\n", plist->reqFile);
+		}
 		for (plist = lptr; plist; plist = plist->pnext) {
-			/* If this is the first time for a list, connect to its status PV's */
-			if (plist->status_PV[0] == '\0') {
+			/*
+			 * If this is the first time for a list, and user has defined a status prefix,
+			 * connect to the list's status PV's
+			 */
+			if (*status_prefix && (plist->status_PV[0] == '\0')) {
 				/*** Build PV names ***/
 				/* make common portion of PVname strings */
 				n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
@@ -748,7 +753,7 @@ STATIC int save_restore(void)
 					ca_put(DBR_STRING, plist->time_chid, &plist->timeStr);
 			}
 		}
-/* END: This should be done with list locked */
+		unlockList();
 
 		/*** service user commands ***/
 		if (remove_dset) {
