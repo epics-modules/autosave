@@ -457,7 +457,10 @@ every <code>period</code> seconds.
 	calls are used instead of static database access dbPutX() calls.
 	Record processing will result from caput()'s to inherently process-
 	passive fields.
-	<P>This function can be called at any time after iocInit.
+	<P>This function can be called at any time after one of the
+	<tt>create_*_set()</tt> functions have been called.  If you want to
+	call this function before creating any save sets, you can call
+	<tt>create_*_set()</tt> with an empty request-file name.
 
 <P><dt><code>int fdbrestoreX(char *save_file)</code>
 <dd>This function restores from the file &lt;saveRestorePath&gt;/&lt;save_file&gt, which
@@ -466,7 +469,10 @@ every <code>period</code> seconds.
 	boot-time restore, because caput() calls are used instead of static
 	database access dbPutX() calls.  Record processing will result from
 	caput()'s to inherently process-passive fields.
-	<P>This function can be called at any time after iocInit.
+	<P>This function can be called at any time after one of the
+	<tt>create_*_set()</tt> functions have been called.  If you want to
+	call this function before creating any save sets, you can call
+	<tt>create_*_set()</tt> with an empty request-file name.
 
 <P><dt><code>void save_restoreShow(int verbose)</code>
 <dd>List all the save sets currently being managed by the save_restore task.
@@ -574,7 +580,10 @@ every <code>period</code> seconds.
 
 <P><dt><code>void save_restoreSet_status_prefix(char *prefix)</code>
 <dd>Specifies the prefix to be used to construct the names of PV's with
-	which save_restore reports its status.
+	which save_restore reports its status.  If you want autosave to update
+	status PVs as it operates, you must call this function and load the
+	database save_restoreStatus.db, specifying the same prefix in both
+	commands.
 	<P>This function must be called before the first call to <code>create_xxx_set()</code>.
 
 <P><dt><code>void save_restoreSet_NFSHost(char *hostname, char *address)</code>
