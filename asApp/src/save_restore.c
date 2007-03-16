@@ -103,8 +103,16 @@
  * 12/06/06  tmm  v5.1 Don't even print the value of errno if fprintf() sets it.
  *                In tornado 2.2.1, fprintf() is setting errno every time, so
  *                the info is useless for diagnostic purposes.
+ * 03/16/06  tmm  v5.2 create_xxx_set can now specify PV names from which file
+ *                path and file name are to be read, by including SAVENAMEPV
+ *                and/or SAVEPATHPV in the macro string supplied as an argument.
+ *                Note this can be done only on the first call to create_xxx_set()
+ *                for a save set, because only the first call results in a call to
+ *                readReqFile(), in which the macro string is parsed.  If either
+ *                macro is specified, save_restore will not maintain backup or
+ *                files for the save set.
  */
-#define		SRVERSION "save/restore V5.1"
+#define		SRVERSION "save/restore V5.2"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -198,6 +206,9 @@ struct chlist {								/* save set list element */
 	char			timeStr[STRING_LEN];
 	char			time_PV[PV_NAME_LEN];
 	chid			time_chid;
+	char			savePathPV[PV_NAME_LEN], saveNamePV[PV_NAME_LEN];
+	chid			savePathPV_chid, saveNamePV_chid;
+	int				do_backups;
 };
 
 struct channel {					/* database channel list element */
@@ -350,7 +361,7 @@ STATIC int lockList() {
 	epicsMutexLock(sr_mutex);
 	if (!listLock) listLock = caller_owns_lock = 1;
 	epicsMutexUnlock(sr_mutex);
-	if (save_restoreDebug) printf("lockList: listLock=%d\n", listLock);
+	if (save_restoreDebug >= 10) printf("lockList: listLock=%d\n", listLock);
 	return(caller_owns_lock);
 }
 
@@ -358,7 +369,7 @@ STATIC void unlockList() {
 	epicsMutexLock(sr_mutex);
 	listLock = 0;
 	epicsMutexUnlock(sr_mutex);
-	if (save_restoreDebug) printf("unlockList: listLock=%d\n", listLock);
+	if (save_restoreDebug >= 10) printf("unlockList: listLock=%d\n", listLock);
 }
 
 STATIC int waitForListLock(double secondsToWait) {
@@ -649,7 +660,7 @@ STATIC int save_restore(void)
 			}
 
 			/*** Periodically make sequenced backup of most recent saved file ***/
-			if (do_seq_check) {
+			if (do_seq_check && plist->do_backups) {
 				if (save_restoreNumSeqFiles && plist->last_save_file &&
 					(epicsTimeDiffInSeconds(&currTime, &plist->backup_time) >
 						save_restoreSeqPeriodInSeconds)) {
@@ -834,6 +845,20 @@ STATIC int connect_list(struct chlist *plist)
 		}
 	}
 	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
+
+	/* Connect to savePathPV and saveNamePV, if they are defined */
+	if (plist->savePathPV[0] || plist->saveNamePV[0]) {
+		if (plist->savePathPV[0]) {
+			TATTLE(ca_search(plist->savePathPV,&plist->savePathPV_chid), "save_restore: ca_search(%s) returned %s", plist->savePathPV);
+		}
+		if (plist->saveNamePV[0]) {
+			TATTLE(ca_search(plist->saveNamePV,&plist->saveNamePV_chid), "save_restore: ca_search(%s) returned %s", plist->saveNamePV);
+		}
+		if (ca_pend_io(0.5)!=ECA_NORMAL) {
+			errlogPrintf("save_restore: Can't connect to list-specific path/name PV(s)\n");
+		}
+	}
+
 	return(get_channel_values(plist));
 }
 
@@ -1194,45 +1219,67 @@ STATIC int write_save_file(struct chlist *plist)
 	strcpy(plist->statusStr, "Ok");
 
 	/* Make full file names */
-	strncpy(save_file, saveRestoreFilePath, sizeof(save_file) - 1);
-	strncat(save_file, plist->save_file, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
-	strcpy(backup_file, save_file);
-	strncat(backup_file, "B", 1);
+	if (plist->savePathPV_chid) {
+		/* This list's path name comes from a PV */
+		ca_array_get(DBR_STRING,1,plist->savePathPV_chid,tmpstr);
+		ca_pend_io(1.0);
+		if (tmpstr[0] == '\0') return(OK);
+		strncpy(save_file, tmpstr, sizeof(save_file) - 1);
+	} else {
+		/* Use standard path name. */
+		strncpy(save_file, saveRestoreFilePath, sizeof(save_file) - 1);
+	}
+	if (plist->saveNamePV_chid) {
+		/* This list's file name comes from a PV */
+		ca_array_get(DBR_STRING,1,plist->saveNamePV_chid,tmpstr);
+		ca_pend_io(1.0);
+		if (tmpstr[0] == '\0') return(OK);
+		strncat(save_file, tmpstr, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
+	} else {
+		/* Use file name constructed from the request file name. */
+		strncat(save_file, plist->save_file, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
+	}
 
-	/* Ensure that backup is ok before we overwrite .sav file. */
-	backup_state = check_file(backup_file);
-	if (backup_state != BS_OK) {
-		errlogPrintf("save_restore:write_save_file: Backup file (%s) bad or not found.  Writing a new one. [%s]\n", 
-			backup_file, datetime);
-		if (backup_state == BS_BAD) {
-			/* make a backup copy of the corrupted file */
-			strcpy(tmpstr, backup_file);
-			strcat(tmpstr, "_SBAD_");
-			if (save_restoreDatedBackupFiles) {
-				strcat(tmpstr, datetime);
-				sprintf(SR_recentlyStr, "Bad file: '%sB'", plist->save_file);
+	/* Currently, all lists do backups, unless their file path or file name comes from a PV. */
+	if (plist->do_backups) {
+		strcpy(backup_file, save_file);
+		strncat(backup_file, "B", 1);
+
+		/* Ensure that backup is ok before we overwrite .sav file. */
+		backup_state = check_file(backup_file);
+		if (backup_state != BS_OK) {
+			errlogPrintf("save_restore:write_save_file: Backup file (%s) bad or not found.  Writing a new one. [%s]\n", 
+				backup_file, datetime);
+			if (backup_state == BS_BAD) {
+				/* make a backup copy of the corrupted file */
+				strcpy(tmpstr, backup_file);
+				strcat(tmpstr, "_SBAD_");
+				if (save_restoreDatedBackupFiles) {
+					strcat(tmpstr, datetime);
+					sprintf(SR_recentlyStr, "Bad file: '%sB'", plist->save_file);
+				}
+				(void)myFileCopy(backup_file, tmpstr);
 			}
-			(void)myFileCopy(backup_file, tmpstr);
-		}
-		if (write_it(backup_file, plist) == ERROR) {
-			errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
-			errlogPrintf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
-			errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
-			plist->status = SR_STATUS_FAIL;
-			strcpy(plist->statusStr, "Can't write .savB file");
+			if (write_it(backup_file, plist) == ERROR) {
+				errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+				errlogPrintf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
+				errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+				plist->status = SR_STATUS_FAIL;
+				strcpy(plist->statusStr, "Can't write .savB file");
+				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+					ca_flush_io();
+				}
+				return(ERROR);
+			}
+			plist->status = SR_STATUS_WARN;
+			strcpy(plist->statusStr, ".savB file was bad");
 			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
 				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				ca_flush_io();
 			}
-			return(ERROR);
+			backup_state = BS_NEW;
 		}
-		plist->status = SR_STATUS_WARN;
-		strcpy(plist->statusStr, ".savB file was bad");
-		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			ca_flush_io();
-		}
-		backup_state = BS_NEW;
 	}
 
 	/*** Write the save file ***/
@@ -1255,22 +1302,26 @@ STATIC int write_save_file(struct chlist *plist)
 	epicsTimeGetCurrent(&plist->save_time);
 	strcpy(plist->last_save_file, plist->save_file);
 
-	/*** Write a backup copy of the save file ***/
-	if (backup_state != BS_NEW) {
-		/* make a backup copy */
-		if (myFileCopy(save_file, backup_file) != OK) {
-			errlogPrintf("save_restore:write_save_file - Couldn't make backup '%s' [%s]\n",
-				backup_file, datetime);
-			plist->status = SR_STATUS_WARN;
-			strcpy(plist->statusStr, "Can't write .savB file");
-			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-				ca_flush_io();
+	if (plist->do_backups) {
+		/*** Write a backup copy of the save file ***/
+		if (backup_state != BS_NEW) {
+			/* make a backup copy */
+			if (myFileCopy(save_file, backup_file) != OK) {
+				errlogPrintf("save_restore:write_save_file - Couldn't make backup '%s' [%s]\n",
+					backup_file, datetime);
+				plist->status = SR_STATUS_WARN;
+				strcpy(plist->statusStr, "Can't write .savB file");
+				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
+					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+					ca_flush_io();
+				}
+				sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
+				return(ERROR);
 			}
-			sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
-			return(ERROR);
 		}
 	}
+
+	/* Update status PV */
 	if (plist->not_connected) {
 		plist->status = SR_STATUS_WARN;
 		sprintf(plist->statusStr,"%d %s not saved", plist->not_connected, 
@@ -1507,6 +1558,7 @@ STATIC int create_data_set(
 		errlogPrintf("save_restore:create_data_set: channel list calloc failed");
 		return(ERROR);
 	}
+	plist->do_backups = 1;	/* Do backups and sequences backups, unless we're told not to. */
 	callbackSetCallback(periodic_save, &plist->periodicCb);
 	callbackSetUser(plist, &plist->periodicCb);
 	callbackSetCallback(on_change_timer, &plist->monitorCb);
@@ -1622,6 +1674,9 @@ void save_restoreShow(int verbose)
 			if (plist->save_state & CHANGE) strcat(tmpstr, "CHANGE ");
 			if (plist->save_state & MANUAL) strcat(tmpstr, "MANUAL ");
 			strcat(tmpstr, "]");
+			printf("    path PV: %s\n", plist->savePathPV[0]?plist->savePathPV:"None");
+			printf("    name PV: %s\n", plist->saveNamePV[0]?plist->saveNamePV:"None");
+			printf("    backups: %s\n", plist->do_backups?"YES":"NO");
 			printf("    save_state = 0x%x\n", plist->save_state);
 			printf("    period: %d; trigger chan: '%s'; monitor period: %d\n",
 			   plist->period,plist->trigger_channel,plist->monitor_period);
@@ -2203,6 +2258,21 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	}
 	/* close file */
 	fclose(inp_fd);
+
+	/*
+	 * Allow macro string supplied to create_xxx_set() to specify a PV from which the
+	 * path and/or file name will be read when it's time to write the file.  Currently,
+	 * this can only be done when the list is defined.
+	 */
+	if (macGetValue(handle, "SAVEPATHPV", name, 80) > 0) {
+		plist->do_backups = 0;
+		strncpy(plist->savePathPV, name, 80);
+	}
+	if (macGetValue(handle, "SAVENAMEPV", name, 80) > 0) {
+		plist->do_backups = 0;
+		strncpy(plist->saveNamePV, name, 80);
+	}
+
 	if (handle) {
 		macDeleteHandle(handle);
 		if (pairs) free(pairs);
