@@ -103,7 +103,7 @@
  * 12/06/06  tmm  v5.1 Don't even print the value of errno if fprintf() sets it.
  *                In tornado 2.2.1, fprintf() is setting errno every time, so
  *                the info is useless for diagnostic purposes.
- * 03/16/06  tmm  v5.2 create_xxx_set can now specify PV names from which file
+ * 03/16/07  tmm  v5.2 create_xxx_set can now specify PV names from which file
  *                path and file name are to be read, by including SAVENAMEPV
  *                and/or SAVEPATHPV in the macro string supplied as an argument.
  *                Note this can be done only on the first call to create_xxx_set()
@@ -111,6 +111,7 @@
  *                readReqFile(), in which the macro string is parsed.  If either
  *                macro is specified, save_restore will not maintain backup or
  *                files for the save set.
+ * 03/19/07  tmm  v5.2 Don't print errno unless function returns an error.
  */
 #define		SRVERSION "save/restore V5.2"
 
@@ -1033,7 +1034,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if ((out_fd = fopen(filename,"w")) == NULL) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
 			save_restoreNFSOK = 0;
 			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
@@ -1045,7 +1046,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 	n = fprintf(out_fd,"# %s\tAutomatically generated - DO NOT MODIFY - %s\n",
 			SRversion, datetime);
-	if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+	/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 		goto trouble;
@@ -1055,7 +1056,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		errno = 0;
 		n = fprintf(out_fd,"! %d channel(s) not connected - or not all gets were successful\n",
 				plist->not_connected);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 			goto trouble;
@@ -1092,7 +1093,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
-			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+			/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d [%s].\n", n, datetime);
 				goto trouble;
@@ -1111,7 +1112,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* write file-is-ok marker */
 	errno = 0;
 	n = fprintf(out_fd, "<END>\n");
-	if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+	/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
 		goto trouble;
@@ -1121,7 +1122,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 	n = fflush(out_fd);
 	if (n != 0){
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		errlogPrintf("save_restore:write_it: fflush returned %d [%s]\n", n, datetime);
 	}
 
@@ -1132,7 +1133,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if (n == ERROR) {
 		errlogPrintf("save_restore:write_it: ioctl(,FIOSYNC,) returned %d [%s]\n",
 			n, datetime);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	}
 #elif defined(_WIN32)
         /* WIN32 has no real equivalent to fsync? */
@@ -1141,7 +1142,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if ((n != 0) && (errno == ENOTSUP)) { n = 0; errno = 0; }
 	if (n != 0) {
 		errlogPrintf("save_restore:write_it: fsync returned %d [%s]\n", n, datetime);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	}
 #endif
 
@@ -1150,7 +1151,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	n = fclose(out_fd);
 	if (n != 0) {
 		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		goto trouble;
 	}
 	return(OK);

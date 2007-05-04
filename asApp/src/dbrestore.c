@@ -53,6 +53,7 @@
  *                file-size differences caused by different line terminators
  *                on different operating systems.  (Thanks to Kay Kasemir.)
  * 01/02/07  tmm  v4.9 Convert empty SPC_CALC fields to "0" before restoring.
+ * 03/19/07  tmm  v4.10 Don't print errno unless function returns an error.
  *                
  */
 #define VERSION "4.9"
@@ -153,7 +154,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	errno = 0;
 	if ((source_fd = fopen(source,"rb")) == NULL) {
 		errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", source);
-		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__); */
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) 
 			save_restoreNFSOK = 0;
 		return(ERROR);
@@ -165,7 +166,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	 */
 	if ((dest_fd = fopen(dest,"wb")) == NULL) {
 		errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", dest);
-		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__); */
 		fclose(source_fd);
 		return(ERROR);
 	}
@@ -173,17 +174,17 @@ STATIC int myFileCopy(const char *source, const char *dest)
 	while ((bp=fgets(buffer, BUF_SIZE, source_fd))) {
 		errno = 0;
 		chars_printed += fprintf(dest_fd, "%s", bp);
-		if (errno) {myPrintErrno("myFileCopy", __FILE__, __LINE__); errno = 0;}
+		/* if (errno) {myPrintErrno("myFileCopy", __FILE__, __LINE__); errno = 0;} */
 	}
 	errno = 0;
 	if (fclose(source_fd) != 0){
                 errlogPrintf("save_restore:myFileCopy: Error closing file '%s'\n", source);
-		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__); */
 	}
 	errno = 0;
 	if (fclose(dest_fd) != 0){
 		errlogPrintf("save_restore:myFileCopy: Error closing file '%s'\n", dest);
-		if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__);
+		/* if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__); */
 	}
 	errno = 0;
 	if (size && (chars_printed != size)) {
@@ -741,7 +742,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		errlogPrintf("dbrestore:reboot_restore: header line '%s'\n", buffer);
 	}
 	status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
-	if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+	if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 
 	/* restore from data file */
 	num_errors = 0;
@@ -948,7 +949,7 @@ FILE *checkFile(const char *file)
 	if (!versionstr) {
 		/* file has no version number */
 		status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
-		if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 		return(inp_fd);	/* Assume file is ok */
 	}
 	if (isdigit((int)versionstr[1]))
@@ -959,25 +960,25 @@ FILE *checkFile(const char *file)
 	/* <END> check started in v1.8 */
 	if (version < 1.8) {
 		status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
-		if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 		return(inp_fd);	/* Assume file is ok. */
 	}
 	/* check out "successfully written" marker */
 	status = fseek(inp_fd, -6, SEEK_END);
-	if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+	if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 	fgets(tmpstr, 6, inp_fd);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
 		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
-		if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 		return(inp_fd);
 	}
 	
 	status = fseek(inp_fd, -7, SEEK_END);
-	if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+	if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 	fgets(tmpstr, 7, inp_fd);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
 		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
-		if (status) myPrintErrno("checkFile", __FILE__, __LINE__);
+		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 		return(inp_fd);
 	}
 
