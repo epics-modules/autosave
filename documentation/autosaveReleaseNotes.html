@@ -10,6 +10,19 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.3</h3>
+<ul>
+<li><tt>create_xxx_set()</tt> can now specify PV names from which file
+path and file name are to be read, by including <tt>SAVENAMEPV</tt>
+and/or <tt>SAVEPATHPV</tt> in the macro string supplied as an argument.
+Note this can be done only on the first call to <tt>create_xxx_set()</tt>
+for a save set, because only the first call results in a call to
+<tt>readReqFile()</tt>, in which function the macro string is parsed.  If either
+macro is specified, save_restore will not maintain backup or sequence 
+files for the save set.
+<li>Don't print errno unless function returns an error.
+</ul>
+
 <h3>4.2.1</h3>
 <ul>
 <li>Added date/time to error messages printed to the console.

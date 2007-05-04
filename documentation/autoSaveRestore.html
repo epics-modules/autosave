@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v4.2.1</h1>
+<h1 align="center">autosave v4.3</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC is rebooted.  The
@@ -156,6 +156,9 @@ might want to autosave for a single scalcout record.  This file is
 <i>include</i>d in calc/calcApp/Db/userStringCalcs10_settings.req, which,
 in turn, is included in xxx/iocBoot/iocvxWorks/auto_settings.req.
 
+<P> Beginning in v5.2.1, synApps contains software to generate autosave-request files from information contained in command and database files.
+See synApps/support/utils/makeAutosaveFiles.py.
+
 <h4>3. Set request-file path (optional, recommended)</h4>
 Specify one or more directories to be searched for
 request files, using one or more invocations of the function
@@ -194,6 +197,11 @@ that the path does not contain symbolic links.  In my experience, VxWorks
 cannot write through a symbolic link.  (I don't understand all the ins and outs
 of this limitation.  It may be that symbolic links are OK if they contain
 absolute path names.)
+
+<P>Beginning with autosave v4.3, you can also specify the path and/or
+filename, to which an autosave <tt>.sav</tt> file is to be written, with
+an EPICS PV. See the documentation of <tt>create_xxx_set()</tt> for details. 
+
 
 <h4>7. Give write permission (required)</h4>
 Give the IOC write permission to the directory in which the save
@@ -285,6 +293,21 @@ discussion of request files (step 2).  If supplied, this macro-substitution
 string supplements any macro strings supplied in include-file directives of
 request files read for this save set.
 
+<P>The macro string can also be used to override the default path and name to
+which the <tt>.sav</tt> file will be written.  If the macro
+<tt>SAVEPATHPV=&lt;pv-name&gt;</tt> is included, autosave will write the
+<tt>.sav</tt> file to the path read from the EPICS PV &lt;pv-name&gt;, instead
+of writing to the path specified in <tt>set_savefile_path()</tt>. If the macro
+<tt>SAVENAMEPV=&lt;pv-name&gt;</tt> is included, autosave will write the
+<tt>.sav</tt> file to the filename read from the EPICS PV &lt;pv-name&gt;.
+(By default, the <tt>.sav</tt> file name is the request-file name, with <tt>.req</tt>
+replaced by <tt>.sav</tt>.)
+
+<P><b>NOTE:</b>  If either <tt>SAVEPATHPV</tt> or <tt>SAVENAMEPV</tt> occurs in
+the macro string, autosave will not attempt to save backup or sequence files for
+the save set.
+
+
 <P>For each "create_monitor_set(&lt;name&gt;.req, &lt;time&gt;, &lt;macro&gt;)" command, the
 save_restore process will write the files &lt;name&gt;.sav and &lt;name&gt;.savB every
 &lt;time&gt; seconds, if any of the PVs named in the file &lt;name&gt;.req have changed
@@ -303,6 +326,7 @@ Under vxWorks, you can avoid this by putting a
 	taskDelay(&lt;number_of_60_Hz_clock_ticks&gt;)
 </pre>
 before create_monitor_set().
+
 
 <h4>12. Maintain save files</h4>
 
@@ -460,7 +484,8 @@ every <code>period</code> seconds.
 	<P>This function can be called at any time after one of the
 	<tt>create_*_set()</tt> functions have been called.  If you want to
 	call this function before creating any save sets, you can call
-	<tt>create_*_set()</tt> with an empty request-file name.
+	<tt>create_*_set()</tt> with an empty request-file name.  Autosave will
+	complain about this, but it won't think you're a bad person.
 
 <P><dt><code>int fdbrestoreX(char *save_file)</code>
 <dd>This function restores from the file &lt;saveRestorePath&gt;/&lt;save_file&gt, which
@@ -472,7 +497,8 @@ every <code>period</code> seconds.
 	<P>This function can be called at any time after one of the
 	<tt>create_*_set()</tt> functions have been called.  If you want to
 	call this function before creating any save sets, you can call
-	<tt>create_*_set()</tt> with an empty request-file name.
+	<tt>create_*_set()</tt> with an empty request-file name.  Autosave will
+	not hate you for doing this, though it will complain.
 
 <P><dt><code>void save_restoreShow(int verbose)</code>
 <dd>List all the save sets currently being managed by the save_restore task.
@@ -482,7 +508,7 @@ every <code>period</code> seconds.
 <P><dt><code>int set_requestfile_path(char *path, char *pathsub)</code>
 <dd>Called before create_xxx_set(), this function specifies the path to be
 	prepended to request-file names.  <code>pathsub</code>, if present, will be appended
-	to <code>path</code>, if present, with a separating '/' whether or not <code>path</code> ends
+	to <code>path</code>, if present, with a separating '/', whether or not <code>path</code> ends
 	or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one will
 	be appended to it.
 	<P>You can specify several directories to be searched for request files by
@@ -495,7 +521,7 @@ every <code>period</code> seconds.
 <P><dt><code>int set_savefile_path(char *path, char *pathsub)</code>
 <dd>Called before iocInit(), this function specifies the path to be prepended
 	to save-file and restore-file names.   <code>pathsub</code>, if present, will be
-	appended to <code>path</code>, if present, with a separating '/' whether or not <path>
+	appended to <code>path</code>, if present, with a separating '/', whether or not <code>path</code>
 	ends or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one
 	will be appended to it.
 	<P>If save_restore is managing its own NFS mount, this function specifies the
@@ -685,7 +711,7 @@ create_monitor_set("auto_settings.req", 30, "P=xxx:")</font>
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: July 24, 2006 
+    Last modified: May 4, 2007 
 </address>
 </body>
 </html>
