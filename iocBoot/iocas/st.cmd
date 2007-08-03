@@ -41,3 +41,10 @@ iocInit
 create_monitor_set("auto_positions.req",5,"P=as:")
 # save other things every thirty seconds
 create_monitor_set("auto_settings.req",30,"P=as:")
+
+# The following command makes the autosave request files 'info_settings.req',
+# and 'info_positions.req', from information (info nodes) contained in all of
+# the EPICS databases that have been loaded into this IOC.
+makeAutosaveFiles()
+create_monitor_set("info_positions.req",5,"P=as:")
+create_monitor_set("info_settings.req",30,"P=as:")
