@@ -21,6 +21,8 @@ for a save set, because only the first call results in a call to
 macro is specified, save_restore will not maintain backup or sequence 
 files for the save set.
 <li>Don't print errno unless function returns an error.
+<li>New functions makeAutosaveFiles(), and makeAutosaveFileFromDbInfo(), search
+the database for info nodes indicating fields to be autosaved.
 </ul>
 
 <h3>4.2.1</h3>
