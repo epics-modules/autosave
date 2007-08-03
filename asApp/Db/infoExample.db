@@ -1,0 +1,7 @@
+
+record(ao, "$(P)test1") {
+  field(DTYP, "Soft Channel")
+  info(autosaveFields, "PREC EGU DESC")
+  info(autosaveFields_pass0, "VAL RVAL")
+}
+
