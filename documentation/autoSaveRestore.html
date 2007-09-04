@@ -162,7 +162,7 @@ in turn, is included in xxx/iocBoot/iocvxWorks/auto_settings.req.
 
 <p>Beginning with version 4.3, autosave can generate request files from
 <i>info</i> nodes contained in an EPICS database.  See the function
-makeAutosaveFiles(), below, for more information on this topic.
+<code>makeAutosaveFiles()</code>, below, for more information on this topic.
 
 <P> <i>Note: Beginning with synApps version 5.2.1, synApps contains software to
 generate autosave-request files from information contained in command and
@@ -187,9 +187,9 @@ can fix a stale file handle by dismounting and remounting the file system.
 
 <h4>5. Use NFS (required on vxWorks) </h4>
 
-Use NFS, preferably as described above, or by including an nfsMount() command in
-your startup script.  Save_restore is only tested with NFS, and probably will
-not work with vxWorks' netDrv .
+Use NFS, preferably as described above, or by including an
+<code>nfsMount()</code> command in your startup script.  Save_restore is only
+tested with NFS, and probably will not work with vxWorks' netDrv .
 
 <P>When autosave runs under operating systems other than vxWorks, it simply uses
 whatever mount the operating system, or a system administrator, has provided.
@@ -200,9 +200,10 @@ files to be written, by calling the function
 <pre>
 	set_savefile_path()
 </pre>
-in your startup script, before the create_xxx_set() commands, to specify the
-path to the directory.  If you are using NFS (strongly recommended), ensure
-that the path does not contain symbolic links.  In my experience, VxWorks
+
+in your startup script, before the <code>create_xxx_set()</code> commands, to
+specify the path to the directory.  If you are using NFS (strongly recommended),
+ensure that the path does not contain symbolic links.  In my experience, VxWorks
 cannot write through a symbolic link.  (I don't understand all the ins and outs
 of this limitation.  It may be that symbolic links are OK if they contain
 absolute path names.)
@@ -219,19 +220,27 @@ write save files, but the files will be corrupted because save_restore will not
 be permitted to change their lengths.  Save_restore attempts to detect this
 condition, but cannot work around it if the file length must increase.
 
-<h4>8. Set restore conditions (optional, recommended)</h4>
-Specify which save files are to be restored before
-record initialization (pass 0) and which are to be restored after record
-initialization (pass 1), using the commands
+<h4>8. Specify restore files (optional, recommended)</h4>
+
+Specify which save files are to be restored before record initialization (pass 0)
+and which are to be restored after record initialization (pass 1), using the
+commands
+
 <pre>
 	set_pass0_restoreFile()
 	set_pass1_restoreFile()
 </pre>
+
 Place these commands in the startup file before iocInit.  If you don't call
 either of these functions (or if your calls fail completely to specify any
 restore files) the supplied initHooks routine will attempt to restore the file
 "auto_positions.sav" before record init, and the file "auto_settings.sav" both
 before and after record init.
+
+<P>To disable boot-time restore completely, delete or comment out all
+<code>set_passN_restoreFile()</code> calls, and add the call
+<code>set_pass0_restoreFile("")</code>. This will defeat the fallback to standard
+file names described above.
 
 <p>Notes on restore passes:
 <ol>
@@ -262,6 +271,10 @@ saved parameter values.  The copy of initHooks included in this distribution is
 recommended.  This will happen automatically if the ioc's executable is built
 as described above.
 
+<P>You can disable boot-time restore by refraining from loading the initHook
+routine, but this is not always practical.  Another way to disable boot-time
+restore is described in step <i>8. Specify restore files</i>, above.
+
 <h4>10. Select save-file options (optional, recommended)</h4>
 Tell save_restore to writed dated backup files.
 At boot time, the restore software writes a backup copy of the ".sav" file from
@@ -286,21 +299,26 @@ commands:
 will cause save_restore to maintain three copies of each .sav file, at
 ten-minute intervals.
 
-<h4>11. Start the save process (required)</h4>
+<h4>11. Start the save task (required)</h4>
 Invoke the "save" part of this software as part of the EPICS
 startup sequence, by calling create_XXX_set() -- e.g., adding lines of the form
 <pre>
 	create_monitor_set("auto_positions.req", 5, "P=xxx:")
 	create_monitor_set("auto_settings.req", 30, "P=xxx:")
 </pre>
+
 to your EPICS startup file after iocInit.  You can call the files anything you
 want, but note that the file names "auto_positions" and "auto_settings" receive
-special treatment: they are default restore-file names specified by initHooks()
-if set_pass&lt;n&gt;_restoreFile() were never called.  The third argument to
-create_monitor_set()  is a macro-substitution string, as described above in the
-discussion of request files (step 2).  If supplied, this macro-substitution
-string supplements any macro strings supplied in include-file directives of
-request files read for this save set.
+special treatment: they are default restore-file names specified by
+<code>asInitHooks()</code> if <code>set_passN_restoreFile()</code> were never
+called.  The third argument to <code>create_monitor_set()</code>  is a
+macro-substitution string, as described above in the discussion of request files
+(step 2).  If supplied, this macro-substitution string supplements any macro
+strings supplied in include-file directives of request files read for this save
+set.
+
+<P> If you want to start the save task without also creating a save set, you
+can make the call <code>create_monitor_set("", 0, "")</code>.
 
 <P>The macro string can also be used to override the default path and name to
 which the <tt>.sav</tt> file will be written.  If the macro
@@ -317,15 +335,16 @@ the macro string, autosave will not attempt to save backup or sequence files for
 the save set.
 
 
-<P>For each "create_monitor_set(&lt;name&gt;.req, &lt;time&gt;, &lt;macro&gt;)" command, the
+<P>For each <code>create_monitor_set(&lt;name&gt;.req, &lt;time&gt;, &lt;macro&gt;)</code> command, the
 save_restore process will write the files &lt;name&gt;.sav and &lt;name&gt;.savB every
 &lt;time&gt; seconds, if any of the PVs named in the file &lt;name&gt;.req have changed
-value since the last write.  Other create_xxx_set() commands do the same thing,
+value since the last write.  Other <code>create_xxx_set()</code> commands do the same thing,
 but with different conditions triggering the save operation.
 
-<P>Note that in versions prior to 2.7, create_monitor_set() used an argument of
-type double to specify the period (in seconds).  This doesn't work on the PPC,
-so the arguments for this and similar functions were changed to int.
+<P>Note that in versions prior to 2.7, <code>create_monitor_set()</code> used an
+argument of type double to specify the period (in seconds).  This doesn't work on
+PowerPC processors, under vWorks, so the arguments for this and similar functions
+were changed to int.
 
 <P>If your IOC takes a really long time to boot, it's possible the PVs you want to
 save will not have the correct values when the save_restore task first looks at
@@ -334,7 +353,7 @@ Under vxWorks, you can avoid this by putting a
 <pre>
 	taskDelay(&lt;number_of_60_Hz_clock_ticks&gt;)
 </pre>
-before create_monitor_set().
+before <code>create_monitor_set()</code>.
 
 
 <h4>12. Maintain save files</h4>
@@ -388,11 +407,20 @@ calls.  Four data types get special attention:
 <dd>read as double, converted to string with the format "%.14g".  (Otherwise,
 the record's .PREC field would limit the precision.)
 <dt>float
-<dd>Same as double, but the formst is "%.7g".
+<dd>Same as double, but the format is "%.7g".
 <dt>menu and enum
-<dd>Channel access does not distinguish these types.  dbStaticLib cannot write
-enums as strings, because enum strings may not be defined until after
-record initialization--long after the values must have been restored.
+
+<dd>Menu and enum are integer data types with values restricted to the set
+(0,1,...N), where 'N' depends on the PV, but is usually 15 or smaller.  EPICS
+associates a string with each number in the set, and permits clients to use
+either the number or the string.  For menu PV's, the strings are specified in a
+.dbd file; for enum PV's, the strings can be specified in a database file,
+and they can be modified at run time.
+
+<P>Channel access does not distinguish these types, so neither does autosave.
+Autosave cannot write enums as strings, because enum strings may not have been
+defined at the time they must be restored.
+
 <dt>arrays of any kind
 <dd>Arrays are read and written using database access.  Channel access cannot
 read only the defined portion of an array, dbStaticLib cannot write an array.
