@@ -534,7 +534,6 @@ STATIC int save_restore(void)
 	struct chlist *plist = NULL;
 	char *cp, nameString[FN_LEN];
 	int i, do_seq_check, just_remounted, n;
-	long status;
 	epicsTimeStamp currTime, last_seq_check, remount_check_time;
 
 	if (save_restoreDebug)
@@ -591,15 +590,12 @@ STATIC int save_restore(void)
 				strncpy(SR_rebootStatusStr, restoreFileList.pass1StatusStr[i], (STRING_LEN-1));
 			}
 		}
-		if (SR_rebootStatus_chid && (ca_state(SR_rebootStatus_chid) == cs_conn))
-			ca_put(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
-		if (SR_rebootStatusStr_chid && (ca_state(SR_rebootStatusStr_chid) == cs_conn))
-			ca_put(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
+		TRY_TO_PUT(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
+		TRY_TO_PUT(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
 		epicsTimeGetCurrent(&currTime);
 		epicsTimeToStrftime(SR_rebootTimeStr, sizeof(SR_rebootTimeStr),
 			TIMEFMT_noY, &currTime);
-		if (SR_rebootTime_chid && (ca_state(SR_rebootTime_chid) == cs_conn))
-			ca_put(DBR_STRING, SR_rebootTime_chid, &SR_rebootTimeStr);
+		TRY_TO_PUT(DBR_STRING, SR_rebootTime_chid, &SR_rebootTimeStr);
 	}
 
 	while(1) {
@@ -701,16 +697,11 @@ STATIC int save_restore(void)
 
 		/* report status */
 		SR_heartbeat = (SR_heartbeat+1) % 2;
-		if (SR_status_chid && (ca_state(SR_status_chid) == cs_conn))
-			ca_put(DBR_LONG, SR_status_chid, &SR_status);
-		if (SR_heartbeat_chid && (ca_state(SR_heartbeat_chid) == cs_conn))
-			ca_put(DBR_LONG, SR_heartbeat_chid, &SR_heartbeat);
-		if (SR_statusStr_chid && (ca_state(SR_statusStr_chid) == cs_conn))
-			ca_put(DBR_STRING, SR_statusStr_chid, &SR_statusStr);
-		if (SR_recentlyStr_chid && (ca_state(SR_recentlyStr_chid) == cs_conn)) {
-			SR_recentlyStr[(STRING_LEN-1)] = '\0';
-			status = ca_put(DBR_STRING, SR_recentlyStr_chid, &SR_recentlyStr);
-		}
+		TRY_TO_PUT(DBR_LONG, SR_status_chid, &SR_status);
+		TRY_TO_PUT(DBR_LONG, SR_heartbeat_chid, &SR_heartbeat);
+		TRY_TO_PUT(DBR_STRING, SR_statusStr_chid, &SR_statusStr);
+		SR_recentlyStr[(STRING_LEN-1)] = '\0';
+		TRY_TO_PUT(DBR_STRING, SR_recentlyStr_chid, &SR_recentlyStr);
 
 		/*** set up list-specific status PV's for any new lists ***/
 		while (waitForListLock(5) == 0) {
@@ -746,23 +737,19 @@ STATIC int save_restore(void)
 				}
 			}
 
-			if (plist->status_chid && (ca_state(plist->status_chid) == cs_conn))
-				ca_put(DBR_LONG, plist->status_chid, &plist->status);
-			if (plist->name_chid && (ca_state(plist->name_chid) == cs_conn)) {
+			TRY_TO_PUT(DBR_LONG, plist->status_chid, &plist->status);
+			if (CONNECTED(plist->name_chid)) {
 				strncpy(nameString, plist->save_file, STRING_LEN-1);
 				cp = strrchr(nameString, (int)'.');
 				if (cp) *cp = 0;
 				ca_put(DBR_STRING, plist->name_chid, &nameString);
 			}
-			if (plist->save_state_chid && (ca_state(plist->save_state_chid) == cs_conn))
-				ca_put(DBR_LONG, plist->save_state_chid, &plist->save_state);
-			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn))
-				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+			TRY_TO_PUT(DBR_LONG, plist->save_state_chid, &plist->save_state);
+			TRY_TO_PUT(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 			if ((plist->status >= SR_STATUS_WARN) && (plist->save_time.secPastEpoch != 0)) {
 				epicsTimeToStrftime(plist->timeStr, sizeof(plist->timeStr),
 					TIMEFMT_noY, &plist->save_time);
-				if (plist->time_chid && (ca_state(plist->time_chid) == cs_conn))
-					ca_put(DBR_STRING, plist->time_chid, &plist->timeStr);
+				TRY_TO_PUT(DBR_STRING, plist->time_chid, &plist->timeStr);
 			}
 		}
 		unlockList();
@@ -1267,18 +1254,12 @@ STATIC int write_save_file(struct chlist *plist)
 				errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 				plist->status = SR_STATUS_FAIL;
 				strcpy(plist->statusStr, "Can't write .savB file");
-				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-					ca_flush_io();
-				}
+				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				return(ERROR);
 			}
 			plist->status = SR_STATUS_WARN;
 			strcpy(plist->statusStr, ".savB file was bad");
-			if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-				ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-				ca_flush_io();
-			}
+			TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 			backup_state = BS_NEW;
 		}
 	}
@@ -1291,10 +1272,7 @@ STATIC int write_save_file(struct chlist *plist)
 		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't write .sav file");
-		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			ca_flush_io();
-		}
+		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 		sprintf(SR_recentlyStr, "Can't write '%s'", plist->save_file);
 		return(ERROR);
 	}
@@ -1312,10 +1290,7 @@ STATIC int write_save_file(struct chlist *plist)
 					backup_file, datetime);
 				plist->status = SR_STATUS_WARN;
 				strcpy(plist->statusStr, "Can't write .savB file");
-				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-					ca_flush_io();
-				}
+				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
 				return(ERROR);
 			}
@@ -1327,10 +1302,7 @@ STATIC int write_save_file(struct chlist *plist)
 		plist->status = SR_STATUS_WARN;
 		sprintf(plist->statusStr,"%d %s not saved", plist->not_connected, 
 			plist->not_connected==1?"value":"values");
-		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			ca_flush_io();
-		}
+		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 	}
 	sprintf(SR_recentlyStr, "Wrote '%s'", plist->save_file);
 	return(OK);
@@ -2159,10 +2131,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	if (!inp_fd) {
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't open .req file");
-		if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-			ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			ca_flush_io();
-		}
+		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 		errlogPrintf("save_restore:readReqFile: unable to open file %s. Exiting.\n", reqFile);
 		return(ERROR);
 	}
@@ -2230,10 +2199,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			if (pchannel == (struct channel *)0) {
 				plist->status = SR_STATUS_WARN;
 				strcpy(plist->statusStr, "Can't alloc channel memory");
-				if (plist->statusStr_chid && (ca_state(plist->statusStr_chid) == cs_conn)) {
-					ca_put(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-					ca_flush_io();
-				}
+				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				errlogPrintf("save_restore:readReqFile: channel calloc failed");
 			} else {
 				/* add new element to the list */

@@ -15,6 +15,16 @@
         printf(FMT, (ARG), ca_message(err_code)); \
 }
 
+#define CONNECTED(CHID) ((CHID) && (ca_state(CHID) == cs_conn))
+
+/* do a ca_put, if the channel is connected */
+#define TRY_TO_PUT(TYPE, CHID, POINTER) \
+{if (CONNECTED(CHID)) ca_put(TYPE, CHID, POINTER);}
+
+#define TRY_TO_PUT_AND_FLUSH(TYPE, CHID, POINTER) \
+{if (CONNECTED(CHID)) {ca_put(TYPE, CHID, POINTER); ca_flush_io();}}
+
+
 #define         MAX(a,b)   ((a)>(b)?(a):(b))
 #define         MIN(a,b)   ((a)<(b)?(a):(b))
 #define         MAXRESTOREFILES 8
