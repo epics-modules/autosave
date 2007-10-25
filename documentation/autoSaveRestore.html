@@ -537,6 +537,15 @@ every <code>period</code> seconds.
 	<tt>create_*_set()</tt> with an empty request-file name.  Autosave will
 	not hate you for doing this, though it will complain.
 
+<P><dt><code>void save_restoreSet_FilePermissions(int permissions)</code>
+<dd>Specify the file permissions used to create new .sav files.  This
+	integer value will be supplied, exactly as given, to the system call,
+	<tt>open()</tt>.  Typically, file permissions are set with an octal
+	number, such as 0640, and <tt>save_restoreSet_FilePermissions()</tt>
+	will confirm any number given to it by echoing it to the console as
+	an octal number.
+	<P>This function can be called at any time after iocInit.
+
 <P><dt><code>void save_restoreShow(int verbose)</code>
 <dd>List all the save sets currently being managed by the save_restore task.
 	If (verbose != 0), lists the PV's as well.

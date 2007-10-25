@@ -112,6 +112,9 @@
  *                macro is specified, save_restore will not maintain backup or
  *                files for the save set.
  * 03/19/07  tmm  v5.2 Don't print errno unless function returns an error.
+ * 09/21/07  tmm  v5.3 New function, save_restoreSet_FilePermissions(),  allows control
+ *                over permissions with which .sav files are created.
+
  */
 #define		SRVERSION "save/restore V5.2"
 
