@@ -153,6 +153,14 @@ extern int logMsg(char *fmt, ...);
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
 
+#define SET_FILE_PERMISSIONS 1
+#if SET_FILE_PERMISSIONS
+#include "sys/types.h"
+#include "fcntl.h"
+/* common file_permissions = S_IRUSR S_IWUSR S_IRGRP S_IWGRP S_IROTH S_IWOTH */
+mode_t file_permissions = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+#endif
+
 #define TIME2WAIT 20		/* time to wait for semaphores sem_remove and sem_do_manual_op */
 #define BACKWARDS_LIST 0	/* old list order was backwards */
 
@@ -352,6 +360,10 @@ void save_restoreSet_SeqPeriodInSeconds(int period) {save_restoreSeqPeriodInSeco
 void save_restoreSet_IncompleteSetsOk(int ok) {save_restoreIncompleteSetsOk = ok;}
 void save_restoreSet_DatedBackupFiles(int ok) {save_restoreDatedBackupFiles = ok;}
 void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix, 29);}
+void save_restoreSet_FilePermissions(int permissions) {
+	file_permissions = permissions;
+	printf("save_restore: File permissions set to 0%o\n", (unsigned int)file_permissions);
+}
 
 /********************************* code *********************************/
 
@@ -1006,10 +1018,11 @@ STATIC int get_channel_values(struct chlist *plist)
  * NOTE: Assumes sr_mutex is locked
  *
  */
- 
+
 STATIC int write_it(char *filename, struct chlist *plist)
 {
 	FILE 			*out_fd;
+	int 			filedes = -1;
 	struct channel	*pchannel;
 	int 			n, i;
 	char			datetime[32];
@@ -1018,6 +1031,21 @@ STATIC int write_it(char *filename, struct chlist *plist)
 
 	/* open the file */
 	errno = 0;
+#if SET_FILE_PERMISSIONS
+	filedes = open(filename, O_RDWR | O_CREAT, file_permissions);
+	if (filedes < 0) {
+		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
+			filename, datetime);
+		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
+			save_restoreNFSOK = 0;
+			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
+		}
+		return(ERROR);
+	} else {
+		out_fd = fdopen(filedes, "w");
+	}
+#else
 	if ((out_fd = fopen(filename,"w")) == NULL) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
@@ -1028,6 +1056,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		}
 		return(ERROR);
 	}
+#endif
+
 
 	/* write header info */
 	errno = 0;
@@ -1136,6 +1166,12 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* close the file */
 	errno = 0;
 	n = fclose(out_fd);
+#if SET_FILE_PERMISSIONS
+	if (filedes >= 0) {
+		close(filedes);
+		filedes = -1;
+	}
+#endif
 	if (n != 0) {
 		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
 		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
@@ -1158,6 +1194,12 @@ trouble:
 		errlogPrintf("save_restore:write_it: Can't close '%s'; giving up. [%s]\n",
 			plist->save_file, datetime);
 	}
+#if SET_FILE_PERMISSIONS
+	if (filedes >= 0) {
+		close(filedes);
+		filedes = -1;
+	}
+#endif
 	return(ERROR);
 }
 
@@ -1610,6 +1652,7 @@ void save_restoreShow(int verbose)
 	printf("  Current date-time (yymmdd-hhmmss): [%s] \n", datetime);
 	printf("  Status: '%s' - '%s'\n", SR_STATUS_STR[SR_status], SR_statusStr);
 	printf("  Debug level: %d\n", save_restoreDebug);
+	printf("  File permissions: 0%o\n", (unsigned int)file_permissions);
 	printf("  Save/restore incomplete save sets? %s\n", save_restoreIncompleteSetsOk?"YES":"NO");
 	printf("  Write dated backup files? %s\n", save_restoreDatedBackupFiles?"YES":"NO");
 	printf("  Number of sequence files to maintain: %d\n", save_restoreNumSeqFiles);
@@ -2427,6 +2470,11 @@ IOCSH_ARG_ARRAY save_restoreSet_status_prefix_Args[1] = {&save_restoreSet_status
 IOCSH_FUNCDEF   save_restoreSet_status_prefix_FuncDef = {"save_restoreSet_status_prefix",1,save_restoreSet_status_prefix_Args};
 static void     save_restoreSet_status_prefix_CallFunc(const iocshArgBuf *args) {save_restoreSet_status_prefix(args[0].sval);}
 
+/* void save_restoreSet_FilePermissions(int permissions); */
+IOCSH_ARG       save_restoreSet_FilePermissions_Arg0    = {"permissions",iocshArgInt};
+IOCSH_ARG_ARRAY save_restoreSet_FilePermissions_Args[1] = {&save_restoreSet_FilePermissions_Arg0};
+IOCSH_FUNCDEF   save_restoreSet_FilePermissions_FuncDef = {"save_restoreSet_FilePermissions",1,save_restoreSet_FilePermissions_Args};
+static void     save_restoreSet_FilePermissions_CallFunc(const iocshArgBuf *args) {save_restoreSet_FilePermissions(args[0].ival);}
 
 void save_restoreRegister(void)
 {
@@ -2455,6 +2503,7 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_IncompleteSetsOk_FuncDef, save_restoreSet_IncompleteSetsOk_CallFunc);
     iocshRegister(&save_restoreSet_DatedBackupFiles_FuncDef, save_restoreSet_DatedBackupFiles_CallFunc);
     iocshRegister(&save_restoreSet_status_prefix_FuncDef, save_restoreSet_status_prefix_CallFunc);
+    iocshRegister(&save_restoreSet_FilePermissions_FuncDef, save_restoreSet_FilePermissions_CallFunc);
 }
 
 epicsExportRegistrar(save_restoreRegister);
