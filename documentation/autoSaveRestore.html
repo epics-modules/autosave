@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v4.3</h1>
+<h1 align="center">autosave v4.4</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC is rebooted.  The
@@ -30,6 +30,43 @@ and does not persist after iocInit() returns.
 program, asVerify, to compare written autosave files with current PV values.
 This program can also write an autosave file from which PV values can be
 restored.
+
+<h2> Important nuances </h2>
+<ul>
+
+<P><li>Autosave uses dbStaticLib to write parameters at boot time, just like
+dbLoadRecords().  Thus, boot-time restore does not cause record processing to
+occur, and it does not make a record's value defined (doesn't set UDF to 0).
+<em>Exception: arrays cannot be written by dbStaticLib, so autosave writes arrays
+using database access.  This still doesn't cause processing to occur, though it
+should cause the record's UDF field to be set to 0.</em>
+
+<P><li>At run time (after boot-time restore), autosave reads and writes using
+channel-access.  Thus, restoring at run time will in general produce a
+different result than restoring at boot time. <em>Exception: arrays are read and
+written using database access.</em>
+
+<P><li>Boot-time restore can occur before and/or after record initialization.
+For most PV's, you don't need to think about this; just tell autosave to restore
+at both times, and autosave will do whatever is required to get the value
+written.  You cannot make this restore-time choice on a PV-by-PV basis; you can
+only specify when an entire file of parameters should be restored.
+
+<P>Motor-record positions (VAL or DVAL) should be restored only before record
+initialization, because this is the assumption under which motor-record device
+support was written. 
+
+<P>In the lore that has built up around autosave, PV's that should be restored
+only before record initialization have been termed "positions".  All other PV's
+have been termed "settings".  Thus, you might run across a file called
+'auto_positions.req', and now you'll know that this file is intended to be
+restored only during autosave's pass-0.
+
+<P><li>You can save parameters without also restoring them, and restore
+parameters without also saving them, but you can't make these choices for
+individual parameters, only for entire files of parameters. 
+
+</ul>
 
 <h2> Module contents</h2>
 
@@ -276,7 +313,8 @@ routine, but this is not always practical.  Another way to disable boot-time
 restore is described in step <i>8. Specify restore files</i>, above.
 
 <h4>10. Select save-file options (optional, recommended)</h4>
-Tell save_restore to writed dated backup files.
+<ul>
+<li>Tell save_restore to writed dated backup files.
 At boot time, the restore software writes a backup copy of the ".sav" file from
 which it restored PV's.  This file can either be named xxx.sav.bu, and be
 rewritten every reboot, or named xxx.sav_YYMMDD-HHMMSS, where "YY..." is a
@@ -290,14 +328,23 @@ the following line in your st.cmd file before the call toiocInit():
   If a save file is restored in both pass 0 and pass 1, the boot-backup file
   will be written only during pass 0.
 
-<P>Tell save_restore to save sequence files.  The
+<P><li>Tell save_restore to save sequence files.  The
 commands:
 <pre>
 	save_restoreSet_NumSeqFiles(3)
 	save_restoreSet_SeqPeriodInSeconds(600)
 </pre>
 will cause save_restore to maintain three copies of each .sav file, at
-ten-minute intervals.
+ten-minute intervals.  Note: if autosave fails to write the .sav file, it will
+stop making sequence copies until it again succeeds.
+
+<P><li>Specify the time delay between a failed .sav-file write and the retry of
+that write.  The default delay is 60 seconds.  If list-PV's change during the
+delay, the new values will be written.
+<pre>
+	save_restoreSet_RetrySeconds(60)
+</pre>
+</ul>
 
 <h4>11. Start the save task (required)</h4>
 Invoke the "save" part of this software as part of the EPICS
@@ -642,6 +689,11 @@ every <code>period</code> seconds.
 	Sequenced backup files will be written with this period.
 	<P>This function can be called at any time.
 
+<P><dt><code>void save_restoreSet_RetrySeconds(int seconds)</code>
+<dd>Sets the value of <code>(int) save_restoreRetrySeconds</code> (initially 60).
+	If the .sav-file write fails, it will be retried after this interval..
+	<P>This function can be called at any time.
+
 <P><dt><code>void save_restoreSet_DatedBackupFiles(int ok)</code>
 <dd>Sets the value of <code>(int) save_restoreDatedBackupFiles</code> (initially 1).
 	If zero, the backup file written at reboot time (a copy of the file
@@ -781,6 +833,9 @@ save_restoreSet_NumSeqFiles(3)
 
 # Time interval between sequenced backups
 save_restoreSet_SeqPeriodInSeconds(600)
+
+# Time between failed .sav-file write and the retry.
+save_restoreSet_RetrySeconds(60)
 
 # NFS host name and IP address
 save_restoreSet_NFSHost("oxygen", "164.54.52.4")</font>

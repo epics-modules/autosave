@@ -10,6 +10,18 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.4</h3>
+<ul>
+<li>If file close fails, retry once.  (Previously, would retry up to 100 times.)
+<li>If file write (including close) fails, retry after save_restoreRetrySeconds
+(default value is 60 seconds).  Previously, would retry only after the file
+system was remounted, or the next time the set was triggered.
+<li>New function save_restoreSet_RetrySeconds(int seconds).
+<li>Don't copy .sav file to .sav&lt;n&gt; (i.e., don't write sequence files) if .sav
+file write failed.
+</ul>
+
+
 <h3>4.3</h3>
 <ul>
 <li>New function, <tt>save_restoreSet_FilePermissions()</tt>,  allows control
