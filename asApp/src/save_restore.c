@@ -114,9 +114,15 @@
  * 03/19/07  tmm  v5.2 Don't print errno unless function returns an error.
  * 09/21/07  tmm  v5.3 New function, save_restoreSet_FilePermissions(),  allows control
  *                over permissions with which .sav files are created.
-
+ * 11/19/07  tmm  v5.4 After failing to write a save file, retry after
+ *                save_restoreRetrySeconds.  (New function, save_restoreSet_RetrySeconds().)
+ *                Previously, we retried only after the file system was remounted, or waited
+ *                until the next time the set was triggered.  Also, no longer retry fclose()
+ *                100 times; now retry twice at most before giving up.
+ *                Don't write sequence files (copy .sav to .sav<n>) for a list in failure.
+ *
  */
-#define		SRVERSION "save/restore V5.2"
+#define		SRVERSION "save/restore V5.4"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -201,6 +207,7 @@ struct chlist {								/* save set list element */
 	int				not_connected;			/* # bad channels not saved/connected */
 	int				backup_sequence_num;	/* appended to backup files */
 	epicsTimeStamp	backup_time;
+	epicsTimeStamp	save_attempt_time;
 	epicsTimeStamp	save_time;
 	/* time_t			backup_time; */
 	/* time_t			save_time; */
@@ -297,6 +304,7 @@ volatile int	save_restoreNumSeqFiles = 3;			/* number of sequence files to maint
 volatile int	save_restoreSeqPeriodInSeconds = 60;	/* period between sequence-file writes */
 volatile int	save_restoreIncompleteSetsOk = 1;		/* will save/restore incomplete sets? */
 volatile int	save_restoreDatedBackupFiles = 1;		/* save backups as <filename>.bu or <filename>_YYMMDD-HHMMSS */
+volatile int	save_restoreRetrySeconds = 60;			/* Time before retrying write after a failure. */
 
 epicsExportAddress(int, save_restoreNumSeqFiles);
 epicsExportAddress(int, save_restoreSeqPeriodInSeconds);
@@ -366,6 +374,9 @@ void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix,
 void save_restoreSet_FilePermissions(int permissions) {
 	file_permissions = permissions;
 	printf("save_restore: File permissions set to 0%o\n", (unsigned int)file_permissions);
+}
+void save_restoreSet_RetrySeconds(int seconds) {
+	if (seconds >= 0) save_restoreRetrySeconds = seconds;
 }
 
 /********************************* code *********************************/
@@ -548,7 +559,7 @@ STATIC int save_restore(void)
 {
 	struct chlist *plist = NULL;
 	char *cp, nameString[FN_LEN];
-	int i, do_seq_check, just_remounted, n;
+	int i, do_seq_check, just_remounted, n, saveNeeded=0;
 	epicsTimeStamp currTime, last_seq_check, remount_check_time;
 
 	if (save_restoreDebug)
@@ -656,12 +667,22 @@ STATIC int save_restore(void)
 			if (plist->enabled_method != plist->save_method) enable_list(plist);
 
 			/*
-			 * Save lists that have triggered.  If we've just successfully remounted,
-			 * save lists that are in failure.
+			 * Save lists that have triggered.  Save lists that are in failure, if we've just remounted,
+			 * or if RETRY_SECS have elapsed since the last save attempt.
 			 */
-			if ( (plist->save_state & SINGLE_EVENTS)
-			  || ((plist->save_state & MONITORED) == MONITORED)
-			  || ((plist->status <= SR_STATUS_FAIL) && just_remounted)) {
+			saveNeeded = FALSE;
+			if (plist->save_state & SINGLE_EVENTS)
+				saveNeeded = TRUE;
+			else if ((plist->save_state & MONITORED) == MONITORED)
+				saveNeeded = TRUE;
+			else if (plist->status <= SR_STATUS_FAIL) {
+				if (just_remounted)
+					saveNeeded = TRUE;
+				else if (epicsTimeDiffInSeconds(&currTime, &plist->save_attempt_time) > save_restoreRetrySeconds)
+					saveNeeded = TRUE;
+			}
+
+			if (saveNeeded) {
 
 				/* fetch values all of the channels */
 				plist->not_connected = get_channel_values(plist);
@@ -672,7 +693,7 @@ STATIC int save_restore(void)
 			}
 
 			/*** Periodically make sequenced backup of most recent saved file ***/
-			if (do_seq_check && plist->do_backups) {
+			if (do_seq_check && plist->do_backups && (plist->status > SR_STATUS_FAIL)) {
 				if (save_restoreNumSeqFiles && plist->last_save_file &&
 					(epicsTimeDiffInSeconds(&currTime, &plist->backup_time) >
 						save_restoreSeqPeriodInSeconds)) {
@@ -1021,13 +1042,14 @@ STATIC int get_channel_values(struct chlist *plist)
  * NOTE: Assumes sr_mutex is locked
  *
  */
-
+#define FPRINTF_FAILED	1
+#define CLOSE_FAILED 	2
 STATIC int write_it(char *filename, struct chlist *plist)
 {
 	FILE 			*out_fd;
 	int 			filedes = -1;
 	struct channel	*pchannel;
-	int 			n, i;
+	int 			n, problem = 0;
 	char			datetime[32];
 	
 	fGetDateStr(datetime);
@@ -1039,7 +1061,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if (filedes < 0) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
 			save_restoreNFSOK = 0;
 			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
@@ -1052,7 +1074,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if ((out_fd = fopen(filename,"w")) == NULL) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		if (++save_restoreIoErrors > save_restoreRemountThreshold) {
 			save_restoreNFSOK = 0;
 			strncpy(SR_recentlyStr, "Too many I/O errors",(STRING_LEN-1));
@@ -1066,9 +1088,10 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	errno = 0;
 	n = fprintf(out_fd,"# %s\tAutomatically generated - DO NOT MODIFY - %s\n",
 			SRversion, datetime);
-	/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		problem |= FPRINTF_FAILED;
 		goto trouble;
 	}
 
@@ -1076,9 +1099,10 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		errno = 0;
 		n = fprintf(out_fd,"! %d channel(s) not connected - or not all gets were successful\n",
 				plist->not_connected);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+			problem |= FPRINTF_FAILED;
 			goto trouble;
 		}
 	}
@@ -1091,9 +1115,10 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else {
 			n = fprintf(out_fd, "#%s ", pchannel->name);
 		}
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+			problem |= FPRINTF_FAILED;
 			goto trouble;
 		}
 
@@ -1105,17 +1130,19 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-			/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
+				if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+				problem |= FPRINTF_FAILED;
 				goto trouble;
 			}
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
-			/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 			if (n <= 0) {
 				errlogPrintf("save_restore:write_it: fprintf returned %d [%s].\n", n, datetime);
+				if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+				problem |= FPRINTF_FAILED;
 				goto trouble;
 			}
 		}
@@ -1132,18 +1159,19 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* write file-is-ok marker */
 	errno = 0;
 	n = fprintf(out_fd, "<END>\n");
-	/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
 	if (n <= 0) {
 		errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		problem |= FPRINTF_FAILED;
 		goto trouble;
 	}
 
 	/* flush everything to disk */
 	errno = 0;
 	n = fflush(out_fd);
-	if (n != 0){
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+	if (n) {
 		errlogPrintf("save_restore:write_it: fflush returned %d [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 	}
 
 
@@ -1153,48 +1181,49 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	if (n == ERROR) {
 		errlogPrintf("save_restore:write_it: ioctl(,FIOSYNC,) returned %d [%s]\n",
 			n, datetime);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 	}
 #elif defined(_WIN32)
         /* WIN32 has no real equivalent to fsync? */
 #else
 	n = fsync(fileno(out_fd));
-	if ((n != 0) && (errno == ENOTSUP)) { n = 0; errno = 0; }
-	if (n != 0) {
+	if (n && (errno == ENOTSUP)) { n = 0; errno = 0; }
+	if (n) {
 		errlogPrintf("save_restore:write_it: fsync returned %d [%s]\n", n, datetime);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 	}
 #endif
 
 	/* close the file */
 	errno = 0;
 	n = fclose(out_fd);
+	if (n) {
+		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		problem |= CLOSE_FAILED;
+		goto trouble;
+	}
 #if SET_FILE_PERMISSIONS
 	if (filedes >= 0) {
 		close(filedes);
 		filedes = -1;
 	}
 #endif
-	if (n != 0) {
-		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
-		/* if (errno) myPrintErrno("write_it", __FILE__, __LINE__); */
-		goto trouble;
-	}
 	return(OK);
 
 trouble:
-	/* try to close file */
-	for (i=1, n=1; n && i<100;i++) {
-		n = fclose(out_fd);
-		if (n && ((i%10)==0)) {
-			errlogPrintf("save_restore:write_it: fclose('%s') returned %d (%d tries)\n",
-				plist->save_file, n, i);
-			epicsThreadSleep(10.0);
-		}
+	/* close the file */
+	errno = 0;
+	n = fclose(out_fd);
+	if (n) {
+		errlogPrintf("save_restore:write_it: fclose('%s') returned %d\n", plist->save_file, n);
+		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+	} else {
+		problem &= ~CLOSE_FAILED;
 	}
-	if (i >= 60) {
+	if (problem) {
 		fGetDateStr(datetime);
-		errlogPrintf("save_restore:write_it: Can't close '%s'; giving up. [%s]\n",
+		errlogPrintf("save_restore:write_it: Giving up on this attempt to write '%s'. [%s]\n",
 			plist->save_file, datetime);
 	}
 #if SET_FILE_PERMISSIONS
@@ -1203,7 +1232,7 @@ trouble:
 		filedes = -1;
 	}
 #endif
-	return(ERROR);
+	return(problem ? ERROR : OK);
 }
 
 
@@ -1250,6 +1279,7 @@ STATIC int write_save_file(struct chlist *plist)
 	fGetDateStr(datetime);
 	plist->status = SR_STATUS_OK;
 	strcpy(plist->statusStr, "Ok");
+	epicsTimeGetCurrent(&plist->save_attempt_time);
 
 	/* Make full file names */
 	if (plist->savePathPV_chid) {
@@ -1595,7 +1625,10 @@ STATIC int create_data_set(
 	plist->save_state = 0;
 	plist->save_ok = 0;
 	plist->monitor_period = MAX(mon_period, min_period);
+	/* init times */
 	epicsTimeGetCurrent(&plist->backup_time);
+	epicsTimeGetCurrent(&plist->save_attempt_time);
+	epicsTimeGetCurrent(&plist->save_time);
 	plist->backup_sequence_num = -1;
 	plist->save_ok = 0;
 	plist->not_connected = -1;
@@ -1660,6 +1693,7 @@ void save_restoreShow(int verbose)
 	printf("  Write dated backup files? %s\n", save_restoreDatedBackupFiles?"YES":"NO");
 	printf("  Number of sequence files to maintain: %d\n", save_restoreNumSeqFiles);
 	printf("  Time interval between sequence files: %d seconds\n", save_restoreSeqPeriodInSeconds);
+	printf("  Time interval between .sav-file write failure and retry: %d seconds\n", save_restoreRetrySeconds);
 	printf("  NFS host: '%s'; address:'%s'\n", save_restoreNFSHostName, save_restoreNFSHostAddr);
 	printf("  NFS mount status: %s\n",
 		save_restoreNFSOK?"Ok":NFS_managed?"Failed":"not managed by save_restore");
@@ -2479,6 +2513,12 @@ IOCSH_ARG_ARRAY save_restoreSet_FilePermissions_Args[1] = {&save_restoreSet_File
 IOCSH_FUNCDEF   save_restoreSet_FilePermissions_FuncDef = {"save_restoreSet_FilePermissions",1,save_restoreSet_FilePermissions_Args};
 static void     save_restoreSet_FilePermissions_CallFunc(const iocshArgBuf *args) {save_restoreSet_FilePermissions(args[0].ival);}
 
+/* void save_restoreSet_RetrySeconds(int seconds); */
+IOCSH_ARG       save_restoreSet_RetrySeconds_Arg0    = {"seconds",iocshArgInt};
+IOCSH_ARG_ARRAY save_restoreSet_RetrySeconds_Args[1] = {&save_restoreSet_RetrySeconds_Arg0};
+IOCSH_FUNCDEF   save_restoreSet_RetrySeconds_FuncDef = {"save_restoreSet_RetrySeconds",1,save_restoreSet_RetrySeconds_Args};
+static void     save_restoreSet_RetrySeconds_CallFunc(const iocshArgBuf *args) {save_restoreSet_RetrySeconds(args[0].ival);}
+
 void save_restoreRegister(void)
 {
     iocshRegister(&fdbrestore_FuncDef, fdbrestore_CallFunc);
@@ -2507,6 +2547,7 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_DatedBackupFiles_FuncDef, save_restoreSet_DatedBackupFiles_CallFunc);
     iocshRegister(&save_restoreSet_status_prefix_FuncDef, save_restoreSet_status_prefix_CallFunc);
     iocshRegister(&save_restoreSet_FilePermissions_FuncDef, save_restoreSet_FilePermissions_CallFunc);
+    iocshRegister(&save_restoreSet_RetrySeconds_FuncDef, save_restoreSet_RetrySeconds_CallFunc);
 }
 
 epicsExportRegistrar(save_restoreRegister);
