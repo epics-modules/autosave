@@ -120,6 +120,10 @@
  *                until the next time the set was triggered.  Also, no longer retry fclose()
  *                100 times; now retry twice at most before giving up.
  *                Don't write sequence files (copy .sav to .sav<n>) for a list in failure.
+ *                v5.3 failed to truncate the file when it open()'ed it (when compiled with
+ *                SET_FILE_PERMISSIONS nonzero).  This caused the file to have extra characters
+ *                if its useful length decreased and then increased, and restore thought the
+ *                file was bad.
  *
  */
 #define		SRVERSION "save/restore V5.4"
@@ -1057,7 +1061,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* open the file */
 	errno = 0;
 #if SET_FILE_PERMISSIONS
-	filedes = open(filename, O_RDWR | O_CREAT, file_permissions);
+	/* Note: must truncate, else file retains old characters when its used length decreases. */
+	filedes = open(filename, O_RDWR | O_CREAT | O_TRUNC, file_permissions);
 	if (filedes < 0) {
 		errlogPrintf("save_restore:write_it - unable to open file '%s' [%s]\n",
 			filename, datetime);
