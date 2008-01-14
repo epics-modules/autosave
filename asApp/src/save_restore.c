@@ -166,7 +166,10 @@ extern int logMsg(char *fmt, ...);
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
 
-#define SET_FILE_PERMISSIONS 1
+#ifndef _WIN32
+  #define SET_FILE_PERMISSIONS 1
+#endif
+
 #if SET_FILE_PERMISSIONS
 #include "sys/types.h"
 #include "fcntl.h"
@@ -375,10 +378,12 @@ void save_restoreSet_SeqPeriodInSeconds(int period) {save_restoreSeqPeriodInSeco
 void save_restoreSet_IncompleteSetsOk(int ok) {save_restoreIncompleteSetsOk = ok;}
 void save_restoreSet_DatedBackupFiles(int ok) {save_restoreDatedBackupFiles = ok;}
 void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix, 29);}
+#if SET_FILE_PERMISSIONS
 void save_restoreSet_FilePermissions(int permissions) {
 	file_permissions = permissions;
 	printf("save_restore: File permissions set to 0%o\n", (unsigned int)file_permissions);
 }
+#endif
 void save_restoreSet_RetrySeconds(int seconds) {
 	if (seconds >= 0) save_restoreRetrySeconds = seconds;
 }
@@ -1693,7 +1698,9 @@ void save_restoreShow(int verbose)
 	printf("  Current date-time (yymmdd-hhmmss): [%s] \n", datetime);
 	printf("  Status: '%s' - '%s'\n", SR_STATUS_STR[SR_status], SR_statusStr);
 	printf("  Debug level: %d\n", save_restoreDebug);
+#if SET_FILE_PERMISSIONS
 	printf("  File permissions: 0%o\n", (unsigned int)file_permissions);
+#endif
 	printf("  Save/restore incomplete save sets? %s\n", save_restoreIncompleteSetsOk?"YES":"NO");
 	printf("  Write dated backup files? %s\n", save_restoreDatedBackupFiles?"YES":"NO");
 	printf("  Number of sequence files to maintain: %d\n", save_restoreNumSeqFiles);
@@ -2512,11 +2519,13 @@ IOCSH_ARG_ARRAY save_restoreSet_status_prefix_Args[1] = {&save_restoreSet_status
 IOCSH_FUNCDEF   save_restoreSet_status_prefix_FuncDef = {"save_restoreSet_status_prefix",1,save_restoreSet_status_prefix_Args};
 static void     save_restoreSet_status_prefix_CallFunc(const iocshArgBuf *args) {save_restoreSet_status_prefix(args[0].sval);}
 
+#if SET_FILE_PERMISSIONS
 /* void save_restoreSet_FilePermissions(int permissions); */
 IOCSH_ARG       save_restoreSet_FilePermissions_Arg0    = {"permissions",iocshArgInt};
 IOCSH_ARG_ARRAY save_restoreSet_FilePermissions_Args[1] = {&save_restoreSet_FilePermissions_Arg0};
 IOCSH_FUNCDEF   save_restoreSet_FilePermissions_FuncDef = {"save_restoreSet_FilePermissions",1,save_restoreSet_FilePermissions_Args};
 static void     save_restoreSet_FilePermissions_CallFunc(const iocshArgBuf *args) {save_restoreSet_FilePermissions(args[0].ival);}
+#endif
 
 /* void save_restoreSet_RetrySeconds(int seconds); */
 IOCSH_ARG       save_restoreSet_RetrySeconds_Arg0    = {"seconds",iocshArgInt};
@@ -2551,7 +2560,9 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_IncompleteSetsOk_FuncDef, save_restoreSet_IncompleteSetsOk_CallFunc);
     iocshRegister(&save_restoreSet_DatedBackupFiles_FuncDef, save_restoreSet_DatedBackupFiles_CallFunc);
     iocshRegister(&save_restoreSet_status_prefix_FuncDef, save_restoreSet_status_prefix_CallFunc);
+#if SET_FILE_PERMISSIONS
     iocshRegister(&save_restoreSet_FilePermissions_FuncDef, save_restoreSet_FilePermissions_CallFunc);
+#endif
     iocshRegister(&save_restoreSet_RetrySeconds_FuncDef, save_restoreSet_RetrySeconds_CallFunc);
 }
 
