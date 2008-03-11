@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/synApps_5_1/support/autosave/cvs/asApp/op/adl/save_restoreStatus_more.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/save_restoreStatus_more.adl"
+	version=030102
 }
 display {
 	object {
@@ -587,5 +587,42 @@ polyline {
 	points {
 		(1,201)
 		(398,201)
+	}
+}
+polygon {
+	object {
+		x=350
+		y=0
+		width=17
+		height=20
+	}
+	"basic attribute" {
+		clr=14
+	}
+	"dynamic attribute" {
+		vis="if zero"
+		chan="$(P)SR_deadIfZero"
+	}
+	points {
+		(358,20)
+		(354,17)
+		(351,13)
+		(350,8)
+		(350,4)
+		(350,1)
+		(352,0)
+		(355,0)
+		(358,2)
+		(358,5)
+		(359,2)
+		(362,0)
+		(365,0)
+		(366,1)
+		(367,4)
+		(367,8)
+		(365,13)
+		(362,17)
+		(359,20)
+		(358,20)
 	}
 }
