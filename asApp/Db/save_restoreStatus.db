@@ -6,8 +6,19 @@
 
 record(bo, "$(P)SR_heartbeat") {
   field(DTYP, "Soft Channel")
+  field(FLNK, "$(P)SR_i_am_alive")
 }
 
+record(bo, "$(P)SR_i_am_alive") {
+  field(DTYP, "Soft Channel")
+  field(DOL, "1")
+  field(UDF, "0")
+  field(OUT, "$(P)SR_deadIfZero.VAL PP")
+}
+record(bo, "$(P)SR_deadIfZero") {
+  field(DTYP, "Soft Channel")
+  field(HIGH, "$(DEAD_SECONDS)")
+}
 record(mbbo, "$(P)SR_rebootStatus") {
   field(DTYP, "Soft Channel")
   field(NOBT, "3")
