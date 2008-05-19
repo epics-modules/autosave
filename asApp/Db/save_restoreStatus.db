@@ -17,7 +17,7 @@ record(bo, "$(P)SR_i_am_alive") {
 }
 record(bo, "$(P)SR_deadIfZero") {
   field(DTYP, "Soft Channel")
-  field(HIGH, "$(DEAD_SECONDS)")
+  field(HIGH, "$(DEAD_SECONDS=300)")
 }
 record(mbbo, "$(P)SR_rebootStatus") {
   field(DTYP, "Soft Channel")
