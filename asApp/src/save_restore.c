@@ -124,9 +124,12 @@
  *                SET_FILE_PERMISSIONS nonzero).  This caused the file to have extra characters
  *                if its useful length decreased and then increased, and restore thought the
  *                file was bad.
- *
+ * 03/10/08  tmm  v5.5 Merged in several improvements from Ben Franksen:
+ *                Make use of status PV's optional and controllable by function call.
+ *                Report failed connections to PV's at connect time.
+ *                Allow embedded '.' in save-file name
  */
-#define		SRVERSION "save/restore V5.4"
+#define		SRVERSION "save/restore V5.5"
 
 #ifdef vxWorks
 #include	<vxWorks.h>
@@ -312,11 +315,13 @@ volatile int	save_restoreSeqPeriodInSeconds = 60;	/* period between sequence-fil
 volatile int	save_restoreIncompleteSetsOk = 1;		/* will save/restore incomplete sets? */
 volatile int	save_restoreDatedBackupFiles = 1;		/* save backups as <filename>.bu or <filename>_YYMMDD-HHMMSS */
 volatile int	save_restoreRetrySeconds = 60;			/* Time before retrying write after a failure. */
+volatile int	save_restoreUseStatusPVs = 1;			/* use PVs for status etc. */
 
 epicsExportAddress(int, save_restoreNumSeqFiles);
 epicsExportAddress(int, save_restoreSeqPeriodInSeconds);
 epicsExportAddress(int, save_restoreIncompleteSetsOk);
 epicsExportAddress(int, save_restoreDatedBackupFiles);
+epicsExportAddress(int, save_restoreUseStatusPVs);
 
 /* variables for managing NFS mount */
 char save_restoreNFSHostName[STRING_LEN] = "";
@@ -387,6 +392,7 @@ void save_restoreSet_FilePermissions(int permissions) {
 void save_restoreSet_RetrySeconds(int seconds) {
 	if (seconds >= 0) save_restoreRetrySeconds = seconds;
 }
+void save_restoreSet_UseStatusPVs(int ok) {save_restoreUseStatusPVs = ok;}
 
 /********************************* code *********************************/
 
@@ -584,7 +590,7 @@ STATIC int save_restore(void)
 #endif
 
 	/* Build names for save_restore general status PV's with status_prefix */
-	if (*status_prefix && (*SR_status_PV == '\0')) {
+	if (save_restoreUseStatusPVs && *status_prefix && (*SR_status_PV == '\0')) {
 		strcpy(SR_status_PV, status_prefix);
 		strcat(SR_status_PV, "SR_status");
 		strcpy(SR_heartbeat_PV, status_prefix);
@@ -748,56 +754,58 @@ STATIC int save_restore(void)
 		SR_recentlyStr[(STRING_LEN-1)] = '\0';
 		TRY_TO_PUT(DBR_STRING, SR_recentlyStr_chid, &SR_recentlyStr);
 
-		/*** set up list-specific status PV's for any new lists ***/
-		while (waitForListLock(5) == 0) {
-			if (save_restoreDebug) errlogPrintf("save_restore: '%s' waiting for listLock()\n", plist->reqFile);
-		}
-		for (plist = lptr; plist; plist = plist->pnext) {
-			/*
-			 * If this is the first time for a list, and user has defined a status prefix,
-			 * connect to the list's status PV's
-			 */
-			if (*status_prefix && (plist->status_PV[0] == '\0')) {
-				/*** Build PV names ***/
-				/* make common portion of PVname strings */
-				n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
-				strcpy(plist->name_PV, plist->status_PV);
-				strcpy(plist->save_state_PV, plist->status_PV);
-				strcpy(plist->statusStr_PV, plist->status_PV);
-				strcpy(plist->time_PV, plist->status_PV);
-				/* make all PVname strings */
-				strncat(plist->status_PV, "Status", n);
-				strncat(plist->name_PV, "Name", n);
-				strncat(plist->save_state_PV, "State", n);
-				strncat(plist->statusStr_PV, "StatusStr", n);
-				strncat(plist->time_PV, "Time", n);
-				/* connect with PV's */
-				TATTLE(ca_search(plist->status_PV, &plist->status_chid), "save_restore: ca_search(%s) returned %s", plist->status_PV);
-				TATTLE(ca_search(plist->name_PV, &plist->name_chid), "save_restore: ca_search(%s) returned %s", plist->name_PV);
-				TATTLE(ca_search(plist->save_state_PV, &plist->save_state_chid), "save_restore: ca_search(%s) returned %s", plist->save_state_PV);
-				TATTLE(ca_search(plist->statusStr_PV, &plist->statusStr_chid), "save_restore: ca_search(%s) returned %s", plist->statusStr_PV);
-				TATTLE(ca_search(plist->time_PV, &plist->time_chid), "save_restore: ca_search(%s) returned %s", plist->time_PV);
-				if (ca_pend_io(0.5)!=ECA_NORMAL) {
-					errlogPrintf("save_restore: Can't connect to status PV(s) for list '%s'\n", plist->save_file);
+		if (save_restoreUseStatusPVs) {
+			/*** set up list-specific status PV's for any new lists ***/
+			while (waitForListLock(5) == 0) {
+				if (save_restoreDebug) errlogPrintf("save_restore: '%s' waiting for listLock()\n", plist->reqFile);
+			}
+			for (plist = lptr; plist; plist = plist->pnext) {
+				/*
+				 * If this is the first time for a list, and user has defined a status prefix,
+				 * connect to the list's status PV's
+				 */
+				if (*status_prefix && (plist->status_PV[0] == '\0')) {
+					/*** Build PV names ***/
+					/* make common portion of PVname strings */
+					n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->listNumber);
+					strcpy(plist->name_PV, plist->status_PV);
+					strcpy(plist->save_state_PV, plist->status_PV);
+					strcpy(plist->statusStr_PV, plist->status_PV);
+					strcpy(plist->time_PV, plist->status_PV);
+					/* make all PVname strings */
+					strncat(plist->status_PV, "Status", n);
+					strncat(plist->name_PV, "Name", n);
+					strncat(plist->save_state_PV, "State", n);
+					strncat(plist->statusStr_PV, "StatusStr", n);
+					strncat(plist->time_PV, "Time", n);
+					/* connect with PV's */
+					TATTLE(ca_search(plist->status_PV, &plist->status_chid), "save_restore: ca_search(%s) returned %s", plist->status_PV);
+					TATTLE(ca_search(plist->name_PV, &plist->name_chid), "save_restore: ca_search(%s) returned %s", plist->name_PV);
+					TATTLE(ca_search(plist->save_state_PV, &plist->save_state_chid), "save_restore: ca_search(%s) returned %s", plist->save_state_PV);
+					TATTLE(ca_search(plist->statusStr_PV, &plist->statusStr_chid), "save_restore: ca_search(%s) returned %s", plist->statusStr_PV);
+					TATTLE(ca_search(plist->time_PV, &plist->time_chid), "save_restore: ca_search(%s) returned %s", plist->time_PV);
+					if (ca_pend_io(0.5)!=ECA_NORMAL) {
+						errlogPrintf("save_restore: Can't connect to status PV(s) for list '%s'\n", plist->save_file);
+					}
+				}
+
+				TRY_TO_PUT(DBR_LONG, plist->status_chid, &plist->status);
+				if (CONNECTED(plist->name_chid)) {
+					strncpy(nameString, plist->save_file, STRING_LEN-1);
+					cp = strrchr(nameString, (int)'.');
+					if (cp) *cp = 0;
+					ca_put(DBR_STRING, plist->name_chid, &nameString);
+				}
+				TRY_TO_PUT(DBR_LONG, plist->save_state_chid, &plist->save_state);
+				TRY_TO_PUT(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+				if ((plist->status >= SR_STATUS_WARN) && (plist->save_time.secPastEpoch != 0)) {
+					epicsTimeToStrftime(plist->timeStr, sizeof(plist->timeStr),
+						TIMEFMT_noY, &plist->save_time);
+					TRY_TO_PUT(DBR_STRING, plist->time_chid, &plist->timeStr);
 				}
 			}
-
-			TRY_TO_PUT(DBR_LONG, plist->status_chid, &plist->status);
-			if (CONNECTED(plist->name_chid)) {
-				strncpy(nameString, plist->save_file, STRING_LEN-1);
-				cp = strrchr(nameString, (int)'.');
-				if (cp) *cp = 0;
-				ca_put(DBR_STRING, plist->name_chid, &nameString);
-			}
-			TRY_TO_PUT(DBR_LONG, plist->save_state_chid, &plist->save_state);
-			TRY_TO_PUT(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-			if ((plist->status >= SR_STATUS_WARN) && (plist->save_time.secPastEpoch != 0)) {
-				epicsTimeToStrftime(plist->timeStr, sizeof(plist->timeStr),
-					TIMEFMT_noY, &plist->save_time);
-				TRY_TO_PUT(DBR_STRING, plist->time_chid, &plist->timeStr);
-			}
+			unlockList();
 		}
-		unlockList();
 
 		/*** service user commands ***/
 		if (remove_dset) {
@@ -851,10 +859,15 @@ STATIC int connect_list(struct chlist *plist)
 	}
 
 	for (pchan = plist->pchan_list, n=m=0; pchan != 0; pchan = pchan->pnext, m++) {
-		if (pchan->chid && (ca_state(pchan->chid) == cs_conn)) {
-			strcpy(pchan->value,"Connected");
-			n++;
-		}
+		if (pchan->chid) {
+			if (ca_state(pchan->chid) == cs_conn) {
+				strcpy(pchan->value,"Connected");
+				n++;
+			} else {
+				errlogPrintf("save_restore: connect failed for channel '%s'\n", pchan->name);
+			}
+ 		}
+
 		pchan->max_elements = ca_element_count(pchan->chid);	/* just to see if it's an array */
 		pchan->curr_elements = pchan->max_elements;				/* begin with this assumption */
 		if (save_restoreDebug >= 10)
@@ -1015,8 +1028,7 @@ STATIC int get_channel_values(struct chlist *plist)
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: no CHID for '%s'\n", pchannel->name);
 			} else if (ca_state(pchannel->chid) != cs_conn) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s not connected\n", pchannel->name);
-			}
-			if ((pchannel->max_elements < 1)) {
+			} else if ((pchannel->max_elements < 1)) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has, at most, %ld elements\n",
 					pchannel->name, pchannel->max_elements);
 			}
@@ -1647,8 +1659,14 @@ STATIC int create_data_set(
 
 	/** construct the save_file name **/
 	strcpy(plist->save_file, plist->reqFile);
+#if 0
 	inx = 0;
 	while ((plist->save_file[inx] != 0) && (plist->save_file[inx] != '.') && (inx < (FN_LEN-6))) inx++;
+#else
+	/* fix bfr 2007-10-01: need to search for last '.', not first */
+	inx = strlen(plist->save_file)-1;
+	while (inx > 0 && plist->save_file[inx] != '.') inx--;
+#endif
 	plist->save_file[inx] = 0;	/* truncate if necessary to leave room for ".sav" + null */
 	strcat(plist->save_file,".sav");
 	/* make full name, including file path */
@@ -2533,6 +2551,12 @@ IOCSH_ARG_ARRAY save_restoreSet_RetrySeconds_Args[1] = {&save_restoreSet_RetrySe
 IOCSH_FUNCDEF   save_restoreSet_RetrySeconds_FuncDef = {"save_restoreSet_RetrySeconds",1,save_restoreSet_RetrySeconds_Args};
 static void     save_restoreSet_RetrySeconds_CallFunc(const iocshArgBuf *args) {save_restoreSet_RetrySeconds(args[0].ival);}
 
+/* void save_restoreSet_UseStatusPVs(int ok); */
+IOCSH_ARG       save_restoreSet_UseStatusPVs_Arg0    = {"ok",iocshArgInt};
+IOCSH_ARG_ARRAY save_restoreSet_UseStatusPVs_Args[1] = {&save_restoreSet_UseStatusPVs_Arg0};
+IOCSH_FUNCDEF   save_restoreSet_UseStatusPVs_FuncDef = {"save_restoreSet_UseStatusPVs",1,save_restoreSet_UseStatusPVs_Args};
+static void     save_restoreSet_UseStatusPVs_CallFunc(const iocshArgBuf *args) {save_restoreSet_UseStatusPVs(args[0].ival);}
+
 void save_restoreRegister(void)
 {
     iocshRegister(&fdbrestore_FuncDef, fdbrestore_CallFunc);
@@ -2564,6 +2588,7 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_FilePermissions_FuncDef, save_restoreSet_FilePermissions_CallFunc);
 #endif
     iocshRegister(&save_restoreSet_RetrySeconds_FuncDef, save_restoreSet_RetrySeconds_CallFunc);
+    iocshRegister(&save_restoreSet_UseStatusPVs_FuncDef, save_restoreSet_UseStatusPVs_CallFunc);
 }
 
 epicsExportRegistrar(save_restoreRegister);
