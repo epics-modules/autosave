@@ -710,6 +710,12 @@ every <code>period</code> seconds.
 	commands.
 	<P>This function must be called before the first call to <code>create_xxx_set()</code>.
 
+<P><dt><code>void save_restoreSet_UseStatusPVs(int ok)</code>
+<dd>Specifies whether save_restore should report its status to a preloaded set
+	of EPICS PV's (contained in the database save_restoreStatus.db).  If the
+	argument is '0', then status PV's will not be used.
+	<P>This function should be called before the first call to <code>create_xxx_set()</code>.
+
 <P><dt><code>void save_restoreSet_NFSHost(char *hostname, char *address)</code>
 <dd>Specifies the name and IP address of the NFS host.  If both have been
 	specified, and <code>set_savefile_path()</code> has been called to specify the file
