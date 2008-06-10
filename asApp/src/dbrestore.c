@@ -727,8 +727,8 @@ int reboot_restore(char *filename, initHookState init_state)
 	/* open file */
 	strNcpy(fname, saveRestoreFilePath, sizeof(fname) -1);
 	strncat(fname, filename, MAX(sizeof(fname) -1 - strlen(fname),0));
-	errlogPrintf("*** restoring from '%s' at initHookState %d ***\n",
-		fname, (int)init_state);
+	errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n",
+		fname, (int)init_state, pass ? "after" : "before");
 	if ((inp_fd = fopen_and_check(fname, &status)) == NULL) {
 		errlogPrintf("save_restore: Can't open save file.");
 		if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
