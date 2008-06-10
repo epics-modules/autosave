@@ -46,11 +46,19 @@ channel-access.  Thus, restoring at run time will in general produce a
 different result than restoring at boot time. <em>Exception: arrays are read and
 written using database access.</em>
 
-<P><li>Boot-time restore can occur before and/or after record initialization.
-For most PV's, you don't need to think about this; just tell autosave to restore
-at both times, and autosave will do whatever is required to get the value
-written.  You cannot make this restore-time choice on a PV-by-PV basis; you can
-only specify when an entire file of parameters should be restored.
+<P><li>Boot-time restore can occur at either or both of two times: before record
+initialization ("pass 0"); and after record initialization ("pass 1").  (Record
+initialization includes device initialization.) For most PV's, you don't need to
+think about this; just tell autosave to restore at both times, and autosave will
+do whatever is required to get the value written.  You cannot make this
+restore-time choice on a PV-by-PV basis; you can only specify when an entire
+file of parameters should be restored.
+
+<P>If you want the restored value available for use by device support during its
+initialization, you must cause the value to be restored during pass 0.  (Note
+that arrays cannot be restored at this time.) If you want the restored value to
+overwrite the value written by record/device initialization, you must cause the
+value to be restored dusing pass 1.
 
 <P>Motor-record positions (VAL or DVAL) should be restored only before record
 initialization, because this is the assumption under which motor-record device
