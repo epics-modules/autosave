@@ -689,16 +689,18 @@ every <code>period</code> seconds.
 
 <P><dt><code>void save_restoreSet_NumSeqFiles(int numSeqFiles)</code>
 <dd>Sets the value of <code>(int) save_restoreNumSeqFiles</code> (initially 3).
-	This is the number of sequenced backup files to be maintained.  
+	This is the number of sequenced backup files to be maintained.
+	<code>numSeqFiles</code> must be between 0 and 10 inclusive.  
 	<P>This function can be called at any time.
 
 <P><dt><code>void save_restoreSet_SeqPeriodInSeconds(int period)</code>
 <dd>Sets the value of <code>(int) save_restoreSeqPeriodInSeconds</code> (initially 60).
 	Sequenced backup files will be written with this period.
+	<code>period</code> must be 10 or greater.
 	<P>This function can be called at any time.
 
 <P><dt><code>void save_restoreSet_RetrySeconds(int seconds)</code>
-<dd>Sets the value of <code>(int) save_restoreRetrySeconds</code> (initially 60).
+<dd>Sets the value of <code>(int) save_restoreRetrySeconds</code> (initially 60; minimum 10).
 	If the .sav-file write fails, it will be retried after this interval..
 	<P>This function can be called at any time.
 
