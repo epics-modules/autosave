@@ -10,6 +10,13 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.5</h3>
+<ul>
+<li> Previously, autosave restored auto_positions.sav and auto_settings.sav
+if no save file had been specified in a call to set_pass<i>n</i>_restoreFile().
+Now, autosave does not restore anything you don't tell it to restore.
+</ul>
+
 <h3>4.4</h3>
 <ul>
 <li>If file close fails, retry once.  (Previously, would retry up to 100 times.)
@@ -401,7 +408,6 @@ or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy" command.
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: September 8, 2006 
 </address>
 </body>
 </html>
