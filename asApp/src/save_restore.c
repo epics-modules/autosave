@@ -134,7 +134,12 @@
 #ifdef vxWorks
 #include	<vxWorks.h>
 #include	<stdioLib.h>
-#include	<nfsDrv.h>
+
+/* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
+/* #include	<nfsDrv.h> */
+extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
+extern STATUS nfsUnmount(char *localName);
+
 #include	<ioLib.h>
 extern int logMsg(char *fmt, ...);
 #else
