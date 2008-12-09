@@ -1230,7 +1230,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		problem |= CLOSE_FAILED;
 		goto trouble;
 	}
-#if SET_FILE_PERMISSIONS
+#if 0 /* SET_FILE_PERMISSIONS */
 	if (filedes >= 0) {
 		close(filedes);
 		filedes = -1;
@@ -1253,7 +1253,7 @@ trouble:
 		errlogPrintf("save_restore:write_it: Giving up on this attempt to write '%s'. [%s]\n",
 			plist->save_file, datetime);
 	}
-#if SET_FILE_PERMISSIONS
+#if 0 /* SET_FILE_PERMISSIONS */
 	if (filedes >= 0) {
 		close(filedes);
 		filedes = -1;
