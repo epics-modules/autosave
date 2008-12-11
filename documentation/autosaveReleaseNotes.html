@@ -15,7 +15,13 @@ content="text/html; charset=iso-8859-1">
 <li> Previously, autosave restored auto_positions.sav and auto_settings.sav
 if no save file had been specified in a call to set_pass<i>n</i>_restoreFile().
 Now, autosave does not restore anything you don't tell it to restore.
-<li>Can now build with tornado 2.2.2
+<li>Can now build with tornado 2.2.2.
+
+<li>save_restore.c:write_it() was calling open(), fdopen(), fclose(), and
+close(), in that order, and this worked routinely.  However, some doc suggests
+close() should not be called, and we found a task suspended in the close() call,
+so the call has been deleted.
+
 </ul>
 
 <h3>4.4</h3>
