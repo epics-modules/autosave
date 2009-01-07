@@ -2346,16 +2346,15 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	 * path and/or file name will be read when it's time to write the file.  Currently,
 	 * this can only be done when the list is defined.
 	 */
-	if (macGetValue(handle, "SAVEPATHPV", name, 80) > 0) {
-		plist->do_backups = 0;
-		strncpy(plist->savePathPV, name, 80);
-	}
-	if (macGetValue(handle, "SAVENAMEPV", name, 80) > 0) {
-		plist->do_backups = 0;
-		strncpy(plist->saveNamePV, name, 80);
-	}
-
 	if (handle) {
+		if (macGetValue(handle, "SAVEPATHPV", name, 80) > 0) {
+			plist->do_backups = 0;
+			strncpy(plist->savePathPV, name, 80);
+		}
+		if (macGetValue(handle, "SAVENAMEPV", name, 80) > 0) {
+			plist->do_backups = 0;
+			strncpy(plist->saveNamePV, name, 80);
+		}
 		macDeleteHandle(handle);
 		if (pairs) free(pairs);
 	}
