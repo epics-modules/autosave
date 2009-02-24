@@ -541,25 +541,29 @@ function will change the save file name.
 <P><dt><code>int create_periodic_set(char *request_file, int period, char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
 every <code>period</code> seconds.
-<P>This function can be called at any time after iocInit.
+	<P> See "Start the save task", above for information about the macro string.
+	<P>This function can be called at any time after iocInit.
 
 <P><dt><code>int create_triggered_set(char *request_file, char *trigger_channel,
 		char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
 	whenever the PV specified by <code>trigger_channel</code> is posted.  Normally
 	this occurs when the PV's value changes.
+	<P> See "Start the save task", above for information about the macro string.
 	<P>This function can be called at any time after iocInit.
 
 <P><dt><code>int create_monitor_set(char *request_file, int period, char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
 	every <code>period</code> seconds, if any PV in the save set was posted (changed
 	value) since the last write.
+	<P> See "Start the save task", above for information about the macro string.
 	<P>This function can be called at any time after iocInit.
 
 <P><dt><code>int create_manual_set(char *request_file, char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
 	when the function <code>manual_save()</code> is called with the same request-file
 	name.
+	<P> See "Start the save task", above for information about the macro string.
 	<P>This function can be called at any time after iocInit.
 
 <P><dt><code>int fdbrestore(char *save_file)</code>
