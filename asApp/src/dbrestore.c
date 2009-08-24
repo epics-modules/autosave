@@ -79,6 +79,7 @@
 #include	<dbConvertFast.h>	/* dbFastPutConvertRoutine */
 #include	<initHooks.h>
 #include	<epicsThread.h>
+#include	<errlog.h>
 #include	<iocsh.h>
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
