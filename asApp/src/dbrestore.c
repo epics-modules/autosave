@@ -1210,7 +1210,7 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 	return(n);
 }
 
-#define BUFSIZE 100
+#define BUFFER_SIZE 100
 /*
  * Look through the database for info nodes with the specified info_name, and get the
  * associated info_value string.  Interpret this string as a list of field names.  Write
@@ -1222,7 +1222,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	DBENTRY		dbentry;
 	DBENTRY		*pdbentry = &dbentry;
 	const char *info_value, delimiters[] = " \t\n\r.";
-	char		buf[BUFSIZE], *field, *fields=buf;
+	char		buf[BUFFER_SIZE], *field, *fields=buf;
 	FILE 		*out_fd;
 
 	if (!pdbbase) {
@@ -1230,7 +1230,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 		return;
 	}
 	if (strstr(fileBaseName, ".req")) {
-		strncpy(buf, fileBaseName, BUFSIZE);
+		strncpy(buf, fileBaseName, BUFFER_SIZE);
 	} else {
 		sprintf(buf, "%s.req", fileBaseName);
 	}
@@ -1249,7 +1249,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 			info_value = dbGetInfo(pdbentry, info_name);
 			if (info_value) {
 				/* printf("record %s.autosave = '%s'\n", dbGetRecordName(pdbentry), info_value); */
-				strncpy(fields, info_value, BUFSIZE);
+				strncpy(fields, info_value, BUFFER_SIZE);
 				for (field = strtok(fields, delimiters); field; field = strtok(NULL, delimiters)) {
 					if (dbFindField(pdbentry, field) == 0) {
 						fprintf(out_fd, "%s.%s\n", dbGetRecordName(pdbentry), field);
