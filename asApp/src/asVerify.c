@@ -187,7 +187,7 @@ int main(int argc,char **argv)
 		}
 		/* NOTE value_string must have room for nearly  BUF_SIZE characters */
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
-		if (debug) printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n",
+		if (debug) printf("\nasVerify: PVname='%s', value_string[%zd]='%s'\n",
 				PVname, strlen(value_string), value_string);
 		if (n<3) *value_string = 0;
 		if (strlen(PVname) >= PVNAME_STRINGSZ) {
