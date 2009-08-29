@@ -133,6 +133,7 @@
 
 #ifdef vxWorks
 #include	<vxWorks.h>
+#include	<hostLib.h>
 #include	<stdioLib.h>
 
 /* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
