@@ -57,9 +57,10 @@
  * 08/03/07  tmm  v4.11 Added functions makeAutosaveFileFromDbInfo() and makeAutosaveFiles()
  *                which search through the loaded database, looking for info nodes indicating
  *                fields that are to be autosaved.
+ * 09/11/09  tmm  v4.12 If recordname is an alias (>=3.14.11), don't search for info nodes.
  *                
  */
-#define VERSION "4.11"
+#define VERSION "4.12"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -90,6 +91,10 @@
 #define OK 0
 #define ERROR -1
 #endif
+
+/* EPICS base version tests.*/
+#define LT_EPICSBASE(v,r,l) ((EPICS_VERSION<=(v)) && (EPICS_REVISION<=(r)) && (EPICS_MODIFICATION<(l)))
+#define GE_EPICSBASE(v,r,l) ((EPICS_VERSION>=(v)) && (EPICS_REVISION>=(r)) && (EPICS_MODIFICATION>=(l)))
 
 STATIC char 	*RESTORE_VERSION = VERSION;
 
@@ -1224,6 +1229,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	const char *info_value, delimiters[] = " \t\n\r.";
 	char		buf[BUFFER_SIZE], *field, *fields=buf;
 	FILE 		*out_fd;
+	int			searchRecord;
 
 	if (!pdbbase) {
 		errlogPrintf("autosave:makeAutosaveFileFromDbInfo: No Database Loaded\n");
@@ -1245,7 +1251,13 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	do {
 		/* loop over all records of current type*/
 		dbFirstRecord(pdbentry);
+#if GE_EPICSBASE(3,14,11)
+		searchRecord = dbIsAlias(pdbentry) ? 0 : 1;
+#else
+		searchRecord = 1;
+#endif
 		do {
+			if (searchRecord) {
 			info_value = dbGetInfo(pdbentry, info_name);
 			if (info_value) {
 				/* printf("record %s.autosave = '%s'\n", dbGetRecordName(pdbentry), info_value); */
@@ -1256,6 +1268,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 					} else {
 						printf("makeAutosaveFileFromDbInfo: %s.%s not found\n", dbGetRecordName(pdbentry), field);
 					}
+				}
 				}
 			}
 		} while (dbNextRecord(pdbentry) == 0);
