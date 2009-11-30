@@ -10,6 +10,16 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.6</h3>
+<ul>
+<li> Previously, autosave determined the element count of a PV in
+connect_list(), never revisited it, and ignored PV's whose element
+counts had not been determined.  This prevented autosave from saving
+PV's that failed to connect promptly.
+
+</ul>
+
+
 <h3>4.5</h3>
 <ul>
 <li> Previously, autosave restored auto_positions.sav and auto_settings.sav
