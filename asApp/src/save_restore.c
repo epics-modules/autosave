@@ -225,8 +225,6 @@ struct chlist {								/* save set list element */
 	epicsTimeStamp	backup_time;
 	epicsTimeStamp	save_attempt_time;
 	epicsTimeStamp	save_time;
-	/* time_t			backup_time; */
-	/* time_t			save_time; */
 	int				listNumber;				/* future: identify this list's status reporting variables */
 	char			name_PV[PV_NAME_LEN];	/* future: write save-set name to generic PV */
 	chid			name_chid;
@@ -684,7 +682,9 @@ STATIC int save_restore(void)
 			 * setting up CA monitors that we're going to have to manage, so we
 			 * make all the calls to enable_list().
 			 */ 
-			if (plist->enabled_method == 0) plist->not_connected = connect_list(plist);
+			if (plist->enabled_method == 0) {
+				plist->not_connected = connect_list(plist);
+			}
 			if (plist->enabled_method != plist->save_method) enable_list(plist);
 
 			/*
@@ -845,55 +845,58 @@ STATIC int save_restore(void)
  */
 STATIC int connect_list(struct chlist *plist)
 {
-	struct channel	*pchan;
+	struct channel	*pchannel;
 	int				n, m;
 	long			status, field_size;
 
 	/* connect all channels in the list */
-	for (pchan = plist->pchan_list, n=0; pchan != 0; pchan = pchan->pnext) {
+	for (pchannel = plist->pchan_list, n=0; pchannel != 0; pchannel = pchannel->pnext) {
 		if (save_restoreDebug >= 10)
-			errlogPrintf("save_restore:connect_list: channel '%s'\n", pchan->name);
-		if (ca_search(pchan->name,&pchan->chid) == ECA_NORMAL) {
-			strcpy(pchan->value,"Search Issued");
+			errlogPrintf("save_restore:connect_list: channel '%s'\n", pchannel->name);
+		if (ca_search(pchannel->name,&pchannel->chid) == ECA_NORMAL) {
+			strcpy(pchannel->value,"Search Issued");
 			n++;
 		} else {
-			strcpy(pchan->value,"Search Failed");
+			strcpy(pchannel->value,"Search Failed");
 		}
 	}
 	if (ca_pend_io(MAX(5.0, n * 0.01)) == ECA_TIMEOUT) {
 		errlogPrintf("save_restore:connect_list: not all searches successful\n");
 	}
 
-	for (pchan = plist->pchan_list, n=m=0; pchan != 0; pchan = pchan->pnext, m++) {
-		if (pchan->chid) {
-			if (ca_state(pchan->chid) == cs_conn) {
-				strcpy(pchan->value,"Connected");
+	for (pchannel = plist->pchan_list, n=m=0; pchannel != 0; pchannel = pchannel->pnext, m++) {
+		if (pchannel->chid) {
+			if (ca_state(pchannel->chid) == cs_conn) {
+				strcpy(pchannel->value,"Connected");
 				n++;
 			} else {
-				errlogPrintf("save_restore: connect failed for channel '%s'\n", pchan->name);
+				errlogPrintf("save_restore: connect failed for channel '%s'\n", pchannel->name);
 			}
  		}
 
-		pchan->max_elements = ca_element_count(pchan->chid);	/* just to see if it's an array */
-		pchan->curr_elements = pchan->max_elements;				/* begin with this assumption */
+		pchannel->max_elements = ca_element_count(pchannel->chid);	/* just to see if it's an array */
+		pchannel->curr_elements = pchannel->max_elements;				/* begin with this assumption */
 		if (save_restoreDebug >= 10)
 			errlogPrintf("save_restore:connect_list: '%s' has, at most, %ld elements\n",
-				pchan->name, pchan->max_elements);
-		if (pchan->max_elements > 1) {
+				pchannel->name, pchannel->max_elements);
+		if (pchannel->max_elements > 1) {
 			/* We use database access for arrays, so get that info */
-			status = SR_get_array_info(pchan->name, &pchan->max_elements, &field_size, &pchan->field_type);
-			/* info resulting from dbNameToAddr() might be different, but it's still not the actual element count */
-			pchan->curr_elements = pchan->max_elements;
-			if (save_restoreDebug >= 10)
-				errlogPrintf("save_restore:connect_list:(after SR_get_array_info) '%s' has, at most, %ld elements\n",
-					pchan->name, pchan->max_elements);
-			if (status == 0)
-				pchan->pArray = calloc(pchan->max_elements, field_size);
-			if (pchan->pArray == NULL) {
-				errlogPrintf("save_restore:connect_list: can't alloc array for '%s'\n", pchan->name);
-				pchan->max_elements = 0;
-				pchan->curr_elements = 0;
-			}
+			status = SR_get_array_info(pchannel->name, &pchannel->max_elements, &field_size, &pchannel->field_type);
+			if (status) {
+				pchannel->curr_elements = pchannel->max_elements = -1;
+				errlogPrintf("save_restore:connect_list: array PV '%s' is not local.\n", pchannel->name);
+			} else {
+				/* info resulting from dbNameToAddr() might be different, but it's still not the actual element count */
+				pchannel->curr_elements = pchannel->max_elements;
+				if (save_restoreDebug >= 10)
+					errlogPrintf("save_restore:connect_list:(after SR_get_array_info) '%s' has, at most, %ld elements\n",
+						pchannel->name, pchannel->max_elements);
+				pchannel->pArray = calloc(pchannel->max_elements, field_size);
+				if (pchannel->pArray == NULL) {
+					errlogPrintf("save_restore:connect_list: can't alloc array for '%s'\n", pchannel->name);
+					pchannel->curr_elements = pchannel->max_elements = -1;
+				}
+			}			
 		}
 	}
 	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
@@ -910,7 +913,6 @@ STATIC int connect_list(struct chlist *plist)
 			errlogPrintf("save_restore: Can't connect to list-specific path/name PV(s)\n");
 		}
 	}
-
 	return(get_channel_values(plist));
 }
 
@@ -1000,10 +1002,36 @@ STATIC int get_channel_values(struct chlist *plist)
 	int				not_connected = 0;
 	unsigned short	num_channels = 0;
 	short			field_type;
+	long			status, field_size;
 
 	/* attempt to fetch all channels that are connected */
 	for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 		pchannel->valid = 0;
+
+		/* Handle channels whose element count has not yet been determined. */
+		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (pchannel->max_elements == 0)) {
+			/* Channel probably wasn't connected when connect_list() was called */
+			pchannel->max_elements = pchannel->curr_elements = ca_element_count(pchannel->chid);
+			if (pchannel->max_elements > 1) {
+				status = SR_get_array_info(pchannel->name, &pchannel->max_elements, &field_size, &pchannel->field_type);
+				if (status) {
+					pchannel->curr_elements = pchannel->max_elements = -1; /* Mark channel so we ignore it forever. */
+					errlogPrintf("save_restore:get_channel_values: array PV '%s' is not local.\n", pchannel->name);
+				} else {
+					/* info resulting from dbNameToAddr() might be different, but it's still not the actual element count */
+					pchannel->curr_elements = pchannel->max_elements;
+					if (save_restoreDebug >= 10)
+						errlogPrintf("save_restore:get_channel_values:(after SR_get_array_info) '%s' has, at most, %ld elements\n",
+							pchannel->name, pchannel->max_elements);
+					pchannel->pArray = calloc(pchannel->max_elements, field_size);
+					if (pchannel->pArray == NULL) {
+						errlogPrintf("save_restore:get_channel_values: can't alloc array for '%s'\n", pchannel->name);
+						pchannel->curr_elements = pchannel->max_elements = -1; /* Mark channel so we ignore it forever. */
+					}
+				}			
+			}
+		}
+
 		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (pchannel->max_elements >= 1)) {
 			field_type = ca_field_type(pchannel->chid);
 			strcpy(pchannel->value, INIT_STRING);
@@ -1034,10 +1062,14 @@ STATIC int get_channel_values(struct chlist *plist)
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: no CHID for '%s'\n", pchannel->name);
 			} else if (ca_state(pchannel->chid) != cs_conn) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s not connected\n", pchannel->name);
-			} else if ((pchannel->max_elements < 1)) {
-				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has, at most, %ld elements\n",
-					pchannel->name, pchannel->max_elements);
+			} else if ((pchannel->max_elements == 0)) {
+				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has an undetermined # elements\n",
+					pchannel->name);
+			} else if ((pchannel->max_elements == -1)) {
+				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has a serious problem\n",
+					pchannel->name);
 			}
+
 		}
 	}
 	if (ca_pend_io(MIN(10.0, .1*num_channels)) != ECA_NORMAL) {
@@ -1707,6 +1739,7 @@ STATIC int create_data_set(
  * save_restoreShow -  Show state of save_restore; optionally, list save sets
  *
  */
+static char ca_state_string[4][10] = {"Never", "Prev", "Conn", "Closed"};
 void save_restoreShow(int verbose)
 {
 	struct chlist	*plist;
@@ -1774,7 +1807,8 @@ void save_restoreShow(int verbose)
 				(plist->not_connected == 1) ? ' ' : 's');
 			if (verbose) {
 				for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
-					printf("\t%s (max:%ld curr:%ld elements)\t%s", pchannel->name,
+					printf("\t%s chid:%p state:%s (max:%ld curr:%ld elements)\t%s", pchannel->name,
+						pchannel->chid, pchannel->chid?ca_state_string[ca_state(pchannel->chid)]:"noChid",
 						pchannel->max_elements, pchannel->curr_elements, pchannel->value);
 					if (pchannel->enum_val >= 0) printf("\t%d\n",pchannel->enum_val);
 					else printf("\n");
