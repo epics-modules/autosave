@@ -5,7 +5,7 @@
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
 # EPICS_BASE usually appears last so other apps can override stuff:
-EPICS_BASE=H:/epics/base-3.14.8.2
+EPICS_BASE=H:/epics/base-3.14.11
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
