@@ -127,7 +127,7 @@
  * 03/10/08  tmm  v5.5 Merged in several improvements from Ben Franksen:
  *                Make use of status PV's optional and controllable by function call.
  *                Report failed connections to PV's at connect time.
- *                Allow embedded '.' in save-file name
+ *                Allow embedded '.' in save-file name.
  */
 #define		SRVERSION "save/restore V5.5"
 
