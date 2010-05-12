@@ -780,7 +780,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		if (PVname[0] == '#') /* user must have edited the file manually; accept this line as a comment */
 			continue;
 		if (strlen(PVname) >= 80) {
-			/* must a munged input line */
+			/* must be a munged input line */
 			errlogPrintf("dbrestore:reboot_restore: '%s' is too long to be a PV name.\n", PVname);
 			continue;
 		}
