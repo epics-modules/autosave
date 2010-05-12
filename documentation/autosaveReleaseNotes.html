@@ -13,7 +13,7 @@ content="text/html; charset=iso-8859-1">
 <h3>4.7</h3>
 <ul>
 <li> Previously, array-valued PV's whose representation in a .sav file was
-	exactly 199 bytes long would cause reboot_restore to process the PV
+	exactly 119 bytes long would cause reboot_restore to process the PV
 	twice, the second time as a scalar with no restore data.  In the case of
 	an array of char, this resulted in the first element of the array being
 	overwritten with a zero.
