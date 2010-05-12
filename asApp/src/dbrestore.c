@@ -769,13 +769,19 @@ int reboot_restore(char *filename, initHookState init_state)
 		 * xxx:interp.E 100
 		 * xxx:interp.C @array@ { "1" "0.99" }
 		 */
+		PVname[0] = '\0';
+		value_string[0] = '\0';
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
 		if (n<3) *value_string = 0;
+		if ((n<1) || (PVname[0] == '\0')) {
+			if (save_restoreDebug >= 10) errlogPrintf("dbrestore:reboot_restore: line (fragment) '%s' ignored.\n", bp);
+			continue;
+		}
 		if (PVname[0] == '#') /* user must have edited the file manually; accept this line as a comment */
 			continue;
 		if (strlen(PVname) >= 80) {
 			/* must a munged input line */
-			errlogPrintf("save_restore: '%s' is too long to be a PV name.\n", PVname);
+			errlogPrintf("dbrestore:reboot_restore: '%s' is too long to be a PV name.\n", PVname);
 			continue;
 		}
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
@@ -790,7 +796,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				errlogPrintf("dbFindRecord for '%s' failed\n", PVname);
 				num_errors++; found_field = 0;
 			} else if (dbFoundField(pdbentry) == 0) {
-				errlogPrintf("save_restore: dbFindRecord did not find field '%s'\n", PVname);
+				errlogPrintf("dbrestore:reboot_restore: dbFindRecord did not find field '%s'\n", PVname);
 				num_errors++; found_field = 0;
 			}
 			if (found_field) {
@@ -800,10 +806,10 @@ int reboot_restore(char *filename, initHookState init_state)
 					status = SR_array_restore(pass, inp_fd, PVname, value_string);
 				}
 				if (status) {
-					errlogPrintf("save_restore: restore for PV '%s' failed\n", PVname);
+					errlogPrintf("dbrestore:reboot_restore: restore for PV '%s' failed\n", PVname);
 					num_errors++;
 				}
-			} /* if (found_field) {... */
+			} /* if (found_field) ... */
 		} else if (PVname[0] == '!') {
 			/*
 			* string is an error message -- something like:
