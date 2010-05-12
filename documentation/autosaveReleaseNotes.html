@@ -10,6 +10,15 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.7</h3>
+<ul>
+<li> Previously, array-valued PV's whose representation in a .sav file was
+	exactly 199 bytes long would cause reboot_restore to process the PV
+	twice, the second time as a scalar with no restore data.  In the case of
+	an array of char, this resulted in the first element of the array being
+	overwritten with a zero.
+</ul>
+
 <h3>4.6</h3>
 <ul>
 <li> Previously, autosave determined the element count of a PV in
