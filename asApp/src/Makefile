@@ -20,12 +20,18 @@ asVerify_LIBS	+= Com
 DBD += as.dbd
 DBD += asSupport.dbd
 
+#include files
+INC += osdNfs.h
+
 #=============================
 
 LIBRARY_IOC += autosave
 
 autosave_SRCS += dbrestore.c save_restore.c
 autosave_SRCS += initHooks.c fGetDateStr.c
+
+#os dependent code
+autosave_SRCS += osdNfs.c
 
 autosave_LIBS += $(EPICS_BASE_IOC_LIBS)
 
