@@ -1221,7 +1221,7 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 	return(n);
 }
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 2048
 /*
  * Look through the database for info nodes with the specified info_name, and get the
  * associated info_value string.  Interpret this string as a list of field names.  Write
