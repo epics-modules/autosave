@@ -980,7 +980,7 @@ STATIC int connect_list(struct chlist *plist)
 			}			
 		}
 	}
-	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
+	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected\n", plist->save_file, n, m);
 	errlogPrintf(SR_recentlyStr);
 
 	return(get_channel_values(plist));
@@ -1217,6 +1217,12 @@ STATIC int get_channel_values(struct chlist *plist)
 #define BS_OK		2	/* File is good */
 #define BS_NEW		3	/* Just wrote the file */
 
+#ifdef _WIN32
+  #define BS_SEEK_DISTANCE -7
+#else
+  #define BS_SEEK_DISTANCE -6
+#endif
+
 STATIC int check_file(char *file)
 {
 	FILE *fd;
@@ -1224,7 +1230,7 @@ STATIC int check_file(char *file)
 	int	 file_state = BS_NONE;
 
 	if ((fd = fopen(file, "r")) != NULL) {
-		if ((fseek(fd, -6, SEEK_END)) ||
+		if ((fseek(fd, BS_SEEK_DISTANCE, SEEK_END)) ||
 			(fgets(tmpstr, 6, fd) == 0) ||
 			(strncmp(tmpstr, "<END>", 5) != 0)) {
 			file_state = BS_BAD;
@@ -1251,6 +1257,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	struct channel	*pchannel;
 	int 			n, problem = 0;
 	char			datetime[32];
+    int             file_check;
+    double          delta_time;
 	struct stat		fileStat;		/* qiao: file state */	
 
 	fGetDateStr(datetime);
@@ -1414,9 +1422,11 @@ STATIC int write_it(char *filename, struct chlist *plist)
 
 	/* qiao: check the file state: the file contents, file size and the save time of the file */
 	stat(filename, &fileStat);
-	
-	if ((check_file(filename) != BS_OK) || (fileStat.st_size <= 0) || (difftime(time(NULL), fileStat.st_mtime) > 10.0)) {
-		errlogPrintf("save_restore:write_it: file written checking failure [%s]\n", datetime);
+    file_check = check_file(filename);
+    delta_time = difftime(time(NULL), fileStat.st_mtime);
+	if ((file_check != BS_OK) || (fileStat.st_size <= 0) ||  (delta_time > 10.0)) {
+		errlogPrintf("save_restore:write_it: file written checking failure [%s], check_file=%d, size=%ld, delta_time=%f\n", 
+            datetime, file_check, fileStat.st_size, delta_time);
 		return(ERROR);
 	}	
 	
