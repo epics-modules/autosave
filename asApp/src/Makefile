@@ -27,6 +27,7 @@ INC += osdNfs.h
 
 LIBRARY_IOC += autosave
 
+#os independent code
 autosave_SRCS += dbrestore.c save_restore.c
 autosave_SRCS += initHooks.c fGetDateStr.c
 
