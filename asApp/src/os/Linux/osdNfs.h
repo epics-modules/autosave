@@ -23,6 +23,8 @@
 #include <netdb.h>
 #include <linux/fs.h>
 
+#define NFS_PATH_LEN 128                /* string length for NFS related path */
+
 /* definition except for vxWorks */
 #define OK     0
 #define ERROR -1
