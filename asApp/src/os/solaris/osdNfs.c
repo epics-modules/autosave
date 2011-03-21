@@ -20,12 +20,12 @@ int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the 
 int mountFileSystem(char *uidhost, char *path, char *mntpoint)
 {
     printf("NFS mounting for solaris is managed by OS\n");
-	return(0);
+	return(OK);
 }
 
 /* Note: file system mounting is managed by Linux */
 int dismountFileSystem(char *mntpoint)
 {
     printf("Not allowed to dismount for solaris\n");
-	return(0);
+	return(OK);
 }
