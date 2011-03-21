@@ -552,7 +552,9 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
     /* get the settings */
 	strncpy(save_restoreNFSHostName, hostname, (NFS_PATH_LEN-1));
 	strncpy(save_restoreNFSHostAddr, address, (NFS_PATH_LEN-1));
+	if (mntpoint && mntpoint[0]) {
     strncpy(save_restoreNFSMntPoint, mntpoint, (NFS_PATH_LEN-1));
+	}
 
     save_restoreIoErrors = 0;
 
@@ -565,7 +567,7 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
     }
 
     /* mount the file system */
-    if (mountFileSystem(hostname, address, mntpoint) == NFS_SUCCESS) {
+    if (mountFileSystem(hostname, address, mntpoint) == OK) {
         errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", mntpoint);
         strncpy(SR_recentlyStr, "mountFileSystem succeeded", (STRING_LEN-1));
     }
@@ -672,7 +674,7 @@ STATIC int save_restore(void)
 
 					if (mountFileSystem(save_restoreNFSHostName, 
 								save_restoreNFSHostAddr, 
-								save_restoreNFSMntPoint) == NFS_SUCCESS) {
+								save_restoreNFSMntPoint) == OK) {
 						just_remounted = 1;                    
 						errlogPrintf("save_restore: %s remounted \n", save_restoreNFSMntPoint);
 						SR_status = SR_STATUS_OK;
@@ -980,8 +982,9 @@ STATIC int connect_list(struct chlist *plist)
 			}			
 		}
 	}
-	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected\n", plist->save_file, n, m);
+	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
 	errlogPrintf(SR_recentlyStr);
+	errlogPrintf("\n");
 
 	return(get_channel_values(plist));
 }
