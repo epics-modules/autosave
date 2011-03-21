@@ -16,6 +16,8 @@
 #include <stdioLib.h>
 #include <ioLib.h>
 
+#define NFS_PATH_LEN 128                /* string length for NFS related path */
+
 /* nfsDrv.h was renamed nfsDriver.h in Tornado 2.2.2 */
 /* #include <nfsDrv.h> */
 extern STATUS nfsMount(char *host, char *fileSystem, char *localName);
