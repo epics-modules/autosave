@@ -99,38 +99,48 @@ cleanup:
         return rval;
 }
 
-/* Note: file system mounting is managed by Linux */
+#define MANAGE_MOUNT 0
 int mountFileSystem(char *uidhost, char *path, char *mntpoint)
 {
+#if MANAGE_MOUNT
     /* check the input parameters */
-    /*if (!uidhost || !uidhost[0])   return NFS_INVALID_HOST;
+    if (!uidhost || !uidhost[0])   return NFS_INVALID_HOST;
     if (!path || !path[0])         return NFS_INVALID_PATH;
     if (!mntpoint || !mntpoint[0]) return NFS_INVALID_MNTPOINT;
-    */
     /* mount the file system */
-    /*if (nfsMount(uidhost, path, mntpoint) == OK) {*/     /* 0 - succeed; -1 - failed */
-    /*    save_restoreNFSOK    = 1;
-        save_restoreIoErrors = 0;*/                      /* clean the counter */
-    /*    return NFS_SUCCESS;
+    if (nfsMount(uidhost, path, mntpoint) == OK) {     /* 0 - succeed; -1 - failed */
+        save_restoreNFSOK    = 1;
+        save_restoreIoErrors = 0;                      /* clean the counter */
+        return OK;
     } else {
         save_restoreNFSOK = 0;
-        return NFS_FAILURE;
-    }*/
-    
-    printf("NFS mounting for Linux is managed by OS\n");
-	return(0);  
+        return ERROR;
+    }
+#else
+    printf("Autosave is not configured to manage the file-system mount point.\n");
+	return(OK);  
+#endif
 }
 
-/* Note: file system mounting is managed by Linux */
 int dismountFileSystem(char *mntpoint)
 {
+#if MANAGE_MOUNT
+
     /* check the input parameters */
-    /*if (!mntpoint || !mntpoint[0]) return NFS_INVALID_MNTPOINT;*/
+    if (!mntpoint || !mntpoint[0]) return NFS_INVALID_MNTPOINT;
 
     /* unmount the file system */
-    /*save_restoreNFSOK = 0;
-    return umount(mntpoint);*/                           /* 0 - succeed; -1 - failed */
-    
-    printf("Not allowed to dismount for Linux\n"); 
-	return(0);  
+    save_restoreNFSOK = 0;
+	if (umount(mntpoint) == 0) {
+		return(OK);
+	} else {
+		return(ERROR);
+	}
+
+#else
+
+    printf("Autosave is not configured to manage the file-system mount point.\n");
+	return(OK);
+
+#endif
 }
