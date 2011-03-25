@@ -1221,7 +1221,8 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 	return(n);
 }
 
-#define BUFFER_SIZE 2048
+/* Surely this is enough... */
+#define MAX_FIELD_SIZE 30
 /*
  * Look through the database for info nodes with the specified info_name, and get the
  * associated info_value string.  Interpret this string as a list of field names.  Write
@@ -1232,24 +1233,31 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 {
 	DBENTRY		dbentry;
 	DBENTRY		*pdbentry = &dbentry;
-	const char *info_value, delimiters[] = " \t\n\r.";
-	char		buf[BUFFER_SIZE], *field, *fields=buf;
+	const char *info_value, *pbegin, *pend;
+	char		*fname, *falloc=NULL, field[MAX_FIELD_SIZE];
 	FILE 		*out_fd;
-	int			searchRecord;
+	int			searchRecord, flen;
 
 	if (!pdbbase) {
 		errlogPrintf("autosave:makeAutosaveFileFromDbInfo: No Database Loaded\n");
 		return;
 	}
 	if (strstr(fileBaseName, ".req")) {
-		strncpy(buf, fileBaseName, BUFFER_SIZE);
+		fname=fileBaseName;
 	} else {
-		sprintf(buf, "%s.req", fileBaseName);
+		fname=falloc=malloc(strlen(fileBaseName)+sizeof(".req"));
+		if (!fname) {
+			errlogPrintf("save_restore:makeAutosaveFileFromDbInfo - allocation failed\n");
+			return;
+		}
+		sprintf(fname, "%s.req", fileBaseName);
 	}
-	if ((out_fd = fopen(buf,"w")) == NULL) {
-		errlogPrintf("save_restore:makeAutosaveFileFromDbInfo - unable to open file '%s'\n", buf);
+	if ((out_fd = fopen(fname,"w")) == NULL) {
+		errlogPrintf("save_restore:makeAutosaveFileFromDbInfo - unable to open file '%s'\n", fname);
+		free(falloc);
 		return;
 	}
+	free(falloc);
 
 	dbInitEntry(pdbbase,pdbentry);
 	/* loop over all record types */
@@ -1264,17 +1272,30 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 #endif
 		do {
 			if (searchRecord) {
-			info_value = dbGetInfo(pdbentry, info_name);
-			if (info_value) {
-				/* printf("record %s.autosave = '%s'\n", dbGetRecordName(pdbentry), info_value); */
-				strncpy(fields, info_value, BUFFER_SIZE);
-				for (field = strtok(fields, delimiters); field; field = strtok(NULL, delimiters)) {
-					if (dbFindField(pdbentry, field) == 0) {
-						fprintf(out_fd, "%s.%s\n", dbGetRecordName(pdbentry), field);
-					} else {
-						printf("makeAutosaveFileFromDbInfo: %s.%s not found\n", dbGetRecordName(pdbentry), field);
+				info_value = dbGetInfo(pdbentry, info_name);
+				if (info_value) {
+					/* printf("record %s.autosave = '%s'\n", dbGetRecordName(pdbentry), info_value); */
+
+					for (pbegin=info_value; *pbegin && isspace((int)*pbegin); pbegin++) {} /* skip leading whitespace */
+
+					while (pbegin && *pbegin && !isspace((int)*pbegin)) {
+						/* find end of field */
+						for (pend=pbegin; *pend && !isspace((int)*pend); pend++) {}
+						/* pend points to whitespace or \0 */
+
+						flen = pend-pbegin;
+						if (flen >= sizeof(field)-1) flen = sizeof(field)-1;
+						memcpy(field, pbegin, flen);
+						field[flen]='\0';
+
+						if (dbFindField(pdbentry, field) == 0) {
+							fprintf(out_fd, "%s.%s\n", dbGetRecordName(pdbentry), field);
+						} else {
+							printf("makeAutosaveFileFromDbInfo: %s.%s not found\n", dbGetRecordName(pdbentry), field);
+						}
+
+						for (pbegin=pend; *pbegin && isspace((int)*pbegin); pbegin++) {} /* skip leading whitespace */
 					}
-				}
 				}
 			}
 		} while (dbNextRecord(pdbentry) == 0);
@@ -1282,6 +1303,11 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	dbFinishEntry(pdbentry);
 	fclose(out_fd);
 	return;
+}
+
+void makeAutosaveFiles() {
+    makeAutosaveFileFromDbInfo("info_settings.req", "autosaveFields");
+    makeAutosaveFileFromDbInfo("info_positions.req", "autosaveFields_pass0");
 }
 
 /* set_pass0_restoreFile() */
@@ -1321,8 +1347,7 @@ STATIC void makeAutosaveFileFromDbInfo_CallFunc(const iocshArgBuf *args)
 STATIC const iocshFuncDef makeAutosaveFiles_FuncDef = {"makeAutosaveFiles",0,NULL};
 STATIC void makeAutosaveFiles_CallFunc(const iocshArgBuf *args)
 {
-    makeAutosaveFileFromDbInfo("info_settings.req", "autosaveFields");
-    makeAutosaveFileFromDbInfo("info_positions.req", "autosaveFields_pass0");
+    makeAutosaveFiles();
 }
 
 void dbrestoreRegister(void)
