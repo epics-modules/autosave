@@ -191,7 +191,7 @@ struct chlist {								/* save set list element */
 	struct channel	*pchan_list;			/* channel list head */
 	struct channel	*plast_chan;		/* channel list tail */
 	char			reqFile[FN_LEN];		/* request file name */
-	char			saveFile[PATH_SIZE+1];	/* full save file name */	
+	char			saveFile[NFS_PATH_LEN+1];	/* full save file name */	
 	char 			last_save_file[FN_LEN];	/* file name last used for save */
 	char			save_file[FN_LEN];		/* file name to use on next save */
 	int				save_method;			/* bit for each save method requested */
@@ -246,7 +246,7 @@ struct channel {					/* database channel list element */
 
 struct pathListElement {
 	struct pathListElement *pnext;
-	char path[PATH_SIZE+1];
+	char path[NFS_PATH_LEN+1];
 };
 
 /*** module global variables ***/
@@ -265,7 +265,7 @@ STATIC short	save_restore_init = 0;
 STATIC char 	*SRversion = SRVERSION;
 STATIC struct pathListElement
 				*reqFilePathList = NULL;
-char			saveRestoreFilePath[PATH_SIZE] = "";	/* path to save files, also used by dbrestore.c */
+char			saveRestoreFilePath[NFS_PATH_LEN] = "";	/* path to save files, also used by dbrestore.c */
 STATIC unsigned int
 				taskPriority = 20; /* epicsThreadPriorityCAServerLow -- initial task priority */
 				
@@ -286,7 +286,7 @@ STATIC int		manual_restore_status = 0;		/* result of manual_restore operation */
 STATIC char	status_prefix[30] = "";
 
 STATIC long	SR_status = SR_STATUS_INIT;
-STATIC unsigned short SR_heartbeat = 0;                /* qiao: heart beat 0/1 in turn */
+STATIC unsigned short SR_heartbeat = 0;
 /* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
 STATIC char	SR_statusStr[STRING_LEN] = "", SR_recentlyStr[300] = "";
 STATIC char	SR_status_PV[PV_NAME_LEN] = "", SR_heartbeat_PV[PV_NAME_LEN] = ""; 
@@ -308,6 +308,7 @@ volatile int	save_restoreIncompleteSetsOk = 1;		/* will save/restore incomplete 
 volatile int	save_restoreDatedBackupFiles = 1;		/* save backups as <filename>.bu or <filename>_YYMMDD-HHMMSS */
 volatile int	save_restoreRetrySeconds = 60;			/* Time before retrying write after a failure. */
 volatile int	save_restoreUseStatusPVs = 1;			/* use PVs for status etc. */
+#define CA_RECONNECT_TIME_SECONDS 60
 volatile int	save_restoreCAReconnect = 0;        /* qiao: if there are channels not connected, reconnect them */
 volatile int	save_restoreCallbackTimeout = 600;  /* qiao: if the call back does not work than this time, force to save the data */
 
@@ -322,14 +323,14 @@ epicsExportAddress(int, save_restoreCallbackTimeout);    /* qiao: export the new
 /* variables for managing NFS mount */
 char save_restoreNFSHostName[NFS_PATH_LEN] = "";
 char save_restoreNFSHostAddr[NFS_PATH_LEN] = "";
-char save_restoreNFSMntPoint[NFS_PATH_LEN]  = "";        /* qiao: local path for mount point */
+char save_restoreNFSMntPoint[NFS_PATH_LEN]  = "";
 volatile int save_restoreRemountThreshold=10;
 epicsExportAddress(int, save_restoreRemountThreshold);
 
 /* configuration parameters */
-STATIC int	min_period	= 4;	/* save no more frequently than every 4 seconds */
-STATIC int	min_delay	= 1;	/* check need to save every 1 second */
-				/* worst case wait can be min_period + min_delay */
+STATIC int	MIN_PERIOD	= 4;	/* save no more frequently than every 4 seconds */
+STATIC int	MIN_DELAY	= 1;	/* check need to save every 1 second */
+				/* worst case wait can be MIN_PERIOD + MIN_DELAY */
 
 /*** private functions ***/
 STATIC void periodic_save(CALLBACK *pcallback);
@@ -389,8 +390,14 @@ void save_restoreSet_RetrySeconds(int seconds) {
 	if (seconds >= 0) save_restoreRetrySeconds = seconds;
 }
 void save_restoreSet_UseStatusPVs(int ok) {save_restoreUseStatusPVs = ok;}
-void save_restoreSet_CAReconnect(int ok)    {save_restoreCAReconnect     = ok;}   /* qiao: realize the iocsh interface function */
-void save_restoreSet_CallbackTimeout(int t) {save_restoreCallbackTimeout = t; }   /* qiao: realize the iocsh interface function */
+void save_restoreSet_CAReconnect(int ok) {save_restoreCAReconnect = ok;} 
+void save_restoreSet_CallbackTimeout(int t) {
+	if ((t<0) || (t>=MIN_PERIOD)) {
+		save_restoreCallbackTimeout = t;
+	} else {
+		printf("save_restoreCallbackTimeout must be either negative (forever) or >= %d seconds\n", MIN_PERIOD);
+	}
+}   
 
 /********************************* code *********************************/
 
@@ -522,56 +529,82 @@ int manual_save(char *request_file)
 	return(OK);
 }
 
-/**
- * qiao: realize the callback function for ca connection 
- * 
- * Note: all channel connection flag are set here
- */
 STATIC void ca_connection_callback(struct connection_handler_args args)
 {
-    struct channel *pchannel = ca_puser(args.chid);            /* pointer to the channel */
-    
-    if(!pchannel) return;                                      /* avoid software crash */
-    
-    if(args.op == CA_OP_CONN_UP) {
-        pchannel -> channel_connected = 1;                     /* indicate the channel is connected */	
-	
-    } else {
-        pchannel -> channel_connected = 0;                     /* indicate the channel becomes disconnected */
-	ca_clear_channel(args.chid);                           /* clear the disconnected channel, release the resources */		
-    }   
+	struct channel *pchannel = ca_puser(args.chid);
+
+	if (!pchannel) return;
+
+	if (args.op == CA_OP_CONN_UP) {
+		pchannel->channel_connected = 1;
+	} else {
+		pchannel->channel_connected = 0;
+		ca_clear_channel(args.chid);
+	}
 }
 
 /*** functions to manage NFS mount ***/
+STATIC void do_mount() {
+	if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
+		if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
+			errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
+			strncpy(SR_recentlyStr, "mountFileSystem succeeded", (STRING_LEN-1));
+			save_restoreIoErrors = 0;
+			save_restoreNFSOK = 1;
+		}
+		else {
+			errlogPrintf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
+		}
+	}
+}
+
+/* Concatenate s1 and s2, making sure there is a directory separator between them,
+ * and copy the result to dest.  Make local copies of s1 and s2 to defend against
+ * calls in which one of them is specified also as dest, e.g. makeNfsPath(a,b,a).
+ */
+void makeNfsPath(char *dest, const char *s1, const char *s2) {
+	char tmp1[NFS_PATH_LEN], tmp2[NFS_PATH_LEN];
+
+	if (dest == NULL) return;
+	tmp1[0] = '\0';
+	if (s1 && *s1) strncpy(tmp1, s1, NFS_PATH_LEN-1);
+	tmp2[0] = '\0';
+	if (s2 && *s2) strncpy(tmp2, s2, NFS_PATH_LEN-1);
+
+	if (*tmp1) strncpy(dest, tmp1, NFS_PATH_LEN-1);
+	if ((*tmp2 != '/') && (dest[strlen(dest)-1] != '/'))
+		strncat(dest,"/", MAX(NFS_PATH_LEN-1 - strlen(dest),0));
+	strncat(dest, tmp2, MAX(NFS_PATH_LEN-1 - strlen(dest),0));
+	if (save_restoreDebug >= 1) {
+		errlogPrintf("save_restore:makeNfsPath: dest='%s'\n", dest);
+	}
+}
 
 void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint) 
 {
-    char datetime[32];
-    fGetDateStr(datetime);
+	/* If file system is mounted (save_restoreNFSOK) and we mounted it (save_restoreNFSMntPoint[0]),
+	 * then dismount, presuming that caller wants us to remount from new information.  If we didn't
+	 * mount it, presume that caller did, and that caller wants us to manage the mount point.
+	 */
+	if (save_restoreNFSOK && save_restoreNFSMntPoint[0]) dismountFileSystem(save_restoreNFSMntPoint);
 
-    /* get the settings */
+	/* get the settings */
 	strncpy(save_restoreNFSHostName, hostname, (NFS_PATH_LEN-1));
 	strncpy(save_restoreNFSHostAddr, address, (NFS_PATH_LEN-1));
-	if (mntpoint && mntpoint[0]) {
-    strncpy(save_restoreNFSMntPoint, mntpoint, (NFS_PATH_LEN-1));
+    if (mntpoint && mntpoint[0]) {
+		strncpy(save_restoreNFSMntPoint, mntpoint, (NFS_PATH_LEN-1));
+		if (saveRestoreFilePath[0]) {
+			/* If we already have a file path, make sure it begins with the mount point. */
+			if (strstr(saveRestoreFilePath, save_restoreNFSMntPoint) != saveRestoreFilePath) {
+				makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, saveRestoreFilePath);
+			}
+		}
+	} else if (saveRestoreFilePath[0]) {
+		strncpy(save_restoreNFSMntPoint, saveRestoreFilePath, (NFS_PATH_LEN-1));
 	}
 
-    save_restoreIoErrors = 0;
-
-    /* unmount NFS first if already mounted */
-    if (save_restoreNFSOK) {
-        if(dismountFileSystem(mntpoint) == 0) {
-            errlogPrintf("save_restore:dismountFileSystem:dismounted '%s' [%s]\n", mntpoint, datetime);
-            strncpy(SR_recentlyStr, "nfsUnmount", (STRING_LEN-1));
-        } else return;
-    }
-
-    /* mount the file system */
-    if (mountFileSystem(hostname, address, mntpoint) == OK) {
-        errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", mntpoint);
-        strncpy(SR_recentlyStr, "mountFileSystem succeeded", (STRING_LEN-1));
-    }
-    else errlogPrintf("save_restore: Can't mount '%s'\n", mntpoint);
+	/* mount the file system */
+	do_mount();
 }
 
 
@@ -597,8 +630,7 @@ STATIC int save_restore(void)
 
 	ca_context_create(ca_enable_preemptive_callback);
 
-	if (save_restoreNFSOK == 0)
-		mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint);
+	if (save_restoreNFSOK == 0) do_mount();
 
 	/* Build names for save_restore general status PV's with status_prefix */
 	if (save_restoreUseStatusPVs && *status_prefix && (*SR_status_PV == '\0')) {
@@ -672,15 +704,14 @@ STATIC int save_restore(void)
 				
 				if (dismountFileSystem(save_restoreNFSMntPoint) == 0) {          /* first dismount it */
 
-					if (mountFileSystem(save_restoreNFSHostName, 
-								save_restoreNFSHostAddr, 
-								save_restoreNFSMntPoint) == OK) {
+					if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, 
+								save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
 						just_remounted = 1;                    
-						errlogPrintf("save_restore: %s remounted \n", save_restoreNFSMntPoint);
+						errlogPrintf("save_restore: remounted '%s'\n", save_restoreNFSMntPoint);
 						SR_status = SR_STATUS_OK;
 						strcpy(SR_statusStr, "NFS remounted");
 					} else {
-						errlogPrintf("save_restore: failed to remount %s \n", save_restoreNFSMntPoint);
+						errlogPrintf("save_restore: failed to remount '%s' \n", save_restoreNFSMntPoint);
 						SR_status = SR_STATUS_FAIL;
 						strcpy(SR_statusStr, "NFS failed!");
 					}
@@ -698,9 +729,7 @@ STATIC int save_restore(void)
 				errlogPrintf("save_restore: '%s' save_state = 0x%x\n", plist->reqFile, plist->save_state);
 
 			/* connect the channels on the first instance of this set */
-			/* qiao: connect the channels */
 			if (plist->enabled_method == 0) {
-				/* qiao: connect on the first instance of this set */
 				/* qiao: first, Connect to savePathPV and saveNamePV, if they are defined (this is moved from the connect_list() routine */
 				if (plist->savePathPV[0] || plist->saveNamePV[0]) {
 					if (plist->savePathPV[0]) {
@@ -718,15 +747,15 @@ STATIC int save_restore(void)
 				}
 	
 				/* qiao: second, connect the list */
-				plist -> not_connected = connect_list(plist); 
-				plist -> reconnect_check_time = currTime;
+				plist->not_connected = connect_list(plist); 
+				plist->reconnect_check_time = currTime;
 				
 			} else if (save_restoreCAReconnect &&
-				plist -> not_connected > 0 && 
-				epicsTimeDiffInSeconds(&currTime, &plist -> reconnect_check_time) > 60.) {
-				/* qiao: try to connect to the disconnected channels every 60s if user does not allow incomplete sets */
-				plist -> reconnect_check_time = currTime;
-				plist -> not_connected = connect_list(plist);
+				plist->not_connected > 0 && 
+				epicsTimeDiffInSeconds(&currTime, &plist->reconnect_check_time) > CA_RECONNECT_TIME_SECONDS) {
+				/* Try to connect to disconnected channels every CA_RECONNECT_TIME_SECONDS */
+				plist->reconnect_check_time = currTime;
+				plist->not_connected = connect_list(plist);
 			}
 
 			/*
@@ -741,7 +770,8 @@ STATIC int save_restore(void)
 
 			/* qiao: check the call back timeout if the save method is periodic or monitored */
 			if ((plist->save_method & PERIODIC) || (plist->save_method & MONITORED) == MONITORED) {
-				if (epicsTimeDiffInSeconds(&currTime, &plist -> callback_time) > save_restoreCallbackTimeout) {
+				if ((save_restoreCallbackTimeout > MIN_PERIOD) &&
+					(epicsTimeDiffInSeconds(&currTime, &plist->callback_time) > save_restoreCallbackTimeout)) {
 			    		plist->save_state = plist->save_method;
 					
 					if (save_restoreDebug >= 1)
@@ -896,7 +926,7 @@ STATIC int save_restore(void)
 		}
 
 		/* go to sleep for a while */
-		ca_pend_event((double)min_delay);
+		ca_pend_event((double)MIN_DELAY);
     }
 
 	/* before exit, clear all CA channels */
@@ -923,7 +953,7 @@ STATIC int connect_list(struct chlist *plist)
 		if (save_restoreDebug >= 10)
 			errlogPrintf("save_restore:connect_list: channel '%s'\n", pchannel->name);
 
-		if (!pchannel -> channel_connected) {
+		if (!(pchannel->channel_connected)) {
 			/* printf("The chid of %s is %p\n", pchannel->name, pchannel->chid); */
 			if (pchannel->chid) ca_clear_channel(pchannel->chid);         /* qiao: release the channel, avoid duplicate resource allocation */
 			if (ca_create_channel(pchannel->name, ca_connection_callback, (void *)pchannel, 
@@ -1474,8 +1504,8 @@ trouble:
  */
 STATIC int write_save_file(struct chlist *plist)
 {
-	char	save_file[PATH_SIZE+3] = "", backup_file[PATH_SIZE+3] = "";
-	char	tmpstr[PATH_SIZE+50];
+	char	save_file[NFS_PATH_LEN+3] = "", backup_file[NFS_PATH_LEN+3] = "";
+	char	tmpstr[NFS_PATH_LEN+50];
 	int		backup_state = BS_OK;
 	char	datetime[32];
 
@@ -1491,6 +1521,9 @@ STATIC int write_save_file(struct chlist *plist)
 		ca_pend_io(1.0);
 		if (tmpstr[0] == '\0') return(OK);
 		strncpy(save_file, tmpstr, sizeof(save_file) - 1);
+		if (save_file[0] != '/') {
+			makeNfsPath(save_file, saveRestoreFilePath, save_file);
+		}
 	} else {
 		/* Use standard path name. */
 		strncpy(save_file, saveRestoreFilePath, sizeof(save_file) - 1);
@@ -1500,10 +1533,10 @@ STATIC int write_save_file(struct chlist *plist)
 		ca_array_get(DBR_STRING,1,plist->saveNamePV_chid,tmpstr);
 		ca_pend_io(1.0);
 		if (tmpstr[0] == '\0') return(OK);
-		strncat(save_file, tmpstr, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
+		makeNfsPath(save_file, save_file, tmpstr);
 	} else {
 		/* Use file name constructed from the request file name. */
-		strncat(save_file, plist->save_file, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
+		makeNfsPath(save_file, save_file, plist->save_file);
 	}
 
 	/* Currently, all lists do backups, unless their file path or file name comes from a PV. */
@@ -1596,7 +1629,7 @@ STATIC int write_save_file(struct chlist *plist)
  */
 STATIC void do_seq(struct chlist *plist)
 {
-	char	*p, save_file[PATH_SIZE+3] = "", backup_file[PATH_SIZE+3] = "";
+	char	*p, save_file[NFS_PATH_LEN+3] = "", backup_file[NFS_PATH_LEN+3] = "";
 	int		i;
 	struct stat fileStat;
 	char	datetime[32];
@@ -1604,8 +1637,7 @@ STATIC void do_seq(struct chlist *plist)
 	fGetDateStr(datetime);
 
 	/* Make full file names */
-	strncpy(save_file, saveRestoreFilePath, sizeof(save_file) - 1);
-	strncat(save_file, plist->save_file, MAX(0, sizeof(save_file) - 1 - strlen(save_file)));
+	makeNfsPath(save_file, saveRestoreFilePath, plist->save_file);
 	strcpy(backup_file, save_file);
 	p = &backup_file[strlen(backup_file)];
 
@@ -1816,7 +1848,7 @@ STATIC int create_data_set(
 	callbackSetUser(plist, &plist->monitorCb);
 	strncpy(plist->reqFile, filename, sizeof(plist->reqFile)-1);
 	plist->pchan_list = (struct channel *)0;
-	plist->period = MAX(period, min_period);
+	plist->period = MAX(period, MIN_PERIOD);
 	if (trigger_channel) {
 	    strncpy(plist->trigger_channel, trigger_channel, sizeof(plist->trigger_channel)-1);
 	} else {
@@ -1827,7 +1859,7 @@ STATIC int create_data_set(
 	plist->enabled_method = 0;
 	plist->save_state = 0;
 	plist->save_ok = 0;
-	plist->monitor_period = MAX(mon_period, min_period);
+	plist->monitor_period = MAX(mon_period, MIN_PERIOD);
 	/* init times */
 	epicsTimeGetCurrent(&plist->backup_time);
 	epicsTimeGetCurrent(&plist->save_attempt_time);
@@ -1851,9 +1883,7 @@ STATIC int create_data_set(
 	plist->save_file[inx] = 0;	/* truncate if necessary to leave room for ".sav" + null */
 	strcat(plist->save_file,".sav");
 	/* make full name, including file path */
-	strncpy(plist->saveFile, saveRestoreFilePath, sizeof(plist->saveFile) - 1);
-	strncat(plist->saveFile, plist->save_file, MAX(sizeof(plist->saveFile) - 1 -
-			strlen(plist->saveFile),0));
+	makeNfsPath(plist->saveFile, saveRestoreFilePath, plist->save_file);
 
 	/* read the request file and populate plist with the PV names */
 	if (readReqFile(plist->reqFile, plist, macrostring) == ERROR) {
@@ -1910,6 +1940,7 @@ void save_restoreShow(int verbose)
 	printf("  Time interval between sequence files: %d seconds\n", save_restoreSeqPeriodInSeconds);
 	printf("  Time interval between .sav-file write failure and retry: %d seconds\n", save_restoreRetrySeconds);
 	printf("  NFS host: '%s'; address:'%s'\n", save_restoreNFSHostName, save_restoreNFSHostAddr);
+	printf("  NFS mount point:\n    '%s'\n", save_restoreNFSMntPoint);
 	printf("  NFS mount status: %s\n",
 		save_restoreNFSOK?"Ok":NFS_managed?"Failed":"not managed by save_restore");
 	printf("  I/O errors: %d\n", save_restoreIoErrors);
@@ -1943,7 +1974,15 @@ void save_restoreShow(int verbose)
 			if (plist->save_state & MANUAL) strcat(tmpstr, "MANUAL ");
 			strcat(tmpstr, "]");
 			printf("    path PV: %s\n", plist->savePathPV[0]?plist->savePathPV:"None");
+			if (plist->savePathPV[0]) {
+				ca_array_get(DBR_STRING, 1, plist->savePathPV_chid, tmpstr);
+				printf("        path: '%s'\n", tmpstr);
+			}
 			printf("    name PV: %s\n", plist->saveNamePV[0]?plist->saveNamePV:"None");
+			if (plist->saveNamePV[0]) {
+				ca_array_get(DBR_STRING, 1, plist->saveNamePV_chid, tmpstr);
+				printf("        name: '%s'\n", tmpstr);
+			}
 			printf("    backups: %s\n", plist->do_backups?"YES":"NO");
 			printf("    save_state = 0x%x\n", plist->save_state);
 			printf("    period: %d; trigger chan: '%s'; monitor period: %d\n",
@@ -1978,27 +2017,17 @@ void save_restoreShow(int verbose)
 int set_requestfile_path(char *path, char *pathsub)
 {
 	struct pathListElement *p, *pnew;
-	char fullpath[PATH_SIZE+1] = "";
+	char fullpath[NFS_PATH_LEN+1] = "";
 	int path_len=0, pathsub_len=0;
 
 	if (path && *path) path_len = strlen(path);
 	if (pathsub && *pathsub) pathsub_len = strlen(pathsub);
-	if (path_len + pathsub_len > (PATH_SIZE-1)) {	/* may have to add '/' */
+	if (path_len + pathsub_len > (NFS_PATH_LEN-1)) {	/* may have to add '/' */
 		errlogPrintf("save_restore:set_requestfile_path: 'path'+'pathsub' is too long\n");
 		return(ERROR);
 	}
 
-	if (path && *path) {
-		strcpy(fullpath, path);
-		if (pathsub && *pathsub) {
-			if (*pathsub != '/' && path[strlen(path)-1] != '/') {
-				strcat(fullpath, "/");
-			}
-			strcat(fullpath, pathsub);
-		}
-	} else if (pathsub && *pathsub) {
-		strcpy(fullpath, pathsub);
-	}
+	makeNfsPath(fullpath, path, pathsub);
 
 	if (*fullpath) {
 		/* return(set_requestfile_path(fullpath)); */
@@ -2007,6 +2036,7 @@ int set_requestfile_path(char *path, char *pathsub)
 			errlogPrintf("save_restore:set_requestfile_path: calloc failed\n");
 			return(ERROR);
 		}
+
 		strcpy(pnew->path, fullpath);
 		if (pnew->path[strlen(pnew->path)-1] != '/') {
 			strcat(pnew->path, "/");
@@ -2027,38 +2057,26 @@ int set_requestfile_path(char *path, char *pathsub)
 
 int set_savefile_path(char *path, char *pathsub)
 {
-	char fullpath[PATH_SIZE+1] = "";
-	int path_len=0, pathsub_len=0;
+	char fullpath[NFS_PATH_LEN] = "";
 
 	if (save_restoreNFSOK) dismountFileSystem(save_restoreNFSMntPoint);
 
-	if (path && *path) path_len = strlen(path);
-	if (pathsub && *pathsub) pathsub_len = strlen(pathsub);
-	if (path_len + pathsub_len > (PATH_SIZE-1)) {	/* may have to add '/' */
-		errlogPrintf("save_restore:set_savefile_path: 'path'+'pathsub' is too long\n");
-		return(ERROR);
-	}
-
-	if (path && *path) {
-		strcpy(fullpath, path);
-		if (pathsub && *pathsub) {
-			if (*pathsub != '/' && path[strlen(path)-1] != '/') {
-				strcat(fullpath, "/");
-			}
-			strcat(fullpath, pathsub);
-		}
-	} else if (pathsub && *pathsub) {
-		strcpy(fullpath, pathsub);
-	}
+	makeNfsPath(fullpath, path, pathsub);
 
 	if (*fullpath) {
-		strcpy(saveRestoreFilePath, fullpath);
-		if (saveRestoreFilePath[strlen(saveRestoreFilePath)-1] != '/') {
-			strcat(saveRestoreFilePath, "/");
+		makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
+		if (save_restoreNFSMntPoint[0] == '\0') {
+			strcpy(save_restoreNFSMntPoint, saveRestoreFilePath);
 		}
-		if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0]) 
-			mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint);
-
+		if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0]) {
+			if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
+				errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
+				strncpy(SR_recentlyStr, "mountFileSystem succeeded", (STRING_LEN-1));
+			}
+			else {
+				errlogPrintf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
+			}
+		}
 		return(OK);
 	} else {
 		return(ERROR);
@@ -2274,8 +2292,8 @@ STATIC int do_manual_restore(char *filename, int file_type)
 	struct chlist	*plist;
 	int				found, is_scalar;
 	char			PVname[80];
-	char			restoreFile[PATH_SIZE+1] = "";
-	char			bu_filename[PATH_SIZE+1] = "";
+	char			restoreFile[NFS_PATH_LEN+1] = "";
+	char			bu_filename[NFS_PATH_LEN+1] = "";
 	char			buffer[BUF_SIZE], *bp, c;
 	char			value_string[BUF_SIZE];
 	int				n;
@@ -2332,8 +2350,7 @@ STATIC int do_manual_restore(char *filename, int file_type)
 	}
 
 	/* open file */
-	strncpy(restoreFile, saveRestoreFilePath, sizeof(restoreFile) - 1);
-	strncat(restoreFile, filename, MAX(sizeof(restoreFile) -1 - strlen(restoreFile),0));
+	makeNfsPath(restoreFile, saveRestoreFilePath, filename);
 
 	if (file_type == FROM_SAVE_FILE) {
 		inp_fd = fopen_and_check(restoreFile, &status);
@@ -2406,7 +2423,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
 	struct pathListElement *p;
-	char tmpfile[PATH_SIZE+1] = "";
+	char tmpfile[NFS_PATH_LEN+1] = "";
 
 	if (save_restoreDebug >= 1) {
 		errlogPrintf("save_restore:readReqFile: entry: reqFile='%s', plist=%p, macrostring='%s'\n",
@@ -2417,8 +2434,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	if (reqFilePathList) {
 		/* try to find reqFile in every directory specified in reqFilePathList */
 		for (p = reqFilePathList; p; p = p->pnext) {
-			strcpy(tmpfile, p->path);
-			strcat(tmpfile, reqFile);
+			makeNfsPath(tmpfile, p->path, reqFile);
 			inp_fd = fopen(tmpfile, "r");
 			if (inp_fd) break;
 		}
@@ -2474,7 +2490,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			while (isspace((int)(*t))) t++;  /* delete any additional whitespace */
 			/* copy to filename; terminate at whitespace or quote or comment */
 			for (	i = 0;
-					i<PATH_SIZE && !(isspace((int)(*t))) && (*t != '"') && (*t != '#');
+					i<NFS_PATH_LEN && !(isspace((int)(*t))) && (*t != '"') && (*t != '#');
 					t++,i++) {
 				templatefile[i] = *t;
 			}
