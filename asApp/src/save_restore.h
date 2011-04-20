@@ -85,6 +85,7 @@ extern volatile int save_restoreDatedBackupFiles;
 extern struct restoreList restoreFileList;
 extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
+extern void makeNfsPath(char *dest, const char *s1, const char *s2);
 
 extern int	save_restoreNFSOK;
 extern int	save_restoreIoErrors;
