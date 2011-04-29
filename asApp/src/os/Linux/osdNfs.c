@@ -100,7 +100,7 @@ cleanup:
 }
 
 #define MANAGE_MOUNT 0
-int mountFileSystem(char *uidhost, char *path, char *mntpoint)
+int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
 #if MANAGE_MOUNT
     /* check the input parameters */
