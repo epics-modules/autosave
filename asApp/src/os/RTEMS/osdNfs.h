@@ -15,7 +15,7 @@
 #include <bsp.h>
 #include <librtemsNfs.h>
 
-#define NFS_PATH_LEN 128                /* string length for NFS related path */
+#define NFS_PATH_LEN 255                /* string length for NFS related path */
 
 /* definition except for vxWorks */
 #define OK     0
@@ -30,7 +30,7 @@
 #define NFS_INVALID_MNTPOINT 3           /* mount point in invalid */
 
 /* routines for NFS operation */
-int mountFileSystem(char *uidhost, char *path, char *mntpoint);   /* mount the NFS */
+int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint);   /* mount the NFS */
 int dismountFileSystem(char *mntpoint);                           /* dismount the NFS */
 
 #endif
