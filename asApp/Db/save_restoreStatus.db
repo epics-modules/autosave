@@ -3,9 +3,10 @@
 #! DBD("../../../../xxx/dbd/iocxxxVX.dbd")
 #! DBDEND
 
-
 record(bo, "$(P)SR_heartbeat") {
   field(DTYP, "Soft Channel")
+  field(ZNAM, "0")
+  field(ONAM, "1")
   field(FLNK, "$(P)SR_i_am_alive")
 }
 
@@ -13,10 +14,14 @@ record(bo, "$(P)SR_i_am_alive") {
   field(DTYP, "Soft Channel")
   field(DOL, "1")
   field(UDF, "0")
+  field(ZNAM, "0")
+  field(ONAM, "1")
   field(OUT, "$(P)SR_deadIfZero.VAL PP")
 }
 record(bo, "$(P)SR_deadIfZero") {
   field(DTYP, "Soft Channel")
+  field(ZNAM, "0")
+  field(ONAM, "1")
   field(HIGH, "$(DEAD_SECONDS=300)")
 }
 record(mbbo, "$(P)SR_rebootStatus") {
@@ -161,6 +166,7 @@ record(stringout, "$(P)SR_2_StatusStr") {
   field(VAL, "Status unknown")
 }
 
+
 record(stringout, "$(P)SR_2_Time") {
   field(DTYP, "Soft Channel")
   field(VAL, "Not yet saved")
@@ -253,6 +259,7 @@ record(mbbo, "$(P)SR_5_Status") {
   field(TWST, "Warning")
   field(THST, "Seq Fail")
   field(FRST, "Ok")
+
 }
 
 record(stringout, "$(P)SR_5_StatusStr") {
@@ -288,6 +295,7 @@ record(mbbo, "$(P)SR_6_Status") {
   field(FRST, "Ok")
 }
 
+
 record(stringout, "$(P)SR_6_StatusStr") {
   field(DTYP, "Soft Channel")
   field(VAL, "Status unknown")
@@ -314,6 +322,7 @@ record(mbbo, "$(P)SR_7_Status") {
   field(TWVL, "2")
   field(THVL, "3")
   field(FRVL, "4")
+
   field(ZRST, "No Status")
   field(ONST, "Failure")
   field(TWST, "Warning")
@@ -344,6 +353,7 @@ record(stringout, "$(P)SR_7_Time") {
 #! Record("$(P)SR_rebootStatusStr",200,280,0,0,"$(P)SR_rebootStatusStr")
 #! Visibility("$(P)SR_rebootStatusStr.DTYP",2)
 #! Record("$(P)SR_rebootTime",200,360,0,0,"$(P)SR_rebootTime")
+
 #! Visibility("$(P)SR_rebootTime.DTYP",2)
 #! Record("$(P)SR_statusStr",380,280,0,0,"$(P)SR_statusStr")
 #! Visibility("$(P)SR_statusStr.DTYP",2)
