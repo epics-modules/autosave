@@ -10,7 +10,7 @@
 int save_restoreNFSOK    = 0;
 int save_restoreIoErrors = 0;
 
-int mountFileSystem(char *uidhost, char *path, char *mntpoint)
+int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     printf("mountFileSytem not supported on this OS\n");
 	return(0);  
