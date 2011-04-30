@@ -26,13 +26,14 @@ int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the 
  * Input:
  *    uidhost  - string. The NFS server and uid/gid, [<uid>'.'<gid>'@']<host>. Note better to use IP address
  *               with 'dot' notation for <host>
+ *    addr     - IP address of host.  Not used here.
  *    path     - string. Absolute path on the NFS server
  *    mntpoint - string. Local path. Please note that if "mntpoint" does not exist, it will be created
  *
  * Output:
  *    See the definition of NFS operation error codes
  */
-int mountFileSystem(char *uidhost, char *path, char *mntpoint)
+int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     /* check the input parameters */
     if (!uidhost || !uidhost[0])   return NFS_INVALID_HOST;
