@@ -351,7 +351,8 @@ long SR_put_array_values(char *PVname, void *p_data, long num_values)
  *
  * Parse file *inp_fd, starting with value_string, to extract array data into *p_data
  * ((re)allocate if existing space is insufficient).  If init_state permits, write array
- * to PV named *PVname.
+ * to PV named *PVname.  If gobble, just parse the array data and position inp_fd at the
+ * next input line.
  *
  * Expect the following syntax:
  * <white>[...]<begin>[<white>...<element>]...<white>...<end>[<anything>]
@@ -373,10 +374,10 @@ long SR_put_array_values(char *PVname, void *p_data, long num_values)
  *    { "1.23" " 2.34" " 3.45" }
  *    { "abc" "de\"f" "g{hi\"" "jkl mno} pqr" }
  */
-long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
+long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, int gobble)
 {
 	int				j, end_mark_found=0, begin_mark_found=0, end_of_file=0, found=0, in_element=0;
-	long			status, max_elements=0, num_read=0;
+	long			status=0, max_elements=0, num_read=0;
 	char			buffer[BUF_SIZE], *bp = NULL;
 	char			string[MAX_STRING_SIZE];
 	DBADDR			dbaddr;
@@ -396,10 +397,16 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 	if (save_restoreDebug >= 1) {
 		errlogPrintf("dbrestore:SR_array_restore:entry: PV = '%s'\n", PVname);
 	}
-	if ((status = dbNameToAddr(PVname, paddr)) != 0) {
-		errlogPrintf("save_restore: dbNameToAddr can't find PV '%s'\n", PVname);
-	} else {
-		/*** collect array elements from file into local array ***/
+	if (!gobble) {
+		status = dbNameToAddr(PVname, paddr);
+		if (status != 0) {
+			errlogPrintf("save_restore: dbNameToAddr can't find PV '%s'\n", PVname);
+			gobble = 1;
+		}
+	}
+
+	if (!gobble) {
+		/*** set up infrastructure for collecting array elements from file into local array ***/
 		max_elements = paddr->no_elements;
 		field_type = paddr->field_type;
 		field_size = paddr->field_size;
@@ -435,90 +442,93 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 			status = -1;
 			break;
 		}
-		/** read array values **/
-		if (save_restoreDebug >= 11) {
-			errlogPrintf("dbrestore:SR_array_restore: parsing buffer '%s'\n", value_string);
-		}
-		if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
-			begin_mark_found = 1;
-			if (save_restoreDebug >= 10) {
-				errlogPrintf("dbrestore:SR_array_restore: parsing array buffer '%s'\n", bp);
-			}
-			for (num_read=0; (num_read<max_elements) && bp && !end_mark_found; ) {
-				/* Find beginning of array element */
-				if (save_restoreDebug >= 10) {
-					errlogPrintf("dbrestore:SR_array_restore: looking for element[%ld] \n", num_read);
-				}
-				while ((*bp != ELEMENT_BEGIN) && !end_mark_found && !end_of_file) {
-					if (save_restoreDebug >= 12) {
-						errlogPrintf("dbrestore:SR_array_restore: ...buffer contains '%s'\n", bp);
-					}
-					switch (*bp) {
-					case '\0':
-						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
-							errlogPrintf("save_restore: *** EOF during array-parse\n");
-							end_of_file = 1;
-						}
-						break;
-					case ARRAY_END:
-						end_mark_found = 1;
-						break;
-					default:
-						++bp;
-						break;
-					}
-				}
-				/*
-				 * Read one element: Accumulate characters of element value into string[],
-				 * ignoring any nonzero control characters, and append the value to the local array.
-				 */
-				if (bp && !end_mark_found && !end_of_file) {
-					/* *bp == ELEMENT_BEGIN */
-					if (save_restoreDebug >= 11) {
-						errlogPrintf("dbrestore:SR_array_restore: Found element-begin; buffer contains '%s'\n", bp);
-					}
-					for (bp++, j=0; (j < MAX_STRING_SIZE-1) && (*bp != ELEMENT_END); bp++) {
-						if (*bp == '\0') {
-							if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
-								errlogPrintf("save_restore:array_restore: *** premature EOF.\n");
-								end_of_file = 1;
-								break;
-							}
-							if (save_restoreDebug >= 11) {
-								errlogPrintf("dbrestore:SR_array_restore: new buffer: '%s'\n", bp);
-							}
-							if (*bp == ELEMENT_END) break;
-						} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
-							/* escaped character */
-							bp++;
-						}
-						if (isprint((int)(*bp))) string[j++] = *bp; /* Ignore, e.g., embedded newline */
-					}
-					string[j] = '\0';
-					if (save_restoreDebug >= 10) {
-						errlogPrintf("dbrestore:SR_array_restore: element[%ld] value = '%s'\n", num_read, string);
-						if (bp) errlogPrintf("dbrestore:SR_array_restore: look for element-end: buffer contains '%s'\n", bp);
-					}
+	}
 
+
+	/** read array values **/
+	if (save_restoreDebug >= 11) {
+		errlogPrintf("dbrestore:SR_array_restore: parsing buffer '%s'\n", value_string);
+	}
+	if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
+		begin_mark_found = 1;
+		if (save_restoreDebug >= 10) {
+			errlogPrintf("dbrestore:SR_array_restore: parsing array buffer '%s'\n", bp);
+		}
+		for (num_read=0; bp && !end_mark_found; ) {
+			/* Find beginning of array element */
+			if (save_restoreDebug >= 10) {
+				errlogPrintf("dbrestore:SR_array_restore: looking for element[%ld] \n", num_read);
+			}
+			while ((*bp != ELEMENT_BEGIN) && !end_mark_found && !end_of_file) {
+				if (save_restoreDebug >= 12) {
+					errlogPrintf("dbrestore:SR_array_restore: ...buffer contains '%s'\n", bp);
+				}
+				switch (*bp) {
+				case '\0':
+					if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+						errlogPrintf("save_restore: *** EOF during array-parse\n");
+						end_of_file = 1;
+					}
+					break;
+				case ARRAY_END:
+					end_mark_found = 1;
+					break;
+				default:
+					++bp;
+					break;
+				}
+			}
+			/*
+			 * Read one element: Accumulate characters of element value into string[],
+			 * ignoring any nonzero control characters, and append the value to the local array.
+			 */
+			if (bp && !end_mark_found && !end_of_file) {
+				/* *bp == ELEMENT_BEGIN */
+				if (save_restoreDebug >= 11) {
+					errlogPrintf("dbrestore:SR_array_restore: Found element-begin; buffer contains '%s'\n", bp);
+				}
+				for (bp++, j=0; (j < MAX_STRING_SIZE-1) && (*bp != ELEMENT_END); bp++) {
+					if (*bp == '\0') {
+						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+							errlogPrintf("save_restore:array_restore: *** premature EOF.\n");
+							end_of_file = 1;
+							break;
+						}
+						if (save_restoreDebug >= 11) {
+							errlogPrintf("dbrestore:SR_array_restore: new buffer: '%s'\n", bp);
+						}
+						if (*bp == ELEMENT_END) break;
+					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
+						/* escaped character */
+						bp++;
+					}
+					if (isprint((int)(*bp))) string[j++] = *bp; /* Ignore, e.g., embedded newline */
+				}
+				string[j] = '\0';
+				if (save_restoreDebug >= 10) {
+					errlogPrintf("dbrestore:SR_array_restore: element[%ld] value = '%s'\n", num_read, string);
+					if (bp) errlogPrintf("dbrestore:SR_array_restore: look for element-end: buffer contains '%s'\n", bp);
+				}
 					/*
-					 * We've accumulated all the characters, or all we can handle in string[].
-					 * If there are more characters than we can handle, just pretend we read them.
-					 */
-					/* *bp == ELEMENT_END ,*/
- 					for (found = 0; (found == 0) && !end_of_file; ) {
-						while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
-						switch (*bp) {
-						case ELEMENT_END:
-							found = 1; bp++; break;
-						case ESCAPE:
-							if (*(++bp) == ELEMENT_END) bp++; break;
-						default:
-							if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
-								end_of_file = 1;
-								found = 1;
-							}
+				 * We've accumulated all the characters, or all we can handle in string[].
+				 * If there are more characters than we can handle, just pretend we read them.
+				 */
+				/* *bp == ELEMENT_END ,*/
+					for (found = 0; (found == 0) && !end_of_file; ) {
+					while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
+					switch (*bp) {
+					case ELEMENT_END:
+						found = 1; bp++; break;
+					case ESCAPE:
+						if (*(++bp) == ELEMENT_END) bp++; break;
+					default:
+						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+							end_of_file = 1;
+							found = 1;
 						}
 					}
+				}
+				if ((num_read<max_elements) && !gobble) {
 					/* Append value to local array. */
 					if (p_data) {
 						switch (field_type) {
@@ -556,41 +566,43 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 						}
 					}
 				}
-			} /* for (num_read=0; (num_read<max_elements) && bp && !end_mark_found; ) */
-
-			if ((save_restoreDebug >= 10) && p_data) {
-				errlogPrintf("\nsave_restore: %ld array values:\n", num_read);
-				for (j=0; j<num_read; j++) {
-					switch (field_type) {
-					case DBF_STRING:
-						errlogPrintf("	'%s'\n", &(p_char[j*MAX_STRING_SIZE])); break;
-					case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
-						errlogPrintf("	%u\n", p_ushort[j]); break;
-					case DBF_SHORT:
-						errlogPrintf("	%d\n", p_short[j]); break;
-					case DBF_UCHAR:
-						errlogPrintf("	'%c' (%u)\n", p_uchar[j], p_uchar[j]); break;
-					case DBF_CHAR:
-						errlogPrintf("	'%c' (%d)\n", p_char[j], p_char[j]); break;
-					case DBF_ULONG:
-						errlogPrintf("	%lu\n", p_ulong[j]); break;
-					case DBF_LONG:
-						errlogPrintf("	%ld\n", p_long[j]); break;
-					case DBF_FLOAT:
-						errlogPrintf("	%f\n", p_float[j]); break;
-					case DBF_DOUBLE:
-						errlogPrintf("	%g\n", p_double[j]); break;
-					case DBF_NOACCESS:
-					default:
-						break;
-					}
-				}
-				errlogPrintf("save_restore: end of array values.\n\n");
-				epicsThreadSleep(0.5);
 			}
+		} /* for (num_read=0; bp && !end_mark_found; ) */
 
-		} /* if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) */
-	}
+		if ((save_restoreDebug >= 10) && p_data && !gobble) {
+			errlogPrintf("\nsave_restore: %ld array values:\n", num_read);
+			for (j=0; j<num_read; j++) {
+				switch (field_type) {
+				case DBF_STRING:
+					errlogPrintf("	'%s'\n", &(p_char[j*MAX_STRING_SIZE])); break;
+				case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
+					errlogPrintf("	%u\n", p_ushort[j]); break;
+				case DBF_SHORT:
+					errlogPrintf("	%d\n", p_short[j]); break;
+				case DBF_UCHAR:
+					errlogPrintf("	'%c' (%u)\n", p_uchar[j], p_uchar[j]); break;
+				case DBF_CHAR:
+					errlogPrintf("	'%c' (%d)\n", p_char[j], p_char[j]); break;
+				case DBF_ULONG:
+					errlogPrintf("	%lu\n", p_ulong[j]); break;
+				case DBF_LONG:
+					errlogPrintf("	%ld\n", p_long[j]); break;
+				case DBF_FLOAT:
+					errlogPrintf("	%f\n", p_float[j]); break;
+				case DBF_DOUBLE:
+					errlogPrintf("	%g\n", p_double[j]); break;
+				case DBF_NOACCESS:
+				default:
+					break;
+				}
+			}
+			errlogPrintf("save_restore: end of array values.\n\n");
+			epicsThreadSleep(0.5);
+		}
+
+	} /* if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) */
+
+
 	/* leave the file pointer ready for next PV (next fgets() should yield next PV) */
 	if (begin_mark_found) {
 		/* find ARRAY_END (but ARRAY_END inside an element is just another character) */
@@ -633,7 +645,12 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 		}
 	}
 	if (!status && end_of_file) status = end_of_file;
-	if (pass == 0) {
+
+	if (gobble) {
+		if (save_restoreDebug >= 1) {
+			errlogPrintf("dbrestore:SR_array_restore: Gobbled unused array data.\n");
+		}
+	} else if (pass == 0) {
 		if (save_restoreDebug >= 1) {
 			errlogPrintf("dbrestore:SR_array_restore: No array write in pass 0.\n");
 		}
@@ -649,7 +666,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string)
 			}
 		}
 	}
-	if (p_data == NULL) status = -1;
+	if ((p_data == NULL) && !gobble) status = -1;
 	return(status);
 }
 
@@ -776,8 +793,15 @@ int reboot_restore(char *filename, initHookState init_state)
 			if (save_restoreDebug >= 10) errlogPrintf("dbrestore:reboot_restore: line (fragment) '%s' ignored.\n", bp);
 			continue;
 		}
-		if (PVname[0] == '#') /* user must have edited the file manually; accept this line as a comment */
+		if (PVname[0] == '#') {
+			/* user must have edited the file manually; accept this line as a comment */
+			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
+			if (!is_scalar) {
+				/* Parse and gobble up the whole array. */
+				status = SR_array_restore(pass, inp_fd, PVname, value_string, 1);
+			}
 			continue;
+		}
 		if (strlen(PVname) >= 80) {
 			/* must be a munged input line */
 			errlogPrintf("dbrestore:reboot_restore: '%s' is too long to be a PV name.\n", PVname);
@@ -802,13 +826,20 @@ int reboot_restore(char *filename, initHookState init_state)
 				if (is_scalar) {
 					status = scalar_restore(pass, pdbentry, PVname, value_string);
 				} else {
-					status = SR_array_restore(pass, inp_fd, PVname, value_string);
+					status = SR_array_restore(pass, inp_fd, PVname, value_string, 0);
 				}
 				if (status) {
 					errlogPrintf("dbrestore:reboot_restore: restore for PV '%s' failed\n", PVname);
 					num_errors++;
 				}
-			} /* if (found_field) ... */
+			} else {
+				if (!is_scalar) {
+					/* Parse and gobble up the whole array.  We don't have  PV to restore to,
+					 * but we don't want to trip over the unused array data.
+					 */
+					status = SR_array_restore(pass, inp_fd, PVname, value_string, 1);
+				}
+			} /* if (found_field) {} else {... */
 		} else if (PVname[0] == '!') {
 			/*
 			* string is an error message -- something like:
