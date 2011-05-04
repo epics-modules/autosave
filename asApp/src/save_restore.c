@@ -2385,7 +2385,7 @@ STATIC int do_manual_restore(char *filename, int file_type)
 					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,PVname);
 				}
 			} else {
-				status = SR_array_restore(1, inp_fd, PVname, value_string);
+				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
 			}
 		} else if (PVname[0] == '!') {
 			n = atoi(value_string);	/* value_string actually contains 2nd word of error msg */
