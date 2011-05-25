@@ -621,6 +621,7 @@ STATIC int save_restore(void)
 	int i, do_seq_check, just_remounted, n, saveNeeded=0;
 	epicsTimeStamp currTime, last_seq_check, remount_check_time;
 	char datetime[32];
+	double timeDiff;
 
 	if (save_restoreDebug)
 			errlogPrintf("save_restore:save_restore: entry; status_prefix='%s'\n", status_prefix);
@@ -699,22 +700,25 @@ STATIC int save_restore(void)
 		 * we will assume the NFS need to be remounted */
 		if (save_restoreNFSOK == 0) {
 			/* NFS problem: Try, every 60 seconds, to remount */
-			if (epicsTimeDiffInSeconds(&currTime, &remount_check_time) > 60.) {
+			timeDiff = epicsTimeDiffInSeconds(&currTime, &remount_check_time);
+			errlogPrintf("save_restore: save_restoreNFSOK==0 for %f seconds\n", timeDiff);
+			if (timeDiff > 60.) {
 				remount_check_time = currTime;                           	/* struct copy */
-				
-				if (dismountFileSystem(save_restoreNFSMntPoint) == 0) {          /* first dismount it */
-
-					if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, 
-								save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
-						just_remounted = 1;                    
-						errlogPrintf("save_restore: remounted '%s'\n", save_restoreNFSMntPoint);
-						SR_status = SR_STATUS_OK;
-						strcpy(SR_statusStr, "NFS remounted");
-					} else {
-						errlogPrintf("save_restore: failed to remount '%s' \n", save_restoreNFSMntPoint);
-						SR_status = SR_STATUS_FAIL;
-						strcpy(SR_statusStr, "NFS failed!");
-					}
+				errlogPrintf("save_restore: attempting to remount filesystem\n");
+				dismountFileSystem(save_restoreNFSMntPoint);          /* first dismount it */
+				/* We don't care if dismountFileSystem fails.  
+				 * It could fail simply because an earlier dismount, succeeded.
+				 */
+				if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, 
+							save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
+					just_remounted = 1;                    
+					errlogPrintf("save_restore: remounted '%s'\n", save_restoreNFSMntPoint);
+					SR_status = SR_STATUS_OK;
+					strcpy(SR_statusStr, "NFS remounted");
+				} else {
+					errlogPrintf("save_restore: failed to remount '%s' \n", save_restoreNFSMntPoint);
+					SR_status = SR_STATUS_FAIL;
+					strcpy(SR_statusStr, "NFS failed!");
 				}
 			}
 		}
