@@ -556,9 +556,6 @@ STATIC void do_mount() {
 			errlogPrintf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
 		}
 	}
-  else {
-      save_restoreNFSOK = 1;
-  }
 }
 
 /* Concatenate s1 and s2, making sure there is a directory separator between them,
@@ -574,12 +571,46 @@ void makeNfsPath(char *dest, const char *s1, const char *s2) {
 	if (s2 && *s2) strncpy(tmp2, s2, NFS_PATH_LEN-1);
 
 	if (*tmp1) strncpy(dest, tmp1, NFS_PATH_LEN-1);
-	if ((*tmp2 != '/') && (strlen(dest) !=0 ) && (dest[strlen(dest)-1] != '/'))
+	if (*tmp2 && (*tmp2 != '/') && (strlen(dest) !=0 ) && (dest[strlen(dest)-1] != '/'))
 		strncat(dest,"/", MAX(NFS_PATH_LEN-1 - strlen(dest),0));
-	strncat(dest, tmp2, MAX(NFS_PATH_LEN-1 - strlen(dest),0));
+
+	if ((*tmp2 == '/') && (strlen(dest) !=0 ) && (dest[strlen(dest)-1] == '/')) {
+		strncat(dest, &(tmp2[1]), MAX(NFS_PATH_LEN-1 - strlen(dest),0));
+	} else {
+		strncat(dest, tmp2, MAX(NFS_PATH_LEN-1 - strlen(dest),0));
+	}
 	if (save_restoreDebug >= 1) {
 		errlogPrintf("save_restore:makeNfsPath: dest='%s'\n", dest);
 	}
+}
+
+int testMakeNfsPath() {
+	char dest[NFS_PATH_LEN];
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"","");
+	printf("makeNfsPath(dest,\"\",\"\") yields '%s'\n", dest);
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"abc","");
+	printf("makeNfsPath(dest,\"abc\",\"\") yields '%s'\n", dest);
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"","def");
+	printf("makeNfsPath(dest,\"\",\"def\") yields '%s'\n", dest);
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"","/def");
+	printf("makeNfsPath(dest,\"\",\"/def\") yields '%s'\n", dest);
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"abc/","def");
+	printf("makeNfsPath(dest,\"abc/\",\"def\") yields '%s'\n", dest);
+
+	dest[0] = '\0';
+	makeNfsPath(dest,"abc/","/def");
+	printf("makeNfsPath(dest,\"abc/\",\"/def\") yields '%s'\n", dest);
+	return(0);
 }
 
 void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint) 
