@@ -7,7 +7,7 @@
 #include "osdNfs.h"
 
 /* Global variables */
-int save_restoreNFSOK    = 0;
+int save_restoreNFSOK    = 1;
 int save_restoreIoErrors = 0;
 
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
