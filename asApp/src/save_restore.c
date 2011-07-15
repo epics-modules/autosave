@@ -564,7 +564,6 @@ STATIC void do_mount() {
  */
 void makeNfsPath(char *dest, const char *s1, const char *s2) {
 	char tmp1[NFS_PATH_LEN], tmp2[NFS_PATH_LEN];
-
 	if (dest == NULL) return;
 	tmp1[0] = '\0';
 	if (s1 && *s1) strncpy(tmp1, s1, NFS_PATH_LEN-1);
@@ -572,7 +571,7 @@ void makeNfsPath(char *dest, const char *s1, const char *s2) {
 	if (s2 && *s2) strncpy(tmp2, s2, NFS_PATH_LEN-1);
 
 	if (*tmp1) strncpy(dest, tmp1, NFS_PATH_LEN-1);
-	if ((*tmp2 != '/') && (dest[strlen(dest)-1] != '/'))
+	if ((*tmp2 != '/') && (strlen(dest) !=0 ) && (dest[strlen(dest)-1] != '/'))
 		strncat(dest,"/", MAX(NFS_PATH_LEN-1 - strlen(dest),0));
 	strncat(dest, tmp2, MAX(NFS_PATH_LEN-1 - strlen(dest),0));
 	if (save_restoreDebug >= 1) {
