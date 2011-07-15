@@ -1981,7 +1981,7 @@ void save_restoreShow(int verbose)
 	printf("  NFS host: '%s'; address:'%s'\n", save_restoreNFSHostName, save_restoreNFSHostAddr);
 	printf("  NFS mount point:\n    '%s'\n", save_restoreNFSMntPoint);
 	printf("  NFS mount status: %s\n",
-		save_restoreNFSOK?"Ok":NFS_managed?"Failed":"not managed by save_restore");
+		NFS_managed ? (save_restoreNFSOK?"Ok":"Failed") : "not managed by save_restore");
 	printf("  I/O errors: %d\n", save_restoreIoErrors);
 	printf("  request file path list:\n");
 	while (p) {
