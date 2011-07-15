@@ -556,6 +556,9 @@ STATIC void do_mount() {
 			errlogPrintf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
 		}
 	}
+  else {
+      save_restoreNFSOK = 1;
+  }
 }
 
 /* Concatenate s1 and s2, making sure there is a directory separator between them,
