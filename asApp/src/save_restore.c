@@ -555,6 +555,8 @@ STATIC void do_mount() {
 		else {
 			errlogPrintf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
 		}
+	} else {
+		save_restoreNFSOK = 1;
 	}
 }
 
