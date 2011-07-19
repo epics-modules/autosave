@@ -1,0 +1,405 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 683
+y 302
+w 563
+h 191
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 0
+w 495
+h 80
+lineColor index 0
+fill
+fillColor index 0
+lineWidth 0
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 100
+y 10
+w 300
+h 20
+font "helvetica-bold-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "save_restore status"
+}
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 170
+y 40
+w 195
+h 20
+controlPv "$(P)SR_statusStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 10
+y 45
+w 100
+h 14
+controlPv "$(P)SR_status"
+format "decimal"
+font "helvetica-bold-r-12.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 0
+y 80
+w 495
+h 10
+lineColor index 54
+fillColor index 54
+lineWidth 3
+numPoints 2
+xPoints {
+  0 1
+  1 495
+}
+yPoints {
+  0 83
+  1 83
+}
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 5
+y 30
+w 490
+h 15
+lineColor index 54
+fillColor index 54
+lineWidth 3
+numPoints 2
+xPoints {
+  0 5
+  1 495
+}
+yPoints {
+  0 35
+  1 35
+}
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 170
+y 60
+w 175
+h 15
+controlPv "$(P)SR_recentlyStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 10
+y 65
+w 55
+h 10
+font "helvetica-bold-r-12.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Recently:"
+}
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 430
+y 5
+w 35
+h 25
+lineColor index 21
+fill
+fillColor index 21
+lineWidth 0
+visPv "CALC\\\{(A)\}($(P)SR_heartbeat)"
+visInvert
+visMin "0"
+visMax "1"
+closePolygon
+numPoints 20
+xPoints {
+  0 446
+  1 439
+  2 432
+  3 430
+  4 430
+  5 430
+  6 434
+  7 440
+  8 446
+  9 446
+  10 449
+  11 455
+  12 461
+  13 463
+  14 465
+  15 465
+  16 461
+  17 455
+  18 449
+  19 446
+}
+yPoints {
+  0 30
+  1 26
+  2 21
+  3 15
+  4 10
+  5 6
+  6 5
+  7 5
+  8 8
+  9 11
+  10 8
+  11 5
+  12 5
+  13 6
+  14 10
+  15 15
+  16 21
+  17 26
+  18 30
+  19 30
+}
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 170
+y 120
+w 210
+h 20
+controlPv "$(P)SR_$(N)_StatusStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 2
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 10
+y 126
+w 145
+h 14
+controlPv "$(P)SR_$(N)_Status"
+format "decimal"
+font "helvetica-medium-r-12.0"
+fgColor index 12
+bgColor index 3
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 170
+y 90
+w 145
+h 12
+controlPv "$(P)SR_$(N)_Time"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 3
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Byte)
+object ByteClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 350
+y 90
+w 145
+h 20
+controlPv "$(P)SR_$(N)_State"
+lineColor index 14
+onColor index 14
+offColor index 3
+numBits 6
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 10
+y 90
+w 145
+h 14
+controlPv "$(P)SR_$(N)_Name"
+format "decimal"
+font "helvetica-medium-r-12.0"
+fgColor index 12
+bgColor index 3
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 440
+y 50
+w 55
+h 25
+fgColor index 0
+bgColor index 63
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-bold-r-12.0"
+buttonLabel "MCTRP"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "save_restoreStatusLegend.edl"
+}
+menuLabel {
+  0 "Legend"
+}
+endObjectProperties
+

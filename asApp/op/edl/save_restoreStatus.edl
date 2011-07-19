@@ -1,0 +1,492 @@
+4 0 1
+beginScreenProperties
+major 4
+minor 0
+release 1
+x 725
+y 34
+w 578
+h 200
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+# (Rectangle)
+object activeRectangleClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 0
+w 510
+h 80
+lineColor index 0
+fill
+fillColor index 0
+lineWidth 0
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 70
+y 0
+w 300
+h 22
+font "helvetica-medium-r-18.0"
+fontAlign "center"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "save_restore status"
+}
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 0
+y 80
+w 520
+h 5
+lineColor index 54
+fillColor index 54
+lineWidth 3
+numPoints 2
+xPoints {
+  0 -4
+  1 514
+}
+yPoints {
+  0 81
+  1 81
+}
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 5
+y 15
+w 505
+h 20
+lineColor index 54
+fillColor index 54
+lineWidth 3
+numPoints 2
+xPoints {
+  0 6
+  1 507
+}
+yPoints {
+  0 23
+  1 23
+}
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 20
+y 57
+w 55
+h 15
+font "helvetica-bold-r-12.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Recently:"
+}
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 425
+y 0
+w 20
+h 20
+lineColor index 21
+fill
+fillColor index 21
+lineWidth 0
+visPv "CALC\\\{(A)\}($(P)SR_heartbeat)"
+visInvert
+visMin "0"
+visMax "1"
+closePolygon
+numPoints 20
+xPoints {
+  0 435
+  1 431
+  2 427
+  3 426
+  4 426
+  5 426
+  6 429
+  7 431
+  8 435
+  9 435
+  10 437
+  11 441
+  12 443
+  13 445
+  14 446
+  15 446
+  16 443
+  17 441
+  18 437
+  19 435
+}
+yPoints {
+  0 20
+  1 17
+  2 13
+  3 8
+  4 4
+  5 1
+  6 0
+  7 0
+  8 2
+  9 5
+  10 2
+  11 0
+  12 0
+  13 1
+  14 4
+  15 8
+  16 13
+  17 17
+  18 20
+  19 20
+}
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 20
+y 35
+w 105
+h 14
+controlPv "$(P)SR_status"
+format "decimal"
+font "helvetica-bold-r-12.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 35
+w 280
+h 12
+controlPv "$(P)SR_statusStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 60
+w 280
+h 12
+controlPv "$(P)SR_recentlyStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 0
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 125
+w 185
+h 15
+controlPv "$(P)SR_rebootStatusStr"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 2
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 20
+y 128
+w 130
+h 14
+controlPv "$(P)SR_rebootStatus"
+format "decimal"
+font "helvetica-bold-r-12.0"
+fgColor index 12
+bgColor index 3
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 20
+y 100
+w 195
+h 20
+font "helvetica-bold-r-12.0"
+fgColor index 14
+bgColor index 0
+useDisplayBg
+value {
+  "Reboot status"
+}
+endObjectProperties
+
+# (Text)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 1
+release 0
+x 160
+y 100
+w 195
+h 12
+controlPv "$(P)SR_rebootTime"
+format "decimal"
+font "helvetica-medium-r-10.0"
+fgColor index 12
+bgColor index 3
+autoHeight
+nullColor index 32
+smartRefresh
+fastUpdate
+useHexPrefix
+newPos
+objType "controls"
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 1
+x 450
+y 0
+w 20
+h 20
+lineColor index 14
+fill
+fillColor index 14
+lineWidth 0
+visPv "CALC\\\{(A)\}($(P)SR_deadIfZero)"
+visMin "0"
+visMax "1"
+closePolygon
+numPoints 20
+xPoints {
+  0 459
+  1 455
+  2 451
+  3 450
+  4 450
+  5 450
+  6 452
+  7 456
+  8 459
+  9 459
+  10 461
+  11 464
+  12 468
+  13 469
+  14 470
+  15 470
+  16 468
+  17 464
+  18 461
+  19 459
+}
+yPoints {
+  0 20
+  1 17
+  2 13
+  3 8
+  4 4
+  5 1
+  6 0
+  7 0
+  8 2
+  9 5
+  10 2
+  11 0
+  12 0
+  13 1
+  14 4
+  15 8
+  16 13
+  17 17
+  18 20
+  19 20
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 415
+y 120
+w 85
+h 25
+fgColor index 0
+bgColor index 63
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-bold-r-12.0"
+buttonLabel "More"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "save_restoreStatus_more.edl"
+}
+menuLabel {
+  0 "Add save-sets 0 & 1"
+}
+closeAction {
+  0 1
+}
+symbols {
+  0 "P=$(P)"
+}
+closeDisplay {
+  0 1
+}
+endObjectProperties
+
+# (Related Display)
+object relatedDisplayClass
+beginObjectProperties
+major 4
+minor 2
+release 0
+x 415
+y 95
+w 85
+h 25
+fgColor index 0
+bgColor index 63
+topShadowColor index 2
+botShadowColor index 12
+font "helvetica-bold-r-12.0"
+buttonLabel "Less"
+numPvs 4
+numDsps 1
+displayFileName {
+  0 "save_restoreStatus_tiny.edl"
+}
+menuLabel {
+  0 "Just the rolled-up status"
+}
+closeAction {
+  0 1
+}
+symbols {
+  0 "P=$(P)"
+}
+closeDisplay {
+  0 1
+}
+endObjectProperties
+
