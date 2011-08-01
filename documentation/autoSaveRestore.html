@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v4.7</h1>
+<h1 align="center">autosave v4.8</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC is rebooted.  The
@@ -16,7 +16,10 @@ original author is Bob Dalesio; I made some improvements; Frank Lenkszus made
 some more improvements, which I folded into the version I've been maintaining. 
 A bunch of people contributed to getting the software running on PPC hardware,
 including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus Janousch
-and David Maden (SLS), and I'm not sure who else.
+and David Maden (SLS), and I'm not sure who else.  Zheqiao Geng extended the
+NFS-mount management to RTEMS, and I folded those changes back into a version
+that preserved the previous API.  Michael Davidsaver extended support for info
+nodes to nodes of arbitrary length.
 
 <P>Autosave is a two-part operation: run-time save, and boot-time restore.  The
 run-time part (save_restore.c) is started by commands in the IOC startup file,
@@ -56,13 +59,14 @@ file of parameters should be restored.
 
 <P>If you want the restored value available for use by device support during its
 initialization, you must cause the value to be restored during pass 0.  (Note
-that arrays cannot be restored at this time.) If you want the restored value to
-overwrite the value written by record/device initialization, you must cause the
-value to be restored dusing pass 1.
+that arrays cannot be restored at this time, because storage normally will not
+have been allocated for them yet.) If you want the restored value to overwrite
+the value written by record/device initialization, you must cause the value to
+be restored dusing pass 1.
 
 <P>Motor-record positions (VAL or DVAL) should be restored only before record
-initialization, because this is the assumption under which motor-record device
-support was written. 
+initialization (that is, during pass 0), because this is the assumption under
+which motor-record device support was written. 
 
 <P>In the lore that has built up around autosave, PV's that should be restored
 only before record initialization have been termed "positions".  All other PV's
