@@ -29,11 +29,15 @@ content="text/html; charset=iso-8859-1">
 	<li>Include Michael Davidsaver's mods  to handle info node of arbitrary length
 	<li>Added ZNAM, ONAM to records in saveRestoreStatus.db
 	<li>Don't require successful dismount as prerequisite for mount.  Most likely case
-	    is that dismount will succeed on first try, remount will fail, and then dismount
+		is that dismount will succeed on first try, remount will fail, and then dismount
 		will fail from then on because the file system has already been dismounted.
 	<li>If array data is found in a .sav file, parse to end whether or not the array will
 		be restored.
 	<li>Added .opi display files for CSS-BOY.
+	<li>Fixed wrong seek distance on WIN32.
+	<li>Compile-time option for Linux to manage or not manage NFS mount.
+	<li>Make makeAutosaveFiles() callable from the vxWorks shell.  (Previously, it was
+		callable only from iocsh.)
 </ul>
 
 <h3>4.7</h3>
