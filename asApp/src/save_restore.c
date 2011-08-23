@@ -1248,10 +1248,10 @@ STATIC int get_channel_values(struct chlist *plist)
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: no CHID for '%s'\n", pchannel->name);
 			} else if (ca_state(pchannel->chid) != cs_conn) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s not connected\n", pchannel->name);
-			} else if ((pchannel->max_elements == 0)) {
+			} else if (pchannel->max_elements == 0) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has an undetermined # elements\n",
 					pchannel->name);
-			} else if ((pchannel->max_elements == -1)) {
+			} else if (pchannel->max_elements == -1) {
 				if (save_restoreDebug >= 1) errlogPrintf("save_restore:get_channel_values: %s has a serious problem\n",
 					pchannel->name);
 			}
