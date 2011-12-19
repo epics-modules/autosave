@@ -10,6 +10,19 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>4.9</h3>
+<ul>
+
+	<li>Modified autosave to handle long strings (pvs of type DBF_STRING whose
+	declared size is larger than the number of characters channel access will
+	transport as a DBF_STRING).   request files must specify the pv name with a
+	trailing '$' to have them treated as arrays of char.  The save file,
+	however, will write the bare pv name and the string content.  Manual restore
+	of such files is currently limited to line length of 120, and asVerify
+	doesn't know anything about this stuff. 
+
+</ul>
+
 <h3>4.8</h3>
 <ul>
 	<li>Folded in modifications by Zheqiao Geng (SLAC):
