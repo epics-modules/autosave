@@ -1332,6 +1332,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
     int             file_check;
     double          delta_time;
 	struct stat		fileStat;		/* qiao: file state */	
+	char			realName[64];	/* name without trailing '$' */
+	int				is_long_string;
 
 	fGetDateStr(datetime);
 
@@ -1392,10 +1394,16 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* write PV names and values */
 	for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 		errno = 0;
+		is_long_string = 0;
+		strcpy(realName, pchannel->name);
+		if (realName[strlen(realName)-1] == '$') {
+			realName[strlen(realName)-1] = '\0';
+			is_long_string = 1;
+		}
 		if (pchannel->valid) {
-			n = fprintf(out_fd, "%s ", pchannel->name);
+			n = fprintf(out_fd, "%s ", realName);
 		} else {
-			n = fprintf(out_fd, "#%s ", pchannel->name);
+			n = fprintf(out_fd, "#%s ", realName);
 		}
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
@@ -1412,21 +1420,18 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-			if (n <= 0) {
-				errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
-				if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
-				problem |= FPRINTF_FAILED;
-				goto trouble;
-			}
+		} else if (is_long_string) {
+			/* write long string */
+			n = fprintf(out_fd, "%-s\n", (char *)pchannel->pArray);
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
-			if (n <= 0) {
-				errlogPrintf("save_restore:write_it: fprintf returned %d [%s].\n", n, datetime);
-				if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
-				problem |= FPRINTF_FAILED;
-				goto trouble;
-			}
+		}
+		if (n <= 0) {
+			errlogPrintf("save_restore:write_it: fprintf returned %d [%s].\n", n, datetime);
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+			problem |= FPRINTF_FAILED;
+			goto trouble;
 		}
 	}
 
@@ -2415,7 +2420,7 @@ STATIC int do_manual_restore(char *filename, int file_type)
 		if (n < 3) *value_string = 0;
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
-			if (is_scalar) {
+			if (is_scalar && (strlen(value_string) < 40)) {
 				if (ca_search(PVname, &chanid) != ECA_NORMAL) {
 					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
@@ -2423,6 +2428,17 @@ STATIC int do_manual_restore(char *filename, int file_type)
 				} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
 					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,PVname);
 				}
+			} else if (is_scalar) {
+				/* handle long string */
+				char dollarName[64];
+				strcpy(dollarName, PVname);
+				strcat(dollarName, "$");
+				if (ca_search(dollarName, &chanid) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", dollarName);
+				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", dollarName);
+				}
+				status = SR_put_array_values(dollarName, value_string, strlen(value_string)+1);
 			} else {
 				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
 			}
