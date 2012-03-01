@@ -70,71 +70,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <tsDefs.h>
 #include <fGetDateStr.h>
 
+/* get date,time as yymmdd-HHMMSS */
 int	fGetDateStr( char datetime[])
-{
-
+{ 
 	TS_STAMP   now;
-	char	   time_text[32];
-	char	   tmp[16];
-	char	*p, *p1, *p2;
 
-	tsLocalTime(&now);
-	p = tsStampToText( &now, TS_TEXT_MMDDYY, time_text);
-	p2 = tmp;
-	if((p1 = strchr(p, (int) '/'))) {
-		*p1= 0;
-		strcpy(p2, p);
-	} else {
-		printf("Couldn't crack time: %s\n", p);
-		return(-1);
-	}	
-	p = ++p1;
-	if((p1 = strchr(p, (int) '/'))) {
-		*p1= 0;
-		strncat(p2, p, 2);
-	} else {
-		printf("Couldn't crack time: %s\n", p);
-		return(-1);
-	}	
-	p = ++p1;
-	if((p1 = strchr(p, (int) ' '))) {
-		*p1= 0;
-		strncat(p2, p, 2);
-	} else {
-		printf("Couldn't crack time: %s\n", p);
-		return(-1);
-	}	
-	if(strlen(p2) != 6) {
-		printf("Oops, MM/DD/YY format error: %s\n", p2);
-		return(-1);
-	}
-	
-	datetime[0] = tmp[4];
-	datetime[1] = tmp[5];
-	datetime[2] = tmp[0];
-	datetime[3] = tmp[1];
-	datetime[4] = tmp[2];
-	datetime[5] = tmp[3];
-	datetime[6] = '-';
-	datetime[7] = 0;
-	
-	p = ++p1;
-	if((p1 = strchr(p, (int) ':'))) {
-		*p1= 0;
-		strncat(datetime, p, 2);
-	} else {
-		printf("Couldn't crack time: %s\n", p);
-		return(-1);
-	}	
-	p = ++p1;
-	if((p1 = strchr(p, (int) ':'))) {
-		*p1= 0;
-		strncat(datetime, p, 2);
-	} else {
-		printf("Couldn't crack time: %s\n", p);
-		return(-1);
-	}	
-	p = ++p1;
-	strncat(datetime, p, 2);
+	epicsTimeGetCurrent(&now);
+	epicsTimeToStrftime(datetime, 28, "%y%m%d-%H%M%S", &now);
 	return(0);
 }
+
