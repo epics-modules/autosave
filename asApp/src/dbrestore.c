@@ -386,10 +386,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 	int				field_size = 0;
 	char			*p_char = NULL;
 	short			*p_short = NULL;
-	long			*p_long = NULL;
+	epicsInt32		*p_long = NULL;
 	unsigned char	*p_uchar = NULL;
 	unsigned short	*p_ushort = NULL;
-	unsigned long	*p_ulong = NULL;
+	epicsUInt32		*p_ulong = NULL;
 	float			*p_float = NULL;
 	double			*p_double = NULL;
 
@@ -431,8 +431,8 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		case DBF_UCHAR:                                p_uchar = (unsigned char *)p_data;   break;
 		case DBF_ENUM: case DBF_USHORT: case DBF_MENU: p_ushort = (unsigned short *)p_data; break;
 		case DBF_SHORT:                                p_short = (short *)p_data;           break;
-		case DBF_ULONG:                                p_ulong = (unsigned long *)p_data;   break;
-		case DBF_LONG:                                 p_long = (long *)p_data;             break;
+		case DBF_ULONG:                                p_ulong = (epicsUInt32 *)p_data;     break;
+		case DBF_LONG:                                 p_long = (epicsInt32 *)p_data;       break;
 		case DBF_FLOAT:                                p_float = (float *)p_data;           break;
 		case DBF_DOUBLE:                               p_double = (double *)p_data;         break;
 		case DBF_NOACCESS:
@@ -549,10 +549,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 							p_short[num_read++] = (short)atol(string);
 							break;
 						case DBF_LONG:
-							p_long[num_read++] = atol(string);
+							p_long[num_read++] = (epicsInt32) atol(string);
 							break;
 						case DBF_ULONG:
-							p_ulong[num_read++] = (unsigned long)atol(string);
+							p_ulong[num_read++] = (epicsUInt32) atol(string);
 							break;
 						case DBF_FLOAT:
 							p_float[num_read++] = mySafeDoubleToFloat(atof(string));
@@ -584,9 +584,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 				case DBF_CHAR:
 					errlogPrintf("	'%c' (%d)\n", p_char[j], p_char[j]); break;
 				case DBF_ULONG:
-					errlogPrintf("	%lu\n", p_ulong[j]); break;
+					errlogPrintf("	%u\n", p_ulong[j]); break;
 				case DBF_LONG:
-					errlogPrintf("	%ld\n", p_long[j]); break;
+					errlogPrintf("	%d\n", p_long[j]); break;
 				case DBF_FLOAT:
 					errlogPrintf("	%f\n", p_float[j]); break;
 				case DBF_DOUBLE:
@@ -1179,10 +1179,10 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 	long		i, j, n;
 	char			*p_char = NULL, *pc;
 	short			*p_short = NULL;
-	long			*p_long = NULL;
+	epicsInt32		*p_long = NULL;
 	unsigned char	*p_uchar = NULL;
 	unsigned short	*p_ushort = NULL;
-	unsigned long	*p_ulong = NULL;
+	epicsUInt32		*p_ulong = NULL;
 	float			*p_float = NULL;
 	double			*p_double = NULL;
 
@@ -1223,12 +1223,12 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 			n += fprintf(out_fd, "%1c%u%1c ", ELEMENT_BEGIN, p_ushort[i], ELEMENT_END);
 			break;
 		case DBF_LONG:
-			p_long = (long *)pArray;
-			n += fprintf(out_fd, "%1c%ld%1c ", ELEMENT_BEGIN, p_long[i], ELEMENT_END);
+			p_long = (epicsInt32 *)pArray;
+			n += fprintf(out_fd, "%1c%d%1c ", ELEMENT_BEGIN, p_long[i], ELEMENT_END);
 			break;
 		case DBF_ULONG:
-			p_ulong = (unsigned long *)pArray;
-			n += fprintf(out_fd, "%1c%lu%1c ", ELEMENT_BEGIN, p_ulong[i], ELEMENT_END);
+			p_ulong = (epicsUInt32 *)pArray;
+			n += fprintf(out_fd, "%1c%u%1c ", ELEMENT_BEGIN, p_ulong[i], ELEMENT_END);
 			break;
 		case DBF_FLOAT:
 			p_float = (float *)pArray;
