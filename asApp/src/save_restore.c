@@ -148,7 +148,7 @@
 #include	<epicsThread.h>
 #include	<epicsExport.h>
 #include	<iocsh.h>
-#include 	<tsDefs.h>
+/* not in 3.15.0.1 #include <tsDefs.h> */
 #include    <macLib.h>
 #include	<callback.h>
 #include	<epicsMutex.h>
