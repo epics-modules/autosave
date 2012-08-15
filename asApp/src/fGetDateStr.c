@@ -67,13 +67,13 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <dbCommon.h>
 #include <recGbl.h>
 #include <devSup.h>
-#include <tsDefs.h>
+/* not in 3.15.0.1 #include <tsDefs.h> */
 #include <fGetDateStr.h>
 
 /* get date,time as yymmdd-HHMMSS */
 int	fGetDateStr( char datetime[])
 { 
-	TS_STAMP   now;
+	epicsTimeStamp now;
 
 	epicsTimeGetCurrent(&now);
 	epicsTimeToStrftime(datetime, 28, "%y%m%d-%H%M%S", &now);
