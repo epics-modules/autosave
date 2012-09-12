@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v4.8</h1>
+<h1 align="center">autosave v5.0</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC is rebooted.  The
@@ -32,7 +32,10 @@ and does not persist after iocInit() returns.
 <P>In addition to the autosave software, the autosave module contains a client
 program, asVerify, to compare written autosave files with current PV values.
 This program can also write an autosave file from which PV values can be
-restored.
+restored.  Because one use of asVerify is to retrieve PV values from an IOC that
+is having trouble (autosave has crashed, for example), asVerify connects with
+only one PV at a time.  This makes asVerify rather slow.  In one trial, it took
+two minutes to verify a .sav file containing 5000 PVs.
 
 <h2> Important nuances </h2>
 <ul>
@@ -62,7 +65,7 @@ initialization, you must cause the value to be restored during pass 0.  (Note
 that arrays cannot be restored at this time, because storage normally will not
 have been allocated for them yet.) If you want the restored value to overwrite
 the value written by record/device initialization, you must cause the value to
-be restored dusing pass 1.
+be restored during pass 1.
 
 <P>Motor-record positions (VAL or DVAL) should be restored only before record
 initialization (that is, during pass 0), because this is the assumption under
@@ -174,15 +177,32 @@ to xxxApp/src/Makefile, and add
 <pre>	include "asSupport.dbd"</pre>
 to iocxxxInclude.dbd.
 
-<h4>2. Write request files (optional, though this is the most common use)</h4>
+<h4>2. Write request files (optional, though this is the intended and most
+common use)</h4>
+
 Create "request" files (e.g., auto_settings.req,
 auto_positions.req) specifying the PVs whose values you want to save and
 restore.  The save files corresponding to these request files will have the
-".req" suffix replaced by ".sav".
+".req" suffix replaced by ".sav".  Here's a sample request file:
 
-Request files can include other request files (nested includes are allowed) and
-macro substitution can be performed on the included files (using William
+<pre>
+	xxx:m1.VAL
+	xxx:m2.VAL
+</pre>
+
+<P>Request files can also contain macro variables, whose values will be defined
+in the call that causes the request file to be processed. For example, the above
+request file could also be written as follows:
+
+<pre>
+	$(P)m1.VAL
+	$(P)m2.VAL
+</pre>
+
+<P>Request files can include other request files (nested includes are allowed)
+and macro substitution can be performed on the included files (using William
 Lupton's macro library), with the following syntax:
+
 <pre>
 	file &lt;request_file&gt; &lt;macro-substitution_string&gt;
 </pre>
@@ -191,16 +211,16 @@ e.g.,
 	file motor_settings.req P=xxx:,M=m1
 </pre>
 
-<P>I've tried to defend against forseeable variations in syntax, so that include
-lines with embedded whitespace and/or quotes, macro strings without commas,
-empty macro strings, and lines with trailing comments will be parsed as one
-would want.  Generally, quotes are ignored, whitespace implies a comma but
-otherwise is ignored, and everything after the second sequence of
-non-whitespace characters (i.e., after the file name) and before the (optional)
-comment character '#' is taken as the macro-substitution string.  Macro
-substitution is performed on the entire line, so it's possible to parameterize
-names of included files, as well as PV names.  It is also possible to define a
-macro that replaces its target with nothing.
+<P>I've tried to defend against forseeable variations in syntax, so that
+"include" lines with embedded whitespace and/or quotes, macro strings without
+commas, empty macro strings, and lines with trailing comments will be parsed as
+one would want.  Generally, quotes are ignored, whitespace implies a comma but
+otherwise is ignored, and everything after the second sequence of non-whitespace
+characters (i.e., after the file name) and before the (optional) comment
+character, '#', is taken as the macro-substitution string.  Macro substitution
+is performed on the entire line, so it's possible to parameterize names of
+included files, as well as PV names.  It is also possible to define a macro that
+replaces its target with nothing.
 
 <p>Most synApps modules contain autosave-request files that are
 intended to be included in an ioc's autosave-request file(s).  For example,
@@ -497,6 +517,7 @@ xxx:SR_ao.SCAN 3 <font color=blue>(enum - saved/restored as a short)</font>
 xxx:SR_ao.VAL 4.1234567890123 <font color=blue>(double, printed with format "%.14g")</font>
 xxx:SR_scaler.RATE 1.234568 <font color=blue>(float, printed with format "%.7g")</font>
 xxx:SR_ao.DESC description <font color=blue>(string)</font>
+xxx:myCalc.CALC$ 123456789+123456789+123456789+123456789+123456789 <font color=blue>(long string)</font>
 xxx:SR_ao.OUT xxx:SR_bo.VAL NPP NMS <font color=blue>(link)</font>
 xxx:SR_ao.RVAL 4 <font color=blue>(long)</font>
 xxx:SR_bi.SVAL 2 <font color=blue>(ulong)</font>
