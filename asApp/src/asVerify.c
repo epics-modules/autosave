@@ -41,7 +41,7 @@
 printf("    =============================\n"); wrote_head=1;}
 #define PEND_TIME 5.0
 
-#define	ASVERSION "asVerify V1.1"
+#define	ASVERSION "asVerify R5.0"
 
 #ifndef PVNAME_STRINGSZ
 #define PVNAME_STRINGSZ 61	/* includes terminating null */
@@ -86,7 +86,8 @@ int main(int argc,char **argv)
 	char	restore_filename[PATH_SIZE], trial_restore_filename[PATH_SIZE];
 	char	*tempname, *CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
-	int		i, j, n, is_scalar, is_scalar_in_file, numPVs, numDifferences, numPVsNotConnected, nspace;
+	int		i, j, n, is_scalar, is_scalar_in_file, is_long_string;
+	int		numPVs, numDifferences, numPVsNotConnected, nspace;
 	int		different, wrote_head=0, status, file_ok=0;
 	int		verbose = 0, debug=0, write_restore_file=0;
 	long 	element_count=0, storageBytes=0, alloc_CA_buffer=0;
@@ -187,6 +188,7 @@ int main(int argc,char **argv)
 		}
 		/* NOTE value_string must have room for nearly  BUF_SIZE characters */
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
+		/* if (!debug && !verbose) printf("%-61s\r", PVname); */
 		if (debug) printf("\nasVerify: PVname='%s', value_string[%zd]='%s'\n",
 				PVname, strlen(value_string), value_string);
 		if (n<3) *value_string = 0;
@@ -208,6 +210,7 @@ int main(int argc,char **argv)
 			numPVs++;
 			field_type = ca_field_type(chid);
 			if (debug) printf("'%s' native field_type=%d\n", PVname, field_type);
+			is_long_string = (field_type==DBF_CHAR) && (PVname[strlen(PVname)-1]=='$');
 			/* If DBF_STRING will work, use it. */
 			if (field_type!=DBF_FLOAT && field_type!=DBF_DOUBLE && field_type!=DBF_ENUM)
 				field_type = DBF_STRING;
@@ -217,10 +220,12 @@ int main(int argc,char **argv)
 			is_scalar_in_file = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
 			is_scalar = is_scalar_in_file;
 			if (element_count > 1) is_scalar = 0;
-			if (debug) printf("asVerify: is_scalar=%d, is_scalar_in_file=%d\n", is_scalar, is_scalar_in_file);
+			if (debug) printf("asVerify: is_scalar=%d, is_scalar_in_file=%d, is_long_string=%d\n",
+				is_scalar, is_scalar_in_file, is_long_string);
 
 			/* allocate storage for CA and for reading the file */
 			storageBytes = dbr_size_n(field_type, element_count);
+			if (is_long_string) storageBytes = dbr_size_n(DBF_CHAR, element_count);
 			if (debug) printf("asVerify:type=%d,elements=%ld, storageBytes=%ld\n",
 					field_type, element_count, storageBytes);
 			if (alloc_CA_buffer < storageBytes) {
@@ -372,11 +377,33 @@ int main(int argc,char **argv)
 				break;
 			case  DBF_STRING:
 				svalue = (char *)CA_buffer;
-				status = ca_array_get(DBR_STRING,element_count,chid,(void *)svalue);
+				if (is_long_string) {
+					/* See if we got the whole line */
+					if (bp[strlen(bp)-1] != '\n') {
+						/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
+						if (debug) printf("did not reach end of line for long-string PV\n");
+						bp = fgets(s, BUF_SIZE, fp);
+						n = BUF_SIZE-strlen(value_string)-1;
+						strncat(value_string, bp, n);
+						if (value_string[strlen(value_string)-1] == '\n') value_string[strlen(value_string)-1] = '\0';
+					}
+					/* Discard additional characters until end of line */
+					while (bp[strlen(bp)-1] != '\n') fgets(s, BUF_SIZE, fp);
+
+					status = ca_array_get(DBR_CHAR,element_count,chid,(void *)svalue);
+				} else {
+					status = ca_array_get(DBR_STRING,element_count,chid,(void *)svalue);
+				}
 				if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
 				if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
-				if (is_scalar == is_scalar_in_file) {
-					if (is_scalar) {
+
+				if ((is_scalar != is_scalar_in_file) && !is_long_string) {
+					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
+						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
+				} else {
+					if (is_long_string) {
+						different = strncmp(value_string, svalue, BUF_SIZE);
+					} else if (is_scalar) {
 						different = strcmp(value_string, svalue);
 					} else {
 						svalue_read = (char *)read_buffer;
@@ -389,19 +416,19 @@ int main(int argc,char **argv)
 					if (different) numDifferences++;
 					if (different || verbose) {
 						WRITE_HEADER;
-						if (is_scalar) {
+						if (is_scalar || is_long_string) {
 							nspace = 24-strlen(value_string); if (nspace < 1) nspace = 1;
 							printf("%s%-24s '%s'%*s'%s'\n", different?"*** ":"    ", PVname, value_string, nspace, "", svalue);
 						} else {
 							printf("%s%-25s (array) %d diff%1c\n", different?"*** ":"    ", PVname, different, different==1?' ':'s');
 						}
 					}
-				} else {
-					printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
-						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				}
 				if (write_restore_file) {
-					if (is_scalar) {
+					if (is_long_string) {
+						svalue[BUF_SIZE-1] = '\0';
+						fprintf(fr, "%s %s\n", PVname, svalue);
+					} else if (is_scalar) {
 						fprintf(fr, "%s %s\n", PVname, svalue);
 					} else {
 						fprintf(fr, "%s %-s %1c ", PVname, ARRAY_MARKER, ARRAY_BEGIN);
