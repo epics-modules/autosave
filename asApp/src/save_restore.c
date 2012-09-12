@@ -129,7 +129,7 @@
  *                Report failed connections to PV's at connect time.
  *                Allow embedded '.' in save-file name.
  */
-#define		SRVERSION "save/restore V5.5"
+#define		SRVERSION "autosave R5.0"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -1334,6 +1334,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	struct stat		fileStat;		/* qiao: file state */	
 	char			realName[64];	/* name without trailing '$' */
 	int				is_long_string;
+	char			value_string[BUF_SIZE];
 
 	fGetDateStr(datetime);
 
@@ -1401,9 +1402,9 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			is_long_string = 1;
 		}
 		if (pchannel->valid) {
-			n = fprintf(out_fd, "%s ", realName);
+			n = fprintf(out_fd, "%s ", pchannel->name);
 		} else {
-			n = fprintf(out_fd, "#%s ", realName);
+			n = fprintf(out_fd, "#%s ", pchannel->name);
 		}
 		if (n <= 0) {
 			errlogPrintf("save_restore:write_it: fprintf returned %d. [%s]\n", n, datetime);
@@ -1421,8 +1422,10 @@ STATIC int write_it(char *filename, struct chlist *plist)
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
 		} else if (is_long_string) {
-			/* write long string */
-			n = fprintf(out_fd, "%-s\n", (char *)pchannel->pArray);
+			/* write first BUF-SIZE-1 characters of long string, so dbrestore doesn't choke. */
+			strncpy(value_string, pchannel->pArray, BUF_SIZE-1);
+			value_string[BUF_SIZE-1] = '\0';
+			n = fprintf(out_fd, "%-s\n", value_string);
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
@@ -2344,6 +2347,8 @@ STATIC int do_manual_restore(char *filename, int file_type)
 	long			status, num_errs=0;
 	FILE			*inp_fd;
 	chid			chanid;
+	char			realName[64];	/* name without trailing '$' */
+	int				is_long_string;
 
 	if (file_type == FROM_SAVE_FILE) {
 		/* if this is the current file name for a save set - restore from there */
@@ -2419,26 +2424,42 @@ STATIC int do_manual_restore(char *filename, int file_type)
 		n = sscanf(bp,"%s%c%[^\n]", PVname, &c, value_string);
 		if (n < 3) *value_string = 0;
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
+			/* handle long string name */
+			strcpy(realName, PVname);
+			if (realName[strlen(realName)-1] == '$') {
+				realName[strlen(realName)-1] = '\0';
+				is_long_string = 1;
+			}
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (is_scalar && (strlen(value_string) < 40)) {
+				if (ca_search(realName, &chanid) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", realName);
+				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", realName);
+				} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,realName);
+				}
+			} else if (is_scalar) {
+				if (is_long_string) {
+					/* See if we got the whole line */
+					if (bp[strlen(bp)-1] != '\n') {
+						/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
+						bp = fgets(buffer, BUF_SIZE, inp_fd);
+						n = BUF_SIZE-strlen(value_string)-1;
+						strncat(value_string, bp, n);
+						if (value_string[strlen(value_string)-1] == '\n') value_string[strlen(value_string)-1] = '\0';
+					}
+					/* Discard additional characters until end of line */
+					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+				}
 				if (ca_search(PVname, &chanid) != ECA_NORMAL) {
 					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
 					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", PVname);
-				} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,PVname);
+				} else if (ca_array_put(DBR_CHAR, strlen(value_string), chanid, value_string) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_array_put of '%s' to '%s' failed\n", value_string,PVname);
 				}
-			} else if (is_scalar) {
-				/* handle long string */
-				char dollarName[64];
-				strcpy(dollarName, PVname);
-				strcat(dollarName, "$");
-				if (ca_search(dollarName, &chanid) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", dollarName);
-				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", dollarName);
-				}
-				status = SR_put_array_values(dollarName, value_string, strlen(value_string)+1);
+				/* status = SR_put_array_values(PVname, value_string, strlen(value_string)+1); */
 			} else {
 				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
 			}
