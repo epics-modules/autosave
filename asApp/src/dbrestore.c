@@ -213,7 +213,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	DBADDR	*paddr = &dbaddr;
 	dbfType field_type = pdbentry->pflddes->field_type;
 	short special = pdbentry->pflddes->special;
-	
+
 	if (save_restoreDebug >= 5) errlogPrintf("dbrestore:scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);
 	switch (field_type) {
 	case DBF_STRING: case DBF_ENUM:
@@ -708,7 +708,9 @@ int reboot_restore(char *filename, initHookState init_state)
 	int			n, write_backup, num_errors, is_scalar;
 	long		*pStatusVal = 0;
 	char		*statusStr = 0;
-	
+	char		realName[64];	/* name without trailing '$' */
+	int			is_long_string;
+
 	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
 	printf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
 	/* initialize database access routines */
@@ -790,7 +792,9 @@ int reboot_restore(char *filename, initHookState init_state)
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
 		if (n<3) *value_string = 0;
 		if ((n<1) || (PVname[0] == '\0')) {
-			if (save_restoreDebug >= 10) errlogPrintf("dbrestore:reboot_restore: line (fragment) '%s' ignored.\n", bp);
+			if (save_restoreDebug >= 10) {
+				errlogPrintf("dbrestore:reboot_restore: line (fragment) '%s' ignored.\n", bp);
+			}
 			continue;
 		}
 		if (PVname[0] == '#') {
@@ -812,10 +816,31 @@ int reboot_restore(char *filename, initHookState init_state)
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (save_restoreDebug > 9) errlogPrintf("\n");
 			if (save_restoreDebug >= 10) {
-				errlogPrintf("dbrestore:reboot_restore: Attempting to put %s '%s' to '%s'\n", is_scalar?"scalar":"array", value_string, PVname);
+				errlogPrintf("dbrestore:reboot_restore: Attempting to put %s '%s' to '%s'\n",
+					is_scalar?"scalar":"array", value_string, PVname);
 			}
+
+			/* dbStatic doesn't know about long-string fields (PV name with appended '$'). */
+			strcpy(realName, PVname);
+			if (realName[strlen(realName)-1] == '$') {
+				realName[strlen(realName)-1] = '\0';
+				is_long_string = 1;
+				/* See if we got the whole line */
+				if (bp[strlen(bp)-1] != '\n') {
+					/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
+					if (save_restoreDebug > 9) printf("reboot_restore: did not reach end of line for long-string PV\n");
+					bp = fgets(buffer, BUF_SIZE, inp_fd);
+					n = BUF_SIZE-strlen(value_string)-1;
+					strncat(value_string, bp, n);
+					/* we don't want that '\n' in the string */
+					if (value_string[strlen(value_string)-1] == '\n') value_string[strlen(value_string)-1] = '\0';
+				}
+				/* Discard additional characters until end of line */
+				while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+			}
+
 			found_field = 1;
-			if ((status = dbFindRecord(pdbentry, PVname)) != 0) {
+			if ((status = dbFindRecord(pdbentry, realName)) != 0) {
 				errlogPrintf("dbFindRecord for '%s' failed\n", PVname);
 				num_errors++; found_field = 0;
 			} else if (dbFoundField(pdbentry) == 0) {
