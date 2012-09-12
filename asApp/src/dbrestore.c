@@ -1289,7 +1289,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	DBENTRY		dbentry;
 	DBENTRY		*pdbentry = &dbentry;
 	const char *info_value, *pbegin, *pend;
-	char		*fname, *falloc=NULL, field[MAX_FIELD_SIZE];
+	char		*fname, *falloc=NULL, field[MAX_FIELD_SIZE], realfield[MAX_FIELD_SIZE];
 	FILE 		*out_fd;
 	int			searchRecord, flen;
 
@@ -1342,8 +1342,10 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 						if (flen >= sizeof(field)-1) flen = sizeof(field)-1;
 						memcpy(field, pbegin, flen);
 						field[flen]='\0';
+						strcpy(realfield, field);
+						if (realfield[strlen(realfield)-1] == '$') realfield[strlen(realfield)-1] = '\0';
 
-						if (dbFindField(pdbentry, field) == 0) {
+						if (dbFindField(pdbentry, realfield) == 0) {
 							fprintf(out_fd, "%s.%s\n", dbGetRecordName(pdbentry), field);
 						} else {
 							printf("makeAutosaveFileFromDbInfo: %s.%s not found\n", dbGetRecordName(pdbentry), field);
