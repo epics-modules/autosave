@@ -509,7 +509,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 					errlogPrintf("dbrestore:SR_array_restore: element[%ld] value = '%s'\n", num_read, string);
 					if (bp) errlogPrintf("dbrestore:SR_array_restore: look for element-end: buffer contains '%s'\n", bp);
 				}
-					/*
+				/*
 				 * We've accumulated all the characters, or all we can handle in string[].
 				 * If there are more characters than we can handle, just pretend we read them.
 				 */
@@ -552,7 +552,8 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 							p_long[num_read++] = (epicsInt32) atol(string);
 							break;
 						case DBF_ULONG:
-							p_ulong[num_read++] = (epicsUInt32) atol(string);
+							/*p_ulong[num_read++] = (epicsUInt32) atol(string);*/
+							p_ulong[num_read++] = (epicsUInt32) strtoul(string,NULL,0);
 							break;
 						case DBF_FLOAT:
 							p_float[num_read++] = mySafeDoubleToFloat(atof(string));
