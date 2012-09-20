@@ -1505,8 +1505,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
     file_check = check_file(filename);
     delta_time = difftime(time(NULL), fileStat.st_mtime);
 	if ((file_check != BS_OK) || (fileStat.st_size <= 0) ||  (delta_time > 10.0)) {
-		errlogPrintf("save_restore:write_it: file written checking failure [%s], check_file=%d, size=%ld, delta_time=%f\n", 
-            datetime, file_check, fileStat.st_size, delta_time);
+		errlogPrintf("save_restore:write_it: file written checking failure [%s], check_file=%d, size=%lld, delta_time=%f\n", 
+            datetime, file_check, (long long)fileStat.st_size, delta_time);
 		return(ERROR);
 	}	
 	
@@ -2426,6 +2426,7 @@ STATIC int do_manual_restore(char *filename, int file_type)
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			/* handle long string name */
 			strcpy(realName, PVname);
+			is_long_string = 0;
 			if (realName[strlen(realName)-1] == '$') {
 				realName[strlen(realName)-1] = '\0';
 				is_long_string = 1;
