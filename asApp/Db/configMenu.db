@@ -1,0 +1,175 @@
+record(stringout, "$(P)$(C)Menu:currName") {
+	field(VAL, "defaultConfig")
+}
+record(scalcout, "$(P)$(C)Menu:makeCurrName") {
+	field(BB, "$(C)_")
+	field(CALC, "BB+AA")
+	field(OUT, "$(P)$(C)Menu:currName PP")
+}
+record(scalcout, "$(P)$(C)Menu:makeLoadName") {
+	field(BB, "$(C)_")
+	field(CALC, "BB+AA")
+	field(OUT, "$(P)$(C)Menu:load.A PP")
+}
+
+# Should disable autosave trigger PV so it doesn't post its initial value?
+record(longout, "$(P)$(C)Menu:trigger") {
+	field(MDEL, "-1")
+}
+
+record(aSub,"$(P)$(C)Menu:load") {
+	field(INAM, "configMenu_init")
+	field(SNAM, "configMenu_do")
+	field(FTA, "STRING")
+	field(FTB, "INT")
+}
+
+record(stringout, "$(P)$(C)Menu:name1") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig1") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name1")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig1") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name1")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name2") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig2") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name2")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig2") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name2")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name3") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig3") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name3")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig3") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name3")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name4") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig4") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name4")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig4") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name4")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name5") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig5") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name5")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig5") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name5")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name6") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig6") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name6")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig6") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name6")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name7") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig7") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name7")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig7") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name7")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name8") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig8") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name8")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig8") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name8")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name9") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig9") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name9")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig9") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name9")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
+
+record(stringout, "$(P)$(C)Menu:name10") {
+}
+record(sseq, "$(P)$(C)Menu:loadConfig10") {
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(C)Menu:currName PP")
+	field(DOL2, "$(P)$(C)Menu:name10")
+	field(LNK2, "$(P)$(C)Menu:makeLoadName.AA PP")
+}
+record(stringout, "$(P)$(C)Menu:saveConfig10") {
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(C)Menu:name10")
+	field(OUT, "$(P)$(C)Menu:makeCurrName.AA PP")
+	field(FLNK, "$(P)$(C)Menu:trigger")
+}
