@@ -30,6 +30,7 @@ LIBRARY_IOC += autosave
 #os independent code
 autosave_SRCS += dbrestore.c save_restore.c
 autosave_SRCS += initHooks.c fGetDateStr.c
+autosave_SRCS += configMenuSub.c
 
 #os dependent code
 autosave_SRCS += osdNfs.c
