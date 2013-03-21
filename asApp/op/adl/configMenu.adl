@@ -5,10 +5,10 @@ file {
 }
 display {
 	object {
-		x=1181
-		y=48
+		x=518
+		y=25
 		width=240
-		height=320
+		height=510
 	}
 	clr=14
 	bclr=3
@@ -100,19 +100,6 @@ rectangle {
 }
 text {
 	object {
-		x=45
-		y=55
-		width=150
-		height=13
-	}
-	"basic attribute" {
-		clr=14
-	}
-	textix="config Name"
-	align="horiz. centered"
-}
-text {
-	object {
 		x=5
 		y=0
 		width=230
@@ -121,7 +108,7 @@ text {
 	"basic attribute" {
 		clr=14
 	}
-	textix="config $(C) Menu"
+	textix="configMenu: $(CONFIG)"
 	align="horiz. centered"
 }
 polyline {
@@ -148,7 +135,7 @@ polyline {
 		height=20
 	}
 	monitor {
-		chan="$(P)$(C)Menu:currName"
+		chan="$(P)$(CONFIG)Menu:currName"
 		clr=54
 		bclr=0
 	}
@@ -156,114 +143,160 @@ polyline {
 	limits {
 	}
 }
-composite {
+"choice button" {
 	object {
 		x=5
-		y=70
-		width=230
-		height=120
-	}
-	"composite name"=""
-	children {
-		composite {
-			object {
-				x=5
-				y=170
-				width=230
-				height=20
-			}
-			"composite name"=""
-			"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=5"
-		}
-		composite {
-			object {
-				x=5
-				y=70
-				width=230
-				height=20
-			}
-			"composite name"=""
-			"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=1"
-		}
-		composite {
-			object {
-				x=5
-				y=95
-				width=230
-				height=20
-			}
-			"composite name"=""
-			"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=2"
-		}
-		composite {
-			object {
-				x=5
-				y=120
-				width=230
-				height=20
-			}
-			"composite name"=""
-			"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=3"
-		}
-		composite {
-			object {
-				x=5
-				y=145
-				width=230
-				height=20
-			}
-			"composite name"=""
-			"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=4"
-		}
-	}
-}
-composite {
-	object {
-		x=5
-		y=295
-		width=230
+		y=50
+		width=80
 		height=20
 	}
-	"composite name"=""
-	"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=10"
+	control {
+		chan="$(P)$(CONFIG)Menu:busy"
+		clr=14
+		bclr=51
+	}
+	stacking="column"
 }
-composite {
+"text update" {
 	object {
-		x=5
-		y=195
-		width=230
+		x=100
+		y=50
+		width=125
 		height=20
 	}
-	"composite name"=""
-	"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=6"
-}
-composite {
-	object {
-		x=5
-		y=220
-		width=230
-		height=20
+	monitor {
+		chan="$(P)$(CONFIG)Menu:status"
+		clr=54
+		bclr=3
 	}
-	"composite name"=""
-	"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=7"
-}
-composite {
-	object {
-		x=5
-		y=245
-		width=230
-		height=20
+	limits {
 	}
-	"composite name"=""
-	"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=8"
+}
+text {
+	object {
+		x=45
+		y=95
+		width=150
+		height=13
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="config Name"
+	align="horiz. centered"
 }
 composite {
 	object {
 		x=5
 		y=270
 		width=230
-		height=20
+		height=40
 	}
 	"composite name"=""
-	"composite file"="configMenu_bare1.adl;P=$(P),C=$(C),N=9"
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=5"
+}
+composite {
+	object {
+		x=5
+		y=110
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=1"
+}
+composite {
+	object {
+		x=5
+		y=150
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=2"
+}
+composite {
+	object {
+		x=5
+		y=190
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=3"
+}
+composite {
+	object {
+		x=5
+		y=230
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=4"
+}
+composite {
+	object {
+		x=5
+		y=470
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=10"
+}
+composite {
+	object {
+		x=5
+		y=310
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=6"
+}
+composite {
+	object {
+		x=5
+		y=350
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=7"
+}
+composite {
+	object {
+		x=5
+		y=390
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=8"
+}
+composite {
+	object {
+		x=5
+		y=430
+		width=230
+		height=40
+	}
+	"composite name"=""
+	"composite file"="configMenu_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=9"
+}
+"text update" {
+	object {
+		x=5
+		y=75
+		width=230
+		height=15
+	}
+	monitor {
+		chan="$(P)$(CONFIG)Menu:currDesc"
+		clr=14
+		bclr=1
+	}
+	limits {
+	}
 }
