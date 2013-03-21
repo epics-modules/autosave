@@ -5,10 +5,10 @@ file {
 }
 display {
 	object {
-		x=690
-		y=357
+		x=875
+		y=100
 		width=240
-		height=20
+		height=40
 	}
 	clr=14
 	bclr=3
@@ -95,7 +95,7 @@ display {
 		height=20
 	}
 	control {
-		chan="$(P)$(C)Menu:name$(N)"
+		chan="$(P)$(CONFIG)Menu:name$(N)"
 		clr=14
 		bclr=51
 	}
@@ -110,7 +110,7 @@ display {
 		height=20
 	}
 	control {
-		chan="$(P)$(C)Menu:loadConfig$(N).PROC"
+		chan="$(P)$(CONFIG)Menu:loadConfig$(N).PROC"
 		clr=14
 		bclr=51
 	}
@@ -125,10 +125,26 @@ display {
 		height=20
 	}
 	control {
-		chan="$(P)$(C)Menu:saveConfig$(N).PROC"
+		chan="$(P)$(CONFIG)Menu:saveConfig$(N).PROC"
 		clr=14
 		bclr=51
 	}
 	label="Save"
 	press_msg="1"
+}
+"text entry" {
+	object {
+		x=5
+		y=20
+		width=230
+		height=20
+	}
+	control {
+		chan="$(P)$(CONFIG)Menu:desc$(N)"
+		clr=14
+		bclr=1
+	}
+	format="string"
+	limits {
+	}
 }
