@@ -5,14 +5,15 @@
 #include <dbAccess.h>
 #include <aSubRecord.h>
 
-typedef void (*callbackFunc)(int status, void *puserPvt);
-
-extern int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
-extern char *getMacroString(char *request_file);
-
-extern int manual_save(char *request_file, int secsToWait,
-		char *save_file, callbackFunc callbackFunction, void *puserPvt);
-
+#include "configMenuClient.h"
+/*
+ * typedef void (*callbackFunc)(int status, void *puserPvt);
+ *
+ * extern int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
+ * extern char *getMacroString(char *request_file);
+ * 
+ * extern int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt);
+ */
 volatile int configMenuDebug=0;
 
 void configMenuCallback(int status, void *puserPvt) {
@@ -99,7 +100,7 @@ static long configMenu_do(aSubRecord *pasub) {
 				return(0);
 			}
 			sprintf(filename, "%s_%s.cfg", g, a);
-			*b = manual_save(f, 0, filename, configMenuCallback, (void *)pasub);
+			*b = manual_save(f, filename, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:manual_save returned %ld\n", *b);
 			*vala = 1;
 			*valb = 1;
