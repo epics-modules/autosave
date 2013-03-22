@@ -158,6 +158,7 @@
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
 #include 	"osdNfs.h"              /* qiao: routine of os dependent code, for NFS */
+#include	"configMenuClient.h"
 
 #ifndef _WIN32
   #define SET_FILE_PERMISSIONS 1
@@ -263,8 +264,10 @@ STATIC int statusPvsInUse[NUM_STATUS_PV_SETS] = {0};
 STATIC epicsMutexId	sr_mutex = NULL;			/* mut(ual) ex(clusion) for list of save sets */
 
 /* Support for manual and programmed operations */
-typedef void (*callbackFunc)(int status, void *puserPvt);
 
+/* in configMenuClient.h
+ * typedef void (*callbackFunc)(int status, void *puserPvt);
+ */
 #define OP_MSG_QUEUE_SIZE 10
 #define OP_MSG_FILENAME_SIZE 100
 #define OP_MSG_MACRO_SIZE 100
@@ -376,7 +379,6 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring);
 STATIC int readReqFile(const char *file, struct chlist *plist, char *macrostring);
 STATIC int do_remove_data_set(char *filename);
 STATIC int request_manual_restore(char *filename, int file_type, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
-STATIC int old_manual_save(char *request_file, int secsToWait);
 
 STATIC void ca_connection_callback(struct connection_handler_args args);      /* qiao: call back function for ca connection of the dataset channels */
 STATIC void ca_disconnect();                                                  /* qiao: disconnect all existing CA channels */
@@ -403,10 +405,8 @@ int reload_manual_set(char * filename, char *macrostring);
 /* The following user-callable functions have an abridged argument list for iocsh use,
  * and a full argument list for calls from local client code.
  */
-int fdbrestoreX(char *filename, char *macrostring,
-		callbackFunc callbackFunction, void *puserPvt);
-int manual_save(char *request_file, int secsToWait,
-		char *save_file, callbackFunc callbackFunction, void *puserPvt);
+int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
+int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt);
 char *getMacroString(char *request_file);
 
 /* functions to set save_restore parameters */
@@ -542,49 +542,17 @@ STATIC void on_change_save(struct event_handler_args event)
     }	
 }
 
-/* old manual save.  We need a new way, so we can know when it's done, and whether it succeeded. */
-/* manual_save - user-callable routine to cause a manual set to be saved */
-STATIC int old_manual_save(char *request_file, int secsToWait)
-{
-	struct chlist	*plist;
-	char	datetime[32];
-	int		seconds;
-
-	if (waitForListLock(5) == 0) {
-		printf("manual_save:failed to lock resource.  Try later.\n");
-		return(ERROR);
-	}
-	plist = lptr;
-	while ((plist != 0) && strcmp(plist->reqFile, request_file)) {
-		plist = plist->pnext;
-	}
-	if (plist != 0)
-		plist->save_state |= MANUAL;
-	else {
-		fGetDateStr(datetime);
-		errlogPrintf("save_restore:manual_save: saveset %s not found [%s]\n", request_file, datetime);
-	}
-	unlockList();
-	
-	if (secsToWait == 0) return(OK);
-
-	/* For now don't bother locking the list */
-	for (seconds=0; (seconds < secsToWait) && (plist->save_state & MANUAL); seconds++) {
-		epicsThreadSleep(1.0);
-	}
-	return((plist->save_state & MANUAL) ? ERROR : OK);
-}
-
-int manual_save(char *request_file, int secsToWait, char *save_file, callbackFunc callbackFunction, void *puserPvt)
+int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt)
 {
 	op_msg msg;
 
-	if ((save_file == NULL) && (callbackFunction == NULL))
-		return(old_manual_save(request_file, secsToWait));
+	if (save_restoreDebug) printf("manual_save: request_file='%s', save_file='%s', callbackFunction=%p, puserPvt=%p\n",
+		request_file, save_file, callbackFunction, puserPvt);
 
 	msg.operation = op_SaveFile;
 	strncpy(msg.requestfilename, request_file, OP_MSG_FILENAME_SIZE);
-	strncpy(msg.filename, save_file, OP_MSG_FILENAME_SIZE);
+	msg.filename[0] = '\0';
+	if (save_file) strncpy(msg.filename, save_file, OP_MSG_FILENAME_SIZE);
 	if (callbackFunction==NULL) {
 		callbackFunction = defaultCallback;
 		puserPvt = NULL;
@@ -1728,7 +1696,7 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 		/* Use standard path name. */
 		strncpy(save_file, saveRestoreFilePath, sizeof(save_file) - 1);
 	}
-	if (configName) {
+	if (configName && configName[0]) {
 		makeNfsPath(save_file, save_file, configName);
 	} else if (plist->saveNamePV_chid) {
 		/* This list's file name comes from a PV */
@@ -2684,7 +2652,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (!is_scalar) {
 				/* Parse and gobble up the whole array, without restoring anything. */
-				status = SR_array_restore(pass, inp_fd, PVname, value_string, 1);
+				status = SR_array_restore(1, inp_fd, PVname, value_string, 1);
 			}
 		}
 	}
@@ -2897,10 +2865,9 @@ static void     fdbrestoreX_CallFunc(const iocshArgBuf *args) {fdbrestoreX(args[
 
 /* int manual_save(char *request_file); */
 IOCSH_ARG       manual_save_Arg0    = {"request file",iocshArgString};
-IOCSH_ARG       manual_save_Arg1    = {"seconds to wait for action",iocshArgInt};
-IOCSH_ARG_ARRAY manual_save_Args[2] = {&manual_save_Arg0, &manual_save_Arg1};
-IOCSH_FUNCDEF   manual_save_FuncDef = {"manual_save",2,manual_save_Args};
-static void     manual_save_CallFunc(const iocshArgBuf *args) {manual_save(args[0].sval, args[1].ival, NULL, NULL, NULL);}
+IOCSH_ARG_ARRAY manual_save_Args[1] = {&manual_save_Arg0};
+IOCSH_FUNCDEF   manual_save_FuncDef = {"manual_save",1,manual_save_Args};
+static void     manual_save_CallFunc(const iocshArgBuf *args) {manual_save(args[0].sval, NULL, NULL, NULL);}
 	
 /* int set_savefile_name(char *filename, char *save_filename); */
 IOCSH_ARG       set_savefile_name_Arg0    = {"filename",iocshArgString};
