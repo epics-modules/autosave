@@ -353,6 +353,7 @@ epicsExportAddress(int, save_restoreCallbackTimeout);    /* qiao: export the new
 char save_restoreNFSHostName[NFS_PATH_LEN] = "";
 char save_restoreNFSHostAddr[NFS_PATH_LEN] = "";
 char save_restoreNFSMntPoint[NFS_PATH_LEN]  = "";
+int saveRestoreFilePathIsMountPoint = 1;
 volatile int save_restoreRemountThreshold=10;
 epicsExportAddress(int, save_restoreRemountThreshold);
 
@@ -662,6 +663,7 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
 	strncpy(save_restoreNFSHostName, hostname, (NFS_PATH_LEN-1));
 	strncpy(save_restoreNFSHostAddr, address, (NFS_PATH_LEN-1));
     if (mntpoint && mntpoint[0]) {
+		saveRestoreFilePathIsMountPoint = 0;
 		strncpy(save_restoreNFSMntPoint, mntpoint, (NFS_PATH_LEN-1));
 		if (saveRestoreFilePath[0]) {
 			/* If we already have a file path, make sure it begins with the mount point. */
@@ -671,6 +673,7 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
 		}
 	} else if (saveRestoreFilePath[0]) {
 		strncpy(save_restoreNFSMntPoint, saveRestoreFilePath, (NFS_PATH_LEN-1));
+		saveRestoreFilePathIsMountPoint = 1;
 	}
 
 	/* mount the file system */
@@ -993,6 +996,8 @@ STATIC int save_restore(void)
 		epicsTimeGetCurrent(&delayStart);
 		while (epicsMessageQueueReceiveWithTimeout(opMsgQueue, (void*) &msg, OP_MSG_SIZE, (double)MIN_DELAY) >= 0) {
 			int status=0;
+			char fullPath[NFS_PATH_LEN+1] = "";
+
 			switch (msg.operation) {
 
 			case op_RestoreFromSaveFile:
@@ -1007,6 +1012,10 @@ STATIC int save_restore(void)
 				status = do_manual_restore(msg.filename, FROM_ASCII_FILE, msg.macrostring);
 				if (save_restoreDebug>1) printf("save_restore: manual restore status=%d (0==success)\n", status);
 				sprintf(SR_recentlyStr, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				if (status == 0) {
+					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+					status = asVerify(fullPath, 0, 0, 0);
+				}
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
 
@@ -1068,6 +1077,10 @@ STATIC int save_restore(void)
 						status = write_save_file(plist, msg.filename);
 				}
 				unlockList();
+				if (status == 0) {
+					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+					status = asVerify(fullPath, 0, 0, 0);
+				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
 				sprintf(SR_recentlyStr, "Save of '%s' %s", msg.filename, status?"Failed":"Succeeded");
@@ -2238,11 +2251,13 @@ int set_savefile_path(char *path, char *pathsub)
 	makeNfsPath(fullpath, path, pathsub);
 
 	if (*fullpath) {
-		makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
-		if (save_restoreNFSMntPoint[0] == '\0') {
-			strcpy(save_restoreNFSMntPoint, saveRestoreFilePath);
+		if (saveRestoreFilePathIsMountPoint) {
+			strcpy(saveRestoreFilePath, fullpath);
+			strcpy(save_restoreNFSMntPoint, fullpath);
+		} else {
+			makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
 		}
-		if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0]) {
+		if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
 			if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint, save_restoreNFSMntPoint) == OK) {
 				errlogPrintf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
 				strncpy(SR_recentlyStr, "mountFileSystem succeeded", (STRING_LEN-1));
@@ -2601,19 +2616,19 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 				is_long_string = 1;
 			}
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
-			if (is_scalar && !is_long_string) {
-				/* Discard additional characters until end of line */
-				while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
-				value_string[40] = '\0';
-				if (ca_search(realName, &chanid) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", realName);
-				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", realName);
-				} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,realName);
-				}
-			} else if (is_scalar) {
-				if (is_long_string) {
+			if (is_scalar) {
+				if (!is_long_string) {
+					/* Discard additional characters until end of line */
+					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+					value_string[40] = '\0';
+					if (ca_search(realName, &chanid) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", realName);
+					} else if (ca_pend_io(0.5) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", realName);
+					} else if (ca_put(DBR_STRING, chanid, value_string) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_put of %s to %s failed\n", value_string,realName);
+					}
+				} else  {
 					/* See if we got the whole line */
 					if (bp[strlen(bp)-1] != '\n') {
 						/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
@@ -2624,15 +2639,14 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 					}
 					/* Discard additional characters until end of line */
 					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+					if (ca_search(PVname, &chanid) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
+					} else if (ca_pend_io(0.5) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", PVname);
+					} else if (ca_array_put(DBR_CHAR, strlen(value_string), chanid, value_string) != ECA_NORMAL) {
+						errlogPrintf("save_restore:do_manual_restore: ca_array_put of '%s' to '%s' failed\n", value_string,PVname);
+					}
 				}
-				if (ca_search(PVname, &chanid) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
-				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", PVname);
-				} else if (ca_array_put(DBR_CHAR, strlen(value_string), chanid, value_string) != ECA_NORMAL) {
-					errlogPrintf("save_restore:do_manual_restore: ca_array_put of '%s' to '%s' failed\n", value_string,PVname);
-				}
-				/* status = SR_put_array_values(PVname, value_string, strlen(value_string)+1); */
 			} else {
 				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
 			}
