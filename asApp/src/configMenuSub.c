@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
+
 #include <dbScan.h>
 #include <dbAccess.h>
 #include <aSubRecord.h>
@@ -15,6 +17,7 @@
  * extern int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt);
  */
 volatile int configMenuDebug=0;
+void makeLegal(char *name);
 
 void configMenuCallback(int status, void *puserPvt) {
 	aSubRecord *pasub = (aSubRecord *)puserPvt;
@@ -75,6 +78,7 @@ static long configMenu_do(aSubRecord *pasub) {
 			if (f) {
 				macrostring = getMacroString(f);
 			}
+			makeLegal(a);
 			sprintf(filename, "%s_%s.cfg", g, a);
 			*b = fdbrestoreX(filename, macrostring, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:fdbrestore returned %ld\n", *b);
@@ -99,6 +103,7 @@ static long configMenu_do(aSubRecord *pasub) {
 				*valc = 1;
 				return(0);
 			}
+			makeLegal(a);
 			sprintf(filename, "%s_%s.cfg", g, a);
 			*b = manual_save(f, filename, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:manual_save returned %ld\n", *b);
@@ -116,6 +121,13 @@ static long configMenu_do(aSubRecord *pasub) {
 	return(0);
 }
 
+void makeLegal(char *name) {
+	int i;
+	for (i=0; i<strlen(name); i++) {
+		if (isalnum((int)name[i])) continue;
+		name[i] = '_';
+	}
+}
 
 
 #include <registryFunction.h>
