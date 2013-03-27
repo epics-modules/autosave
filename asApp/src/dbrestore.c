@@ -252,7 +252,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 				errlogPrintf("save_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
 				status = -1;
 			}
-		} else if (save_restoreDebug >= 1) {
+		} else if (save_restoreDebug > 1) {
 				errlogPrintf("dbrestore:scalar_restore: Can't restore link field (%s) in pass 1.\n", PVname);
 		}
 		break;
@@ -281,7 +281,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 					}
 				}
 			}
-		} else if (save_restoreDebug >= 1) {
+		} else if (save_restoreDebug > 1) {
 			errlogPrintf("dbrestore:scalar_restore: Can't restore DBF_NOACCESS field (%s) in pass 0.\n", PVname);
 		}
 		break;
