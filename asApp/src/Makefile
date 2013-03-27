@@ -6,7 +6,7 @@ include $(TOP)/configure/CONFIG
 #=============================
 
 PROD_HOST += asVerify
-asVerify_SRCS	+= asVerify.c
+asVerify_SRCS	+= asVerify.c verify.c
 asVerify_LIBS	+= ca
 asVerify_LIBS	+= Com
 
@@ -30,7 +30,7 @@ LIBRARY_IOC += autosave
 #os independent code
 autosave_SRCS += dbrestore.c save_restore.c
 autosave_SRCS += initHooks.c fGetDateStr.c
-autosave_SRCS += configMenuSub.c
+autosave_SRCS += configMenuSub.c verify.c
 
 #os dependent code
 autosave_SRCS += osdNfs.c
