@@ -390,7 +390,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 		numDifferences, numDifferences==1?" ":"s ", numPVs, numPVs==1?" ":"s ",
 		numPVsNotConnected, numPVsNotConnected==1?" ":"s ");
 
-	return(numDifferences);
+	return(numDifferences + numPVsNotConnected);
 }
 
 static float mySafeDoubleToFloat(double d)
