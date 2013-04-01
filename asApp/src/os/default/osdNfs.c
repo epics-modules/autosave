@@ -9,6 +9,7 @@
 /* Global variables */
 int save_restoreNFSOK    = 1;
 int save_restoreIoErrors = 0;
+extern volatile int save_restoreDebug;
 
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
