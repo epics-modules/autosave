@@ -8,14 +8,7 @@
 #include <aSubRecord.h>
 
 #include "configMenuClient.h"
-/*
- * typedef void (*callbackFunc)(int status, void *puserPvt);
- *
- * extern int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
- * extern char *getMacroString(char *request_file);
- * 
- * extern int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt);
- */
+
 volatile int configMenuDebug=0;
 void makeLegal(char *name);
 
@@ -129,6 +122,57 @@ void makeLegal(char *name) {
 	}
 }
 
+static long configMenuList_init(aSubRecord *pasub) {
+	return(0);
+}
+#define NUM_ITEMS 10
+static long configMenuList_do(aSubRecord *pasub) {
+	char names[NUM_ITEMS][100], descriptions[NUM_ITEMS][100];
+	char *a = (char *)pasub->a;
+	char *f[NUM_ITEMS*2] = {0};
+	int i, status;
+
+	status = findConfigFiles(a, names, descriptions, 10, 100);
+	/* printf("configMenuList_init(%s): findConfigFiles returned %d; names='%s'\n",
+		a, status, names); */
+	if (status == 0) {
+		/* names */
+		f[0] = (char *)pasub->vala;
+		f[1] = (char *)pasub->valb;
+		f[2] = (char *)pasub->valc;
+		f[3] = (char *)pasub->vald;
+		f[4] = (char *)pasub->vale;
+		f[5] = (char *)pasub->valf;
+		f[6] = (char *)pasub->valg;
+		f[7] = (char *)pasub->valh;
+		f[8] = (char *)pasub->vali;
+		f[9] = (char *)pasub->valj;
+
+		/* descriptions */
+		f[10] = (char *)pasub->valk;
+		f[11] = (char *)pasub->vall;
+		f[12] = (char *)pasub->valm;
+		f[13] = (char *)pasub->valn;
+		f[14] = (char *)pasub->valo;
+		f[15] = (char *)pasub->valp;
+		f[16] = (char *)pasub->valq;
+		f[17] = (char *)pasub->valr;
+		f[18] = (char *)pasub->vals;
+		f[19] = (char *)pasub->valt;
+
+		for (i=0; i<NUM_ITEMS; i++) {
+			f[i][0] = '\0';
+			f[i+NUM_ITEMS][0] = '\0';
+		}
+
+		for (i=0; i<NUM_ITEMS; i++) {
+			strncpy(f[i], names[i], 39);
+			strncpy(f[i+NUM_ITEMS], descriptions[i], 39);
+		}
+	}
+	return(0);
+}
+
 
 #include <registryFunction.h>
 #include <epicsExport.h>
@@ -136,6 +180,8 @@ void makeLegal(char *name) {
 epicsExportAddress(int, configMenuDebug);
 
 static registryFunctionRef configMenuRef[] = {
+	{"configMenuList_init", (REGISTRYFUNCTION)configMenuList_init},
+	{"configMenuList_do", (REGISTRYFUNCTION)configMenuList_do},
 	{"configMenu_init", (REGISTRYFUNCTION)configMenu_init},
 	{"configMenu_do", (REGISTRYFUNCTION)configMenu_do}
 };
