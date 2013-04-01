@@ -14,6 +14,7 @@
  */
 int save_restoreNFSOK    = 1;  /* for Linux, NFS has been mounted before autosave starts */
 int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
+extern volatile int save_restoreDebug;
 
 
 /* Note: file system mounting is managed by Linux */
