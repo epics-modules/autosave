@@ -8,57 +8,70 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.0</h1>
+<h1 align="center">autosave v5.1</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
-files on a server, and restores those values when the IOC is rebooted.  The
-original author is Bob Dalesio; I made some improvements; Frank Lenkszus made
-some more improvements, which I folded into the version I've been maintaining. 
-A bunch of people contributed to getting the software running on PPC hardware,
-including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus Janousch
-and David Maden (SLS), and I'm not sure who else.  Zheqiao Geng extended the
-NFS-mount management to RTEMS, and I folded those changes back into a version
-that preserved the previous API.  Michael Davidsaver extended support for info
-nodes to nodes of arbitrary length.
+files on a server, and restores those values when the IOC (Input-Output
+Controller &mdash; the business end of EPICS) is rebooted.  The original author
+is Bob Dalesio; I made some improvements; Frank Lenkszus made some more
+improvements, which I folded into the version I've been maintaining.  A bunch of
+people contributed to getting the software running on PPC hardware, including
+Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus Janousch and David
+Maden (SLS), and I'm not sure who else.  Zheqiao Geng (SLAC) extended the
+NFS-mount management to RTEMS, and made other improvements, such as connecting
+to PVs that weren't live when autosave was initialized.  I folded those changes
+back into a version that preserved the previous API.  Michael Davidsaver (BNL)
+extended support for info nodes to nodes of arbitrary length. Lots of other
+EPICS developers and users contributed by reporting problems and suggesting
+solutions.
 
 <P>Autosave is a two-part operation: run-time save, and boot-time restore.  The
-run-time part (save_restore.c) is started by commands in the IOC startup file,
-and persists while the IOC is running.  Its primary job is to save PV values to
-files on a server, but it also supports manual restore and other management
-operations.  The boot-time part (dbrestore.c) is invoked during iocInit, via an
-EPICS initHook.  It restores PV values from files written by the run-time part,
-and does not persist after iocInit() returns.
+run-time part (the save_restore task or thread) is started by commands in the
+IOC startup file, and persists while the IOC is running.  Its primary job is to
+save PV values to files on a server, but it also supports manual restore and
+other management operations.  The boot-time part (dbrestore.c) is invoked during
+iocInit, via an EPICS initHook.  It restores PV values from files written by the
+run-time part, and does not persist after iocInit() returns.
 
 <P>In addition to the autosave software, the autosave module contains a client
-program, asVerify, to compare written autosave files with current PV values.
+program, <i>asVerify</i>, to compare written autosave files with current PV values.
 This program can also write an autosave file from which PV values can be
 restored.  Because one use of asVerify is to retrieve PV values from an IOC that
 is having trouble (autosave has crashed, for example), asVerify connects with
 only one PV at a time.  This makes asVerify rather slow.  In one trial, it took
 two minutes to verify a .sav file containing 5000 PVs.
 
+<P>Autosave also contains a facility, called <i>configMenu</i>, for creating,
+saving, finding, restoring, and verifying IOC configurations (that is, sets of
+PV values).  configMenu is roughly comparable to the EPICS Backup and Restore
+Tool, BURT, but it uses autosave files, and is driven by EPICS PVs, so it can be
+used manually, by software clients, and by other IOC code.
+
+<hr>
 <h2> Important nuances </h2>
+<hr>
+
 <ul>
 
-<P><li>Autosave uses dbStaticLib to write parameters at boot time, just like
+<P><li>Autosave uses dbStaticLib to write PVs at boot time, just like
 dbLoadRecords().  Thus, boot-time restore does not cause record processing to
 occur, and it does not make a record's value defined (doesn't set UDF to 0).
-<em>Exception: arrays cannot be written by dbStaticLib, so autosave writes arrays
-using database access.  This still doesn't cause processing to occur, though it
-should cause the record's UDF field to be set to 0.</em>
+<em>Exception: arrays cannot be written by dbStaticLib, so autosave writes
+arrays using database access.  This still doesn't cause processing to occur,
+though it should cause the record's UDF field to be set to 0.</em>
 
 <P><li>At run time (after boot-time restore), autosave reads and writes using
-channel-access.  Thus, restoring at run time will in general produce a
-different result than restoring at boot time. <em>Exception: arrays are read and
-written using database access.</em>
+channel-access.  Restoring at run time can produce a different result than
+restoring at boot time, because record execution may occur. <em>Exception:
+arrays are read and written using database access.</em>
 
 <P><li>Boot-time restore can occur at either or both of two times: before record
 initialization ("pass 0"); and after record initialization ("pass 1").  (Record
-initialization includes device initialization.) For most PV's, you don't need to
-think about this; just tell autosave to restore at both times, and autosave will
-do whatever is required to get the value written.  You cannot make this
-restore-time choice on a PV-by-PV basis; you can only specify when an entire
-file of parameters should be restored.
+initialization includes device-support initialization.) For most PV's, you don't
+need to think about this; just tell autosave to restore at both times, and
+autosave will do whatever is required to get the value written.  You cannot make
+this restore-time choice on a PV-by-PV basis; you can only specify when an
+entire file of PVs will be restored.
 
 <P>If you want the restored value available for use by device support during its
 initialization, you must cause the value to be restored during pass 0.  (Note
@@ -74,66 +87,19 @@ which motor-record device support was written.
 <P>In the lore that has built up around autosave, PV's that should be restored
 only before record initialization have been termed "positions".  All other PV's
 have been termed "settings".  Thus, you might run across a file called
-'auto_positions.req', and now you'll know that the parameters in this file are
-intended to be restored only during autosave's pass-0.
+'auto_positions.req', and now you'll know that the PVs in this file are intended
+to be restored only during autosave's pass-0.
 
-<P><li>You can save parameters without also restoring them, and restore
-parameters without also saving them, but you can't make these choices for
-individual parameters, only for entire files of parameters. 
+<P><li>You can save PVs without also restoring them, and restore
+PVs without also saving them, but you can't make these choices for
+individual PVs, only for entire files of PVs. 
 
 </ul>
-
-<h2> Module contents</h2>
-
-<h3>asApp/src</h3>
-<dl>
-<dt>save_restore.c
-<dd>saves PV values in files on a file server according to preset rules.
-
-<dt>dbrestore.c
-<dd>restore PV values at boot time, using dbStaticLib
-
-<dt>initHooks.c
-<dd>call restore routines at the correct time during boot.
-
-<dt>fGetDateStr.c
-<dd>Frank Lenkszus' date-string routines
-
-<dt>save_restore.h, fGetDateStr.h
-<dd>headers
-
-<dt>asVerify.c
-<dd>Client-side tool to compare autosaved file with current PV values.
-Can also write an autosave file.
-</dl>
-
-<p><h3>asApp/Db</h3>
-<dl>
-<dt>auto_settings.req, auto_positions.req 
-<dd>Sample request files
-
-<dt>save_restoreStatus.db
-<dd>database containing records save_restore uses to report status.
-
-<dt>infoExample.db
-<dd>database containing a record with info nodes specifying fields to be
-autosaved.
-
-<dt>SR_test.db
-<dd>Test database for autosave and asVerify.
-</dl>
-
-<p><h3>asApp/op/adl</h3>
-<dl>
-<dt>save_restoreStatus*.adl, save_restoreStatusLegend.adl,
-save_restoreStatus_more.adl, save_restoreStatus_tiny.adl,
-SR_X_Status.adl
-<dd>MEDM displays of save_restore status.
-</dl>
 
 
 <hr>
 <h2>How to use autosave</h2>
+<hr>
 
 This software can be used in many different ways.  I'll describe what you have
 to do to use it as it's commonly used at APS beamlines to save PV values
@@ -216,7 +182,7 @@ e.g.,
 commas, empty macro strings, and lines with trailing comments will be parsed as
 one would want.  Generally, quotes are ignored, whitespace implies a comma but
 otherwise is ignored, and everything after the second sequence of non-whitespace
-characters (i.e., after the file name) and before the (optional) comment
+characters (that is, after the file name) and before the (optional) comment
 character, '#', is taken as the macro-substitution string.  Macro substitution
 is performed on the entire line, so it's possible to parameterize names of
 included files, as well as PV names.  It is also possible to define a macro that
@@ -244,7 +210,7 @@ request files, using one or more invocations of the function
 	set_requestfile_path()
 </pre>
 
-<h4>4. Set NFS host (optional, only available on vxWorks)</h4>
+<h4>4. Set NFS host (optional, only available on vxWorks and RTEMS)</h4>
 Specify the NFS host from which save files will be read at restore time,
 and to which they will be written at save time, by calling the function
 <pre>
@@ -263,7 +229,9 @@ tested with NFS, and probably will not work with vxWorks' netDrv .
 <P>When autosave runs under operating systems other than vxWorks, it simply uses
 whatever mount the operating system, or a system administrator, has provided.
 
-<h4>6. Set save-file path (optional, recommended)</h4>
+<h4>6. Set save-file path (optional, though this is the intended and most common
+use)</h4>
+
 Specify the directory in which you want save
 files to be written, by calling the function
 <pre>
@@ -289,7 +257,7 @@ write save files, but the files will be corrupted because save_restore will not
 be permitted to change their lengths.  Save_restore attempts to detect this
 condition, but cannot work around it if the file length must increase.
 
-<h4>8. Specify restore files (required)</h4>
+<h4>8. Specify restore files (optional, though this is the intended and most common use)</h4>
 
 Specify which save files are to be restored before record initialization (pass 0)
 and which are to be restored after record initialization (pass 1), using the
@@ -332,9 +300,9 @@ overwrite any values read from the hardware.)
 
 </ol>
 
-<h4>9. Load initHook routine (required)</h4>
+<h4>9. Load initHook routine (required for boot-time restore)</h4>
 Load a copy of initHooks that calls reboot_restore() to restore
-saved parameter values.  The copy of initHooks included in this distribution is
+saved PV values.  The copy of initHooks included in this distribution is
 recommended.  This will happen automatically if the ioc's executable is built
 as described above.
 
@@ -344,12 +312,14 @@ restore is described in step <i>8. Specify restore files</i>, above.
 
 <h4>10. Select save-file options (optional, recommended)</h4>
 <ul>
-<li>Tell save_restore to writed dated backup files.
-At boot time, the restore software writes a backup copy of the ".sav" file from
-which it restored PV's.  This file can either be named xxx.sav.bu, and be
-rewritten every reboot, or named xxx.sav_YYMMDD-HHMMSS, where "YY..." is a
-date.  Dated backups are not overwritten.  If you want dated backup files, put
-the following line in your st.cmd file before the call toiocInit():
+
+<li>Tell save_restore to writed dated backup files. At boot time, the restore
+software writes a backup copy of the ".sav" file from which it restored PV's. 
+This file can either be named xxx.sav.bu, and be rewritten every reboot, or be
+named xxx.sav_YYMMDD-HHMMSS, where "YY..." is a date.  Dated backups are not
+overwritten.  If you want dated backup files, put the following line in your
+st.cmd file before the call toiocInit():
+
 <pre>
 	save_restoreSet_DatedBackupFiles(1)
 </pre>
@@ -360,10 +330,12 @@ the following line in your st.cmd file before the call toiocInit():
 
 <P><li>Tell save_restore to save sequence files.  The
 commands:
+
 <pre>
 	save_restoreSet_NumSeqFiles(3)
 	save_restoreSet_SeqPeriodInSeconds(600)
 </pre>
+
 will cause save_restore to maintain three copies of each .sav file, at
 ten-minute intervals.  Note: if autosave fails to write the .sav file, it will
 stop making sequence copies until it again succeeds.
@@ -371,14 +343,33 @@ stop making sequence copies until it again succeeds.
 <P><li>Specify the time delay between a failed .sav-file write and the retry of
 that write.  The default delay is 60 seconds.  If list-PV's change during the
 delay, the new values will be written.
+
 <pre>
 	save_restoreSet_RetrySeconds(60)
 </pre>
+
+
+<P><li>Specify whether autosave should periodically retry connecting to PVs
+whose initial connection attempt failed.  Currently, the connection-retry
+interval is hard-wired at 60 seconds.
+
+<pre>
+	save_restoreSet_CAReconnect(1)
+</pre>
+
+<P><li>Specify the time interval in seconds between forced save-file writes. 
+(-1 means forever). This is intended to get save files written even if the
+normal trigger mechanism is broken.
+
+<pre>
+	save_restoreSet_CallbackTimeout(-1)
+</pre>
+
 </ul>
 
 <h4>11. Start the save task (required)</h4>
 Invoke the "save" part of this software as part of the EPICS
-startup sequence, by calling create_XXX_set() -- e.g., adding lines of the form
+startup sequence, by calling create_XXX_set() &mdash; e.g., adding lines of the form
 <pre>
 	create_monitor_set("auto_positions.req", 5, "P=xxx:")
 	create_monitor_set("auto_settings.req", 30, "P=xxx:")
@@ -432,8 +423,9 @@ Under vxWorks, you can avoid this by putting a
 </pre>
 before <code>create_monitor_set()</code>.
 
-
-<h4>12. Maintain save files</h4>
+<hr>
+<h2>asVerify</h2>
+<hr>
 
 Autosave is not completely bulletproof.  Most APS beamlines have at least one
 autosave related problem every year.  If autosave fails, you might be able to
@@ -453,12 +445,16 @@ usage: asVerify [-vrd] &lt;autosave_file&gt;
          -d (debug) increment debug level by one.
          -rv (or -vr) does both
 examples:
+
     asVerify auto_settings.sav
         (reports only PVs whose values differ from saved values)
+
     asVerify -v auto_settings.sav
         (reports all PVs, marking differences with '***'.)
+
     asVerify -vr auto_settings.sav
         (reports all PVs, and writes a restore file.)
+
     asVerify auto_settings.sav
     caput &lt;myStatusPV&gt; $?
         (writes number of differences found to a PV.)
@@ -474,18 +470,160 @@ any PV names contained in the file, but it cannot parse the "file" command,
 perform macro substitutions, or include other request files.
 
 <hr>
+<h2>configMenu</h2>
+<hr>
+
+<i>configMenu</i> is a facility for creating, saving, finding, restoring, and
+verifying sets of EPICS PVs ("configurations") on a running IOC.  It is roughly
+comparable to the EPICS Backup and Restore Tool, BURT, but it saves
+configurations autosave files, and is driven by and reports back to EPICS PVs,
+so it can be used manually, driven by any CA client, or driven by IOC-resident
+code.  configMenu operations can be driven by a ca_put_callback to an EPICS PV,
+so the loading and saving of a configuration can usefully be driven as part of a
+larger sequence of operations.  For example, any EPICS record that can do a
+ca_put_callback can load or save a configuration and wait for the operation to
+complete before perhaps triggering additional execution.
+
+<h3>Example</h3>
+
+<P>Suppose we want to configure a set of three sscan records to perform any of
+10 different types of scans.  Here are the steps needed to implement a menu of
+scan types, and to give the user a GUI display for creating scan types and
+loading them.  (In the following, <font color="blue">scan1</font> is the name of
+this instance of configMenu.  The files it loads and saves will be named "<font
+color="blue">scan1</font>_&lt;<i>config-name</i>&gt;.cfg".)
+
+<blockquote> <ol> <li>Create an autosave request file, which I'll call "<font
+color="blue">scan1</font>Menu.req", with the following content:
+
+<pre>
+file configMenu.req P=$(P),CONFIG=$(CONFIG)
+file scan_settings.req P=$(P),S=scan2
+file scan_settings.req P=$(P),S=scan1
+file scan_settings.req P=$(P),S=scanH
+</pre>
+
+<blockquote>(This is required only if config files are to be written at run
+time.)</blockquote>
+
+<li>Add the following lines to <code>st.cmd</code>:
+
+<P><code>dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
+
+<blockquote>(This goes before <code>iocInit</code>.)</blockquote>
+
+<P><code>create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
+
+<blockquote>(This goes after <code>iocInit</code>, and is required only if you
+intend for config files to be written at run time, or if you need to have macro
+substitution performed on a config file to be loaded.)</blockquote>
+
+<li>Add the following line to auto_settings.sav:
+
+<P><code>file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font></code>
+
+<blockquote>This autosaves the current configuration name and description, and
+the setting of the <code>enableSave</code> PV.</blockquote>
+
+<li>Add an MEDM related-display entry to bring up a configMenu*.adl display.
+
+<pre>
+label="scan1Menu"
+name="configMenu_small.adl"
+args="P=xxx:,CONFIG=<font color="blue">scan1</font>"
+</pre>
+
+</ol>
+</blockquote>
+
+Here an example of what the user might see:
+
+<P><table width="100%">
+<tr>
+<td><center><IMG SRC="configMenu_small.adl.jpg" NAME="configMenu_small.adl">
+<br>configMenu_small.adl
+<td><center><IMG SRC="configMenu.adl.jpg" NAME="configMenu.adl">
+<br>configMenu.adl
+<td><center><IMG SRC="configMenu_more.adl.jpg" NAME="configMenu_more.adl">
+<br>configMenu_more.adl
+</tr>
+</table>
+
+<P>In <b>configMenu_small.adl</b>, the menu of configurations is displayed by
+and selected from the <i>enum</i> PV, <code>$(P)$(CONFIG)Menu</code>, (e.g.,
+<code>xxx:scan1Menu</code>).  This is the most convenient way for configMenu to
+be driven by CA-client software, because a single PV contains the menu choices
+and is also the PV to which choices are written to cause loading.  This display
+cannot cause a configuration to be written.  When the menu is repopulated, MEDM
+will not automatically retrieve the new names for display by
+<code>$(P)$(CONFIG)Menu</code>.  This must be done manually, by closing and
+reopening the display, which is what the "Refresh menu choices button" does.
+
+
+<P><b>configMenu.adl</b> and <b>configMenu_more.adl</b> show the menu choices as
+separate PVs, for which no manual refresh is needed, and provide buttons for
+loading and saving configurations.
+
+<P><b>configMenu_more.adl</b> also shows description PVs. When the menu is
+populated by searching for config files, descriptions are extracted from those
+files.  Otherwise, if configMenuNames.req is included in an autosave-request
+file, names and descriptions will be restored at boot time.  If the
+<code>enableSave</code> PV (labelled "permit save?") has the value "No" (0), the
+"Save" buttons will not be displayed, and users will not be able to save
+configuration files.
+
+<h3>Details</h3>
+
+<ol>
+
+<li>Configuration names in the display, configMenu.adl (e.g., "align entrance
+slit") will correspond with autosave ".cfg" files whose names are similar, but
+with non-alphanumeric characters replaced by '_' (e.g., "<font
+color="blue">scan1</font>_align_entrance_slit.cfg").  A ".cfg" file is exactly
+like a ".sav" file; the ".cfg" extension is purely to make them easier to find
+and distinguish from ".sav" files.
+
+<blockquote>You don't want to make two configurations
+whose names differ only in non-alphanumeric characters; configMenu will
+gleefully treat them as same configuration.</blockquote>
+
+<li>configMenu_small.adl has a problem when the menu of config files changes:
+MEDM doesn't monitor the menu (enum) strings, so the display must be closed and
+reopened when they change.  That's what the "Refresh menu choices" button is
+for.  (Channel access clients that specify the event-type flag
+<code>DBE_PROPERTY</code> when they subscribe to an enum PV will be notified
+when the enum strings change.)
+
+<li>configMenu can save and restore most kinds of PVs from other IOCs, but
+currently it can't handle array or long-string PVs in a remote IOC.  If you
+use configMenu for remote PVs, you should tell autosave to retry connections
+periodically, by including the following line in save_restore.cmd:
+
+<pre>
+save_restoreSet_CAReconnect(1)
+</pre>
+
+<li>You can load .cfg files that contain macros.  For example, softGlue
+standard example circuits can be loaded without modification into any softGlue
+instance by specifying macros as follows:
+<br><code>
+create_manual_set("SGMenu.req","P=xxx:,CONFIG=SG,H=softGlue:")
+</code><br>
+where the macros "P" and "H" agree with their definitions in softGlue.cmd.
+
+</ol>
+
+<hr>
 <h2>About save files</h2>
-PV values in a save file have been converted to strings, in most cases simply
-by having been read as strings -- e.g., <code>ca_get(DBR_STRING,...)</code>.
+<hr>
+
+PV values in a save file have been converted to strings, in most cases simply by
+having been read as strings &mdash; e.g., <code>ca_get(DBR_STRING,...)</code>.
 Most data types are read using channel access and written using dbStaticLib
-calls.  Four data types get special attention:
-<dl>
-<dt>double
-<dd>read as double, converted to string with the format "%.14g".  (Otherwise,
-the record's .PREC field would limit the precision.)
-<dt>float
-<dd>Same as double, but the format is "%.7g".
-<dt>menu and enum
+calls.  Four data types get special attention: <dl> <dt>double <dd>read as
+double, converted to string with the format "%.14g".  (Otherwise, the record's
+.PREC field would limit the precision.) <dt>float <dd>Same as double, but the
+format is "%.7g". <dt>menu and enum
 
 <dd>Menu and enum are integer data types with values restricted to the set
 (0,1,...N), where 'N' depends on the PV, but is usually 15 or smaller.  EPICS
@@ -551,24 +689,107 @@ the save file was successfully written.
 <P>You can comment out lines in a .sav file by beginning them with '#'.
 
 <hr>
+<h2> Module contents</h2>
+<hr>
+
+<h3>asApp/src</h3>
+<dl>
+<dt>save_restore.c
+<dd>saves PV values in files on a file server according to preset rules.
+
+<dt>dbrestore.c
+<dd>restore PV values at boot time, using dbStaticLib
+
+<dt>initHooks.c
+<dd>call restore routines at the correct time during boot.
+
+<dt>fGetDateStr.c
+<dd>Frank Lenkszus' date-string routines
+
+<dt>save_restore.h, fGetDateStr.h, configMenuClient.h
+<dd>headers
+
+<dt>verify.c
+<dd>compare an autosave save file with current values of PVs.  Used by asVeryify
+and configMenu.
+
+<dt>asVerify.c
+<dd>Client-side tool to compare autosaved file with current PV values.
+Can also write an autosave file.
+
+<dt>configMenuSub.c
+<dd>aSub routines for use by the configMenu database.
+
+</dl>
+
+<p><h3>asApp/Db</h3>
+<dl>
+<dt>auto_settings.req, auto_positions.req 
+<dd>Sample request files
+
+<dt>save_restoreStatus.db
+<dd>database containing records save_restore uses to report status.
+
+<dt>infoExample.db
+<dd>database containing a record with info nodes specifying fields to be
+autosaved.
+
+<dt>SR_test.db
+<dd>Test database for autosave and asVerify.
+
+<dt>configMenu.db, configMenu*.req
+<dd>Support for managing/configuring a collection of PVs.
+
+</dl>
+
+<p><h3>asApp/op/adl</h3>
+<dl>
+<dt>save_restoreStatus*.adl, save_restoreStatusLegend.adl,
+save_restoreStatus_more.adl, save_restoreStatus_tiny.adl,
+SR_X_Status.adl
+<dd>MEDM displays of save_restore status.
+
+<dt>configMenu*.adl
+<dd>Support for managing/configuring a collection of PVs.
+
+</dl>
+
+
+<!-------------------------------------------------------------------------------------->
+<!-------------------------------------------------------------------------------------->
+<!-------------------------------------------------------------------------------------->
+<hr>
 <h2>User-callable functions</h2>
+<hr>
 
 <dl>
-<P><dt><code>int manual_save(char *request_file)</code>
-<dd>If a manual save set for the request file <code>request_file</code> was created
-with create_manual_set(), this command will cause current PV values to
-be saved.
 
-<P><dt><code>int set_savefile_name(char *request_file, char *save_file)</code>
-<dd>If a save set has already been created for the request file, this
-function will change the save file name.
+<P>
 
-<P><dt><code>int create_periodic_set(char *request_file, int period, char *macrostring)</code>
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int create_manual_set(char *request_file, char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
-every <code>period</code> seconds.
+	when the function <code>manual_save()</code> is called with the same request-file
+	name.
 	<P> See "Start the save task", above for information about the macro string.
 	<P>This function can be called at any time after iocInit.
 
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int create_monitor_set(char *request_file, int period, char *macrostring)</code>
+<dd>Create a save set for the request file.  The save file will be written
+	every <code>period</code> seconds, if any PV in the save set was posted (changed
+	value) since the last write.
+	<P> See "Start the save task", above for information about the macro string.
+	<P>This function can be called at any time after iocInit.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int create_periodic_set(char *request_file, int period, char *macrostring)</code>
+<dd>Create a save set for the request file.  The save file will be written
+	every <code>period</code> seconds.
+	<P> See "Start the save task", above for information about the macro string.
+	<P>This function can be called at any time after iocInit.
+
+<!-------------------------------------------------------------------------------------->
 <P><dt><code>int create_triggered_set(char *request_file, char *trigger_channel,
 		char *macrostring)</code>
 <dd>Create a save set for the request file.  The save file will be written
@@ -577,20 +798,7 @@ every <code>period</code> seconds.
 	<P> See "Start the save task", above for information about the macro string.
 	<P>This function can be called at any time after iocInit.
 
-<P><dt><code>int create_monitor_set(char *request_file, int period, char *macrostring)</code>
-<dd>Create a save set for the request file.  The save file will be written
-	every <code>period</code> seconds, if any PV in the save set was posted (changed
-	value) since the last write.
-	<P> See "Start the save task", above for information about the macro string.
-	<P>This function can be called at any time after iocInit.
-
-<P><dt><code>int create_manual_set(char *request_file, char *macrostring)</code>
-<dd>Create a save set for the request file.  The save file will be written
-	when the function <code>manual_save()</code> is called with the same request-file
-	name.
-	<P> See "Start the save task", above for information about the macro string.
-	<P>This function can be called at any time after iocInit.
-
+<!-------------------------------------------------------------------------------------->
 <P><dt><code>int fdbrestore(char *save_file)</code>
 <dd>If <code>save_file</code> refers to a save set that exists in memory, then PV's
 	in the save set will be restored from values in memory.  Otherwise, this
@@ -606,181 +814,47 @@ every <code>period</code> seconds.
 	<tt>create_*_set()</tt> with an empty request-file name.  Autosave will
 	complain about this, but it won't think you're a bad person.
 
-<P><dt><code>int fdbrestoreX(char *save_file)</code>
-<dd>This function restores from the file &lt;saveRestorePath&gt;/&lt;save_file&gt, which
-	can look just like a save file, but which needn't end in &lt;END&gt;?.  No backup
-	file will be written.  The effect probably will not be the same as a
-	boot-time restore, because caput() calls are used instead of static
-	database access dbPutX() calls.  Record processing will result from
-	caput()'s to inherently process-passive fields.
-	<P>This function can be called at any time after one of the
-	<tt>create_*_set()</tt> functions have been called.  If you want to
-	call this function before creating any save sets, you can call
-	<tt>create_*_set()</tt> with an empty request-file name.  Autosave will
-	not hate you for doing this, though it will complain.
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int fdbrestoreX(char *save_file)</code> <dd>(iocsh version) This function restores
+from the file &lt;saveRestorePath&gt;/&lt;save_file&gt, which can look just like a save file, but
+which needn't end with <code>&lt;END&gt;</code>.  No backup file will be written.  The effect
+probably will not be the same as a boot-time restore, because caput() calls are used instead of
+static database access dbPut*() calls.  Record processing will result from caput()'s to
+inherently process-passive fields. <P>This function can be called at any time after one of the
+<tt>create_*_set()</tt> functions have been called.  If you want to call this function before
+creating any save sets, you can call <tt>create_*_set()</tt> with an empty request-file name. 
+Autosave will not hate you for doing this, though it will complain.
 
-<P><dt><code>void save_restoreSet_FilePermissions(int permissions)</code>
-<dd>Specify the file permissions used to create new .sav files.  This
-	integer value will be supplied, exactly as given, to the system call,
-	<tt>open()</tt>.  Typically, file permissions are set with an octal
-	number, such as 0640, and <tt>save_restoreSet_FilePermissions()</tt>
-	will confirm any number given to it by echoing it to the console as
-	an octal number.
-	<P>This function can be called at any time after iocInit.
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puser)</code>
 
-<P><dt><code>void save_restoreShow(int verbose)</code>
-<dd>List all the save sets currently being managed by the save_restore task.
-	If (verbose != 0), lists the PV's as well.
-	<P>This function can be called at any time after iocInit.
+<dd>(version for c-code clients) This function does the same job as the iocsh version above.  If
+	<code>macrostring</code> is not NULL, the macro definitions it contains will be applied to
+	the contents of <code>filename</code>. If <code>callbackFunction</code> is not NULL, it
+	specifies a function of type <code>void f(int status, void *puser)</code> that will be called
+	when the save operation is done. 
 
-<P><dt><code>int set_requestfile_path(char *path, char *pathsub)</code>
-<dd>Called before create_xxx_set(), this function specifies the path to be
-	prepended to request-file names.  <code>pathsub</code>, if present, will be appended
-	to <code>path</code>, if present, with a separating '/', whether or not <code>path</code> ends
-	or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one will
-	be appended to it.
-	<P>You can specify several directories to be searched for request files by
-	calling this routine several times.  Directories will be searched in the
-	order in which the <code>set_requestfile_path()</code> calls were made.  If you never
-	call the routine, the crate's current working directory will be searched.
-	If you ever call it, the current directory ("./") will be searched only if
-	you've asked for it explicitly.
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>char *getMacroString(char *request_file)</code>
 
-<P><dt><code>int set_savefile_path(char *path, char *pathsub)</code>
-<dd>Called before iocInit(), this function specifies the path to be prepended
-	to save-file and restore-file names.   <code>pathsub</code>, if present, will be
-	appended to <code>path</code>, if present, with a separating '/', whether or not <code>path</code>
-	ends or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one
-	will be appended to it.
-	<P>If save_restore is managing its own NFS mount, this function specifies the
-	mount point, and calling it will result in an NFS mount if all other
-	requirements have already been met.  If a valid NFS mount already exists,
-	the file system will be dismounted and then mounted with the new path name.
-	This function can be called at any time.
+<dd>If <code>create_*_set()</code> was ever called for <code>request_file</code>, then the
+	macro-substitution string supplied in that call was recorded by autosave, and can be recovered
+	with this function.  This is part of the implementation of <i>configMenu</i>, and it allows .cfg
+	files to include macros.
 
-<P><dt><code>int set_saveTask_priority(int priority)</code>
-<dd>Set the priority of the save_restore task.
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void makeAutosaveFiles(void)</code>
 
-<P><dt><code>int remove_data_set(char *request_file)</code>
-<dd>If a save set has been created for <code>request_file</code>, this function will
-	delete it.
+<dd>Search through the EPICS database (that is, all EPICS records loaded into an
+	IOC) for <i>info</i> nodes named 'autosaveFields' and
+	'autosaveFields_pass0'; construct lists of PV names from the associated info
+	values, and write the PV names to the files 'info_settings.req' and
+	'info_positions.req', respectively.
 
-<P><dt><code>int reload_periodic_set(char *request_file, int period, char *macrostring)</code>
-<dd>This function allows you to change the PV's and the period associated with
-	a save set created by <code>create_periodic_set()</code>.
-
-<P><dt><code>int reload_triggered_set(char *request_file, char *trigger_channel,
-		char *macrostring)</code>
-<dd>This function allows you to change the PV's and the trigger channel
-	associated with a save set created by <code>create_triggered_set()</code>.
-
-<P><dt><code>int reload_monitor_set(char * request_file, int period, char *macrostring)</code>
-<dd>This function allows you to change the PV's and the period associated with
-	a save set created by <code>create_monitor_set()</code>.
-
-<P><dt><code>int reload_manual_set(char * request_file, char *macrostring)</code>
-<dd>This function allows you to change the PV's associated with a save set
-	created by <code>create_manual_set()</code>.
-
-    <P>Note: Don't get too ambitious with the remove/reload functions.  You
-    have to wait for one to finish completely (the save_restore task must
-    get through its service loop) before executing another.  If you call
-    one before the previous function is completely finished, I don't know
-    what will happen.
-
-<P><dt><code>int reboot_restore(char *save_file, initHookState init_state)</code>
-<dd>This should only be called from initHooks because it can only function
-	correctly if called at particular times during iocInit.
-
-<P><dt><code>int set_pass0_restoreFile(char *save_file)</code>
-<dd>This function specifies a save file to be restored during iocInit,
-	before record initialization. Up to eight files can be specified using calls to this function.
-
-<P><dt><code>int set_pass1_restoreFile(char *save_file)</code>
-<dd>This function specifies a save file to be restored during iocInit,
-	after record initialization.
-	Up to eight files can be specified using calls to this function.
-
-<P><dt><code>void save_restoreSet_Debug(int debug_level)</code>
-<dd>Sets the value <code>(int) save_restoreDebug</code> (initially 0).  Increase to
-	get more informational messages printed to the console.
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_IncompleteSetsOk(int ok)</code>
-<dd>Sets the value of <code>(int) save_restoreIncompleteSetsOk</code> (initially 1).
-	If set to zero, save files will not be restored at boot time unless
-	they are perfect, and they will not be overwritten at save time
-	unless a valid CA connection and value exists for every PV in the
-	list.
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_NumSeqFiles(int numSeqFiles)</code>
-<dd>Sets the value of <code>(int) save_restoreNumSeqFiles</code> (initially 3).
-	This is the number of sequenced backup files to be maintained.
-	<code>numSeqFiles</code> must be between 0 and 10 inclusive.  
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_SeqPeriodInSeconds(int period)</code>
-<dd>Sets the value of <code>(int) save_restoreSeqPeriodInSeconds</code> (initially 60).
-	Sequenced backup files will be written with this period.
-	<code>period</code> must be 10 or greater.
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_RetrySeconds(int seconds)</code>
-<dd>Sets the value of <code>(int) save_restoreRetrySeconds</code> (initially 60; minimum 10).
-	If the .sav-file write fails, it will be retried after this interval..
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_DatedBackupFiles(int ok)</code>
-<dd>Sets the value of <code>(int) save_restoreDatedBackupFiles</code> (initially 1).
-	If zero, the backup file written at reboot time (a copy of the file
-	from which parameter values are restored) will have the suffix '.bu',
-	and will be overwritten every reboot.  If nonzero, each reboot will
-	leave behind its own backup file.
-	<P>This function can be called at any time.
-
-<P><dt><code>void save_restoreSet_status_prefix(char *prefix)</code>
-<dd>Specifies the prefix to be used to construct the names of PV's with
-	which save_restore reports its status.  If you want autosave to update
-	status PVs as it operates, you must call this function and load the
-	database save_restoreStatus.db, specifying the same prefix in both
-	commands.
-	<P>This function must be called before the first call to <code>create_xxx_set()</code>.
-
-<P><dt><code>void save_restoreSet_UseStatusPVs(int ok)</code>
-<dd>Specifies whether save_restore should report its status to a preloaded set
-	of EPICS PV's (contained in the database save_restoreStatus.db).  If the
-	argument is '0', then status PV's will not be used.
-	<P>This function should be called before the first call to <code>create_xxx_set()</code>.
-
-<P><dt><code>void save_restoreSet_NFSHost(char *hostname, char *address)</code>
-<dd>Specifies the name and IP address of the NFS host.  If both have been
-	specified, and <code>set_savefile_path()</code> has been called to specify the file
-	path, save_restore will manage its own NFS mount.  This allows save_restore
-	to recover from a reboot of the NFS host (i.e., a stale file handle) and
-	from some kinds of tampering with the save_restore directory.
-
-<P><dt><code>void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
-</code>
-<dd>Search through the EPICS database (i.e., all EPICS records loaded into an
-IOC) for 'info' nodes named <code>info_name</code>; construct a list of PV
-names from the associated info_values found, and write the PV names to the
-file <code>fileBaseName</code>.  If <code>fileBaseName</code> does not contain the string '.req',
-this string will be appended to it.  See <code>makeAutosaveFiles()</code> for more information.
-
-<P>This function can be called at any time after iocInit().
-
-<P><dt><code>void makeAutosaveFiles(void)
-</code>
-<dd>Search through the EPICS database (i.e., all EPICS records loaded into an
-IOC) for <i>info</i> nodes named 'autosaveFields' and 'autosaveFields_pass0';
-construct lists of PV names from the associated info values, and write the PV
-names to the files 'info_settings.req' and 'info_positions.req', respectively.
-
-<P>An info node, in an EPICS database, is similar to a field specification, but
-it has the word <code>info</code> instead of <code>field</code>; and it has an
-arbitrary name, instead of the name of a field in the record.  Here's an EPICS
-database containing a single record with two info nodes:
+<P>An info node, in an EPICS database, is similar to a field specification, but it has the word
+	<code>info</code> instead of <code>field</code>; and it has an arbitrary name, instead of the
+	name of a field in the record.  Here's an EPICS database containing a single record with two
+	info nodes:
 
 <P><PRE>
 record(ao, "$(P)test1") {
@@ -807,22 +881,227 @@ $(P)test1.VAL
 
 <P>See also:
 <ul>
-<li>Chapter 14, "Static Database Access", in the <i>EPICS Application Developer's
-Guide</i>.
+<li>Chapter 14, "Static Database Access", in the <i>EPICS Application Developer's Guide</i>.
 <li><code>makeAutosaveFileFromDbInfo()</code>.
 </ul>
 
 </dd>
 
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name) </code>
+
+<dd>Search through the EPICS database (that is, all EPICS records loaded into an
+	IOC) for 'info' nodes named <code>info_name</code>; construct a list of PV
+	names from the associated info_values found, and write the PV names to the
+	file <code>fileBaseName</code>.  If <code>fileBaseName</code> does not
+	contain the string '.req', this string will be appended to it.  See
+	<code>makeAutosaveFiles()</code> for more information.
+
+<P>This function can be called at any time after iocInit().
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int manual_save(char *request_file)</code>
+
+<dd>(iocsh version)  Cause current PV values for the request file to be saved.  Any request file
+	named in a create_xxx_set() command can be saved manually.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction,
+void *puser);</code>
+
+<dd>(version for c-code clients)  Cause current PV values for the request file to be saved.  Any
+	request file named in a create_xxx_set() command can be saved manually.  If
+	<code>save_file</code> is not NULL and not empty, it specifies the name of the file that will
+	be written.  If <code>callbackFunction</code> is not NULL, it specifies a function of type
+	<code>void f(int status, void *puser)</code> that will be called when the save operation is
+	done.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int reboot_restore(char *save_file, initHookState init_state)</code>
+<dd>This should only be called from initHooks because it can only function
+	correctly if called at particular times during iocInit.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int reload_manual_set(char * request_file, char *macrostring)</code>
+<dd>This function allows you to change the PV's associated with a save set
+	created by <code>create_manual_set()</code>.
+
+    <P>Note: Don't get too ambitious with the remove/reload functions.  You
+    have to wait for one to finish completely (the save_restore task must
+    get through its service loop) before executing another.  If you call
+    one before the previous function is completely finished, I don't know
+    what will happen.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int reload_monitor_set(char * request_file, int period, char *macrostring)</code>
+<dd>This function allows you to change the PV's and the period associated with
+	a save set created by <code>create_monitor_set()</code>.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int reload_periodic_set(char *request_file, int period, char *macrostring)</code>
+<dd>This function allows you to change the PV's and the period associated with
+	a save set created by <code>create_periodic_set()</code>.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int reload_triggered_set(char *request_file, char *trigger_channel,
+		char *macrostring)</code>
+<dd>This function allows you to change the PV's and the trigger channel
+	associated with a save set created by <code>create_triggered_set()</code>.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int remove_data_set(char *request_file)</code>
+<dd>If a save set has been created for <code>request_file</code>, this function will
+	delete it.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_DatedBackupFiles(int ok)</code>
+<dd>Sets the value of <code>(int) save_restoreDatedBackupFiles</code> (initially 1).
+	If zero, the backup file written at reboot time (a copy of the file
+	from which PV values are restored) will have the suffix '.bu',
+	and will be overwritten every reboot.  If nonzero, each reboot will
+	leave behind its own backup file.
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_Debug(int debug_level)</code>
+<dd>Sets the value <code>(int) save_restoreDebug</code> (initially 0).  Increase to
+	get more informational messages printed to the console.
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_FilePermissions(int permissions)</code>
+<dd>Specify the file permissions used to create new .sav files.  This
+	integer value will be supplied, exactly as given, to the system call,
+	<tt>open()</tt>.  Typically, file permissions are set with an octal
+	number, such as 0640, and <tt>save_restoreSet_FilePermissions()</tt>
+	will confirm any number given to it by echoing it to the console as
+	an octal number.
+	<P>This function can be called at any time after iocInit.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_IncompleteSetsOk(int ok)</code>
+<dd>Sets the value of <code>(int) save_restoreIncompleteSetsOk</code> (initially 1).
+	If set to zero, save files will not be restored at boot time unless
+	they are perfect, and they will not be overwritten at save time
+	unless a valid CA connection and value exists for every PV in the
+	list.
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_NFSHost(char *hostname, char *address)</code>
+
+<dd>Specifies the name and IP address of the NFS host.  If both have been
+	specified, and <code>set_savefile_path()</code> has been called to specify
+	the file path, save_restore will manage its own NFS mount.  This allows
+	save_restore to recover from a reboot of the NFS host (that is, a stale file
+	handle) and from some kinds of tampering with the save_restore directory.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_NumSeqFiles(int numSeqFiles)</code>
+<dd>Sets the value of <code>(int) save_restoreNumSeqFiles</code> (initially 3).
+	This is the number of sequenced backup files to be maintained.
+	<code>numSeqFiles</code> must be between 0 and 10 inclusive.  
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_RetrySeconds(int seconds)</code>
+<dd>Sets the value of <code>(int) save_restoreRetrySeconds</code> (initially 60; minimum 10).
+	If the .sav-file write fails, it will be retried after this interval..
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_SeqPeriodInSeconds(int period)</code>
+<dd>Sets the value of <code>(int) save_restoreSeqPeriodInSeconds</code> (initially 60).
+	Sequenced backup files will be written with this period.
+	<code>period</code> must be 10 or greater.
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_status_prefix(char *prefix)</code>
+<dd>Specifies the prefix to be used to construct the names of PV's with
+	which save_restore reports its status.  If you want autosave to update
+	status PVs as it operates, you must call this function and load the
+	database save_restoreStatus.db, specifying the same prefix in both
+	commands.
+	<P>This function must be called before the first call to <code>create_xxx_set()</code>.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_UseStatusPVs(int ok)</code>
+<dd>Specifies whether save_restore should report its status to a preloaded set
+	of EPICS PV's (contained in the database save_restoreStatus.db).  If the
+	argument is '0', then status PV's will not be used.
+	<P>This function should be called before the first call to <code>create_xxx_set()</code>.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreShow(int verbose)</code>
+<dd>List all the save sets currently being managed by the save_restore task.
+	If (verbose != 0), lists the PV's as well.
+	<P>This function can be called at any time after iocInit.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_requestfile_path(char *path, char *pathsub)</code>
+<dd>Called before create_xxx_set(), this function specifies the path to be
+	prepended to request-file names.  <code>pathsub</code>, if present, will be appended
+	to <code>path</code>, if present, with a separating '/', whether or not <code>path</code> ends
+	or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one will
+	be appended to it.
+	<P>You can specify several directories to be searched for request files by
+	calling this routine several times.  Directories will be searched in the
+	order in which the <code>set_requestfile_path()</code> calls were made.  If you never
+	call the routine, the crate's current working directory will be searched.
+	If you ever call it, the current directory ("./") will be searched only if
+	you've asked for it explicitly.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_pass0_restoreFile(char *save_file)</code>
+<dd>This function specifies a save file to be restored during iocInit,
+	before record initialization. Up to eight files can be specified using calls to this function.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_pass1_restoreFile(char *save_file)</code>
+<dd>This function specifies a save file to be restored during iocInit,
+	after record initialization.
+	Up to eight files can be specified using calls to this function.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_savefile_name(char *request_file, char *save_file)</code>
+<dd>If a save set has already been created for the request file, this
+	function will change the save file name.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_savefile_path(char *path, char *pathsub)</code>
+<dd>Called before iocInit(), this function specifies the path to be prepended
+	to save-file and restore-file names.   <code>pathsub</code>, if present, will be
+	appended to <code>path</code>, if present, with a separating '/', whether or not <code>path</code>
+	ends or <code>pathsub</code> begins with '/'.  If the result does not end in '/', one
+	will be appended to it.
+	<P>If save_restore is managing its own NFS mount, this function specifies the
+	mount point, and calling it will result in an NFS mount if all other
+	requirements have already been met.  If a valid NFS mount already exists,
+	the file system will be dismounted and then mounted with the new path name.
+	This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int set_saveTask_priority(int priority)</code>
+<dd>Set the priority of the save_restore task.
+
+
 </dl>
 
+<hr>
 <h2>Example of use</h2>
+<hr>
 
 
 
 ---------- begin excerpt from st.cmd ----------------------
 
 <pre>
+.
+.
+.
+dbLoadDatabase("$(TOP)/dbd/iocxxxVX.dbd")
+iocxxxVX_registerRecordDeviceDriver(pdbbase)
 .
 .
 .
@@ -849,7 +1128,7 @@ set_savefile_path(startup, "autosave");
 # current directory
 set_requestfile_path(startup, "")
 # We want to include request files that are stored with the databases they
-# support -- e.g., in stdApp/Db, mcaApp/Db, etc.  The variables std and mca
+# support &mdash; e.g., in stdApp/Db, mcaApp/Db, etc.  The variables std and mca
 # are defined in cdCommands.  The path is searched in the order in which
 # directories are specified. 
 set_requestfile_path(startup)
@@ -880,15 +1159,16 @@ save_restoreSet_SeqPeriodInSeconds(600)
 # Time between failed .sav-file write and the retry.
 save_restoreSet_RetrySeconds(60)
 
+# Ok to retry connecting to PVs whose initial connection attempt failed?
+save_restoreSet_CAReconnect(1)
+
+# Time interval in seconds between forced save-file writes.  (-1 means forever).
+# This is intended to get save files written even if the normal trigger mechanism is broken.
+save_restoreSet_CallbackTimeout(-1)
+
 # NFS host name and IP address
 save_restoreSet_NFSHost("oxygen", "164.54.52.4")</font>
-.
-.
-.
-dbLoadDatabase("../../dbd/xxxApp.dbd")
-.
-.
-.
+
 <font color="blue">dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=xxx:")</font>
 .
 .
@@ -917,11 +1197,15 @@ create_monitor_set("info_settings.req", 30, "P=xxx:")
 </pre>
 ---------- end excerpt from st.cmd ----------------------
 
+<pre>
+
+
+</pre>
+<hr>
 <address>
     Suggestions and Comments to: <br>
     <a href="mailto:mooney@aps.anl.gov">Tim Mooney </a>:
     (mooney@aps.anl.gov) <br>
-    Last modified: Nov. 13, 2008 
 </address>
 </body>
 </html>
