@@ -8,3 +8,13 @@ $(P)$(CONFIG)Menu:name7
 $(P)$(CONFIG)Menu:name8
 $(P)$(CONFIG)Menu:name9
 $(P)$(CONFIG)Menu:name10
+$(P)$(CONFIG)Menu:desc1
+$(P)$(CONFIG)Menu:desc2
+$(P)$(CONFIG)Menu:desc3
+$(P)$(CONFIG)Menu:desc4
+$(P)$(CONFIG)Menu:desc5
+$(P)$(CONFIG)Menu:desc6
+$(P)$(CONFIG)Menu:desc7
+$(P)$(CONFIG)Menu:desc8
+$(P)$(CONFIG)Menu:desc9
+$(P)$(CONFIG)Menu:desc10
