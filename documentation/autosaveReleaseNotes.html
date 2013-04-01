@@ -10,6 +10,38 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.1</h3>
+<ul>
+
+	<li>In autosave versions 4-8 through 5-0, if the save_restore task connected
+		to a remote PV that later was disconnected, it would crash the next time
+		that PV was used.
+
+	<li>Modified autosave to correctly restore unsigned long values.  Thanks to
+		Kukhee Kim (SSRL) for find and fixing the bug.
+
+	<li>configMenu: new support for manually saving, restoring, and verifying
+		sets of PVs.  configMenu operations can be driven by an EPICS record, or
+		by any channel-access client.  configMenu list can be populated from the
+		existing config files on disk.
+
+	<li>Assignment of status PVs to save sets didn't account for save sets being
+		removed.
+
+	<li>Manual restore failed to correctly handle strings longer than 39
+		characters, did not honor comments in .sav files, and failed to call
+		ca_clear_channel.
+
+	<li>manual_save() no longer takes an argument specifying how long to wait
+		for the save to complete.
+	
+	<li>Refactored asVerify so that the core can be called from a client wrapper
+		and from the save_restore task.  Manual save and restore operations called
+		from configMenu are verified.
+
+</ul>
+
+
 <h3>5.0</h3>
 <ul>
 
