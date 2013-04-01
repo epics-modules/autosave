@@ -599,13 +599,13 @@ currently it can't handle array or long-string PVs in a remote IOC.  If you
 use configMenu for remote PVs, you should tell autosave to retry connections
 periodically, by including the following line in save_restore.cmd:
 
-<li>When configMenu overwrites an existing .cfg file, it makes a backup copy
-of the current version, named <filename>_YYMMDD_HHMMSS.  For example:
-scan1_blank.cfg_130401-140546 was written at 2:05:46 PM on 4/1/2013.
-
 <pre>
 save_restoreSet_CAReconnect(1)
 </pre>
+
+<li>When configMenu overwrites an existing .cfg file, it makes a backup copy
+of the current version, named <filename>_YYMMDD_HHMMSS.  For example:
+scan1_blank.cfg_130401-140546 was written at 2:05:46 PM on 4/1/2013.
 
 <li>You can load .cfg files that contain macros.  For example, softGlue
 standard example circuits can be loaded without modification into any softGlue
