@@ -555,7 +555,7 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 	DIR *pdir=0;
 	FILE *fd;
 	struct dirent *pdirent=0;
-	char thisname[FN_LEN], filename[FN_LEN], *pchar, fullpath[NFS_PATH_LEN];
+	char thisname[FN_LEN], filename[FN_LEN], *pchar, *p_char, fullpath[NFS_PATH_LEN];
 	char buffer[BUF_SIZE], *bp, *bp1;
 
 	if (names == NULL) return(-1);
@@ -573,7 +573,8 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 				strncpy(thisname, &(filename[strlen(config)+1]), FN_LEN-1);
 				if (save_restoreDebug) printf("findConfigFiles: searching '%s' for .cfg\n", thisname);
 				pchar = strstr(thisname, ".cfg");
-				if (pchar) {
+				p_char = strstr(thisname, ".cfg_"); /* Don't include backup copies */
+				if (pchar && !p_char) {
 					*pchar = '\0';
 					strncpy(names[i], thisname, len-1);
 					if (save_restoreDebug) printf("findConfigFiles: found config '%s'\n", names[i]);
@@ -1826,6 +1827,19 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 			strcpy(plist->statusStr, ".savB file was bad");
 			TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 			backup_state = BS_NEW;
+		}
+	}
+
+	if (configName!=NULL) {
+		char datetime[32];
+		FILE *test_fd;
+
+		if ((test_fd = fopen(save_file,"rb")) != NULL) {
+			fGetDateStr(datetime);
+			strcpy(backup_file, save_file);
+			strcat(backup_file, "_");
+			strcat(backup_file, datetime);
+			myFileCopy(save_file,backup_file);
 		}
 	}
 
