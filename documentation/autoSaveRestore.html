@@ -476,7 +476,7 @@ perform macro substitutions, or include other request files.
 <i>configMenu</i> is a facility for creating, saving, finding, restoring, and
 verifying sets of EPICS PVs ("configurations") on a running IOC.  It is roughly
 comparable to the EPICS Backup and Restore Tool, BURT, but it saves
-configurations autosave files, and is driven by and reports back to EPICS PVs,
+configurations as autosave files, and is driven by and reports back to EPICS PVs,
 so it can be used manually, driven by any CA client, or driven by IOC-resident
 code.  configMenu operations can be driven by a ca_put_callback to an EPICS PV,
 so the loading and saving of a configuration can usefully be driven as part of a
@@ -529,7 +529,7 @@ the setting of the <code>enableSave</code> PV.</blockquote>
 
 <pre>
 label="scan1Menu"
-name="configMenu_small.adl"
+name="configMenu.adl"
 args="P=xxx:,CONFIG=<font color="blue">scan1</font>"
 </pre>
 
