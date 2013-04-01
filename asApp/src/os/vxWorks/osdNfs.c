@@ -15,6 +15,7 @@ extern char saveRestoreFilePath[];              /* path to save files */
  */
 int save_restoreNFSOK    = 0;  /* for vxWorks, NFS has not been mounted before autosave starts */
 int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
+extern volatile int save_restoreDebug;
 
 /**
  * Mount the NFS
@@ -62,6 +63,7 @@ int dismountFileSystem(char *mntpoint)
     if (!mntpoint || !mntpoint[0]) {
 		if (saveRestoreFilePath && saveRestoreFilePath[0]) {
 		    strncpy(mntpoint, saveRestoreFilePath, (NFS_PATH_LEN-1));
+			if (save_restoreDebug) printf("save_restore:dismountFileSystem, setting mntpoint tp '%s'\n", mntpoint);
 		} else {
 			return ERROR;
 		}
