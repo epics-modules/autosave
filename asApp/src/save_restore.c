@@ -2055,6 +2055,13 @@ STATIC int create_data_set(
 		save_restore_init = 1;
 	}
 
+	if (filename==NULL || filename[0] == '\0') {
+		/* User probably wanted to start the save_restore task without creating
+		 * a save set.  This is ok.
+		 */
+		 return(0);
+	}
+
 	/* is save set defined - add new save mode if necessary */
 	while (waitForListLock(5) == 0) {
 		if (save_restoreDebug > 1) errlogPrintf("create_data_set: '%s' waiting for listLock()\n", filename);
