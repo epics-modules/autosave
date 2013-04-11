@@ -110,7 +110,7 @@ record(bo, "$(P)$(CONFIG)Menu:status") {
 record(bo, "$(P)$(CONFIG)Menu:enableSave") {
 	field(ZNAM, "No")
 	field(ONAM, "Yes")
-	field(DOL, "1")
+	field(DOL, "$(ENABLE_SAVE=1)")
 }
 record(calcout, "$(P)$(CONFIG)Menu:disable") {
 	field(INPA, "$(P)$(CONFIG)Menu:busy CP")
