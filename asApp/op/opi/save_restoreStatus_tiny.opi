@@ -3,7 +3,7 @@
   <macros>
     <include_parent_macros>true</include_parent_macros>
   </macros>
-  <wuid>36953e20:13dc664cb7e:-7e81</wuid>
+  <wuid>-3e043223:13e0e87519f:-4eee</wuid>
   <boy_version>3.1.2.20120830</boy_version>
   <scripts />
   <show_ruler>true</show_ruler>
@@ -38,7 +38,7 @@
     <line_color>
       <color red="128" green="0" blue="255" />
     </line_color>
-    <wuid>36953e20:13dc664cb7e:-7e80</wuid>
+    <wuid>-3e043223:13e0e87519f:-4eed</wuid>
     <bg_gradient_color>
       <color red="255" green="255" blue="255" />
     </bg_gradient_color>
@@ -91,7 +91,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7e7f</wuid>
+    <wuid>-3e043223:13e0e87519f:-4eec</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>22</height>
@@ -135,7 +135,7 @@ $(pv_value)</tooltip>
     <arrow_length>20</arrow_length>
     <visible>true</visible>
     <fill_level>100.0</fill_level>
-    <wuid>36953e20:13dc664cb7e:-7e7e</wuid>
+    <wuid>-3e043223:13e0e87519f:-4eeb</wuid>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
     <arrows>0</arrows>
@@ -190,7 +190,7 @@ $(pv_value)</tooltip>
     <arrow_length>20</arrow_length>
     <visible>true</visible>
     <fill_level>100.0</fill_level>
-    <wuid>36953e20:13dc664cb7e:-7e7d</wuid>
+    <wuid>-3e043223:13e0e87519f:-4eea</wuid>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
     <arrows>0</arrows>
@@ -242,7 +242,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7e7c</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee9</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>10</height>
@@ -287,7 +287,7 @@ $(pv_value)</tooltip>
     <line_color>
       <color red="128" green="0" blue="255" />
     </line_color>
-    <wuid>36953e20:13dc664cb7e:-7e7b</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee8</wuid>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
     <height>21</height>
@@ -368,7 +368,7 @@ $(pv_value)</tooltip>
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
     <show_units>false</show_units>
-    <wuid>36953e20:13dc664cb7e:-7e7a</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee7</wuid>
     <auto_size>false</auto_size>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
@@ -419,7 +419,7 @@ $(pv_value)</tooltip>
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
     <show_units>false</show_units>
-    <wuid>36953e20:13dc664cb7e:-7e79</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee6</wuid>
     <auto_size>false</auto_size>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
@@ -470,7 +470,7 @@ $(pv_value)</tooltip>
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
     <show_units>false</show_units>
-    <wuid>36953e20:13dc664cb7e:-7e78</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee5</wuid>
     <auto_size>false</auto_size>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
@@ -520,7 +520,7 @@ $(pv_value)</tooltip>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
     <actions_from_pv>false</actions_from_pv>
-    <wuid>36953e20:13dc664cb7e:-7e77</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee4</wuid>
     <scripts />
     <height>20</height>
     <name>Menu Button</name>
@@ -575,7 +575,7 @@ $(pv_value)</tooltip>
     <line_color>
       <color red="128" green="0" blue="255" />
     </line_color>
-    <wuid>36953e20:13dc664cb7e:-7e76</wuid>
+    <wuid>-3e043223:13e0e87519f:-4ee3</wuid>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
     <height>21</height>

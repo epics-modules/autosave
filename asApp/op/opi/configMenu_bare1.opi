@@ -3,7 +3,7 @@
   <macros>
     <include_parent_macros>true</include_parent_macros>
   </macros>
-  <wuid>36953e20:13dc664cb7e:-7f82</wuid>
+  <wuid>-3e043223:13e0e87519f:-4fef</wuid>
   <boy_version>3.1.2.20120830</boy_version>
   <scripts />
   <show_ruler>true</show_ruler>
@@ -36,7 +36,7 @@
       <include_parent_macros>true</include_parent_macros>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f7f</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fec</wuid>
     <scripts />
     <height>20</height>
     <name>Grouping Container</name>
@@ -83,7 +83,7 @@
     <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
       <border_alarm_sensitive>false</border_alarm_sensitive>
       <visible>true</visible>
-      <wuid>36953e20:13dc664cb7e:-7f7e</wuid>
+      <wuid>-3e043223:13e0e87519f:-4feb</wuid>
       <scripts />
       <height>20</height>
       <name>Action Button</name>
@@ -158,7 +158,7 @@ $(pv_value)</tooltip>
     <maximum>Infinity</maximum>
     <minimum>-Infinity</minimum>
     <show_units>false</show_units>
-    <wuid>36953e20:13dc664cb7e:-7f81</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fee</wuid>
     <rotation_angle>0.0</rotation_angle>
     <name>Text Input</name>
     <scale_options>
@@ -191,7 +191,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f80</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fed</wuid>
     <scripts />
     <height>20</height>
     <name>Action Button</name>

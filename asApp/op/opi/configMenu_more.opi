@@ -3,7 +3,7 @@
   <macros>
     <include_parent_macros>true</include_parent_macros>
   </macros>
-  <wuid>36953e20:13dc664cb7e:-7f77</wuid>
+  <wuid>-3e043223:13e0e87519f:-4fe4</wuid>
   <boy_version>3.1.2.20120830</boy_version>
   <scripts />
   <show_ruler>true</show_ruler>
@@ -37,7 +37,7 @@
       <N>5</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f75</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fe2</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -79,7 +79,7 @@
       <N>1</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f74</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fe1</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -121,7 +121,7 @@
       <N>2</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f73</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fe0</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -163,7 +163,7 @@
       <N>3</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f72</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fdf</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -205,7 +205,7 @@
       <N>4</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f71</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fde</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -247,7 +247,7 @@
       <N>10</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f70</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fdd</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -289,7 +289,7 @@
       <N>6</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f6f</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fdc</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -331,7 +331,7 @@
       <N>7</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f6e</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fdb</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -373,7 +373,7 @@
       <N>8</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f6d</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fda</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -415,7 +415,7 @@
       <N>9</N>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f6c</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd9</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -456,7 +456,7 @@
       <include_parent_macros>true</include_parent_macros>
     </macros>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f68</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd5</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <zoom_to_fit>true</zoom_to_fit>
@@ -495,7 +495,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7f76</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fe3</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>13</height>
@@ -537,7 +537,7 @@
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
     <actions_from_pv>false</actions_from_pv>
-    <wuid>36953e20:13dc664cb7e:-7f6b</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd8</wuid>
     <scripts />
     <height>20</height>
     <name>Menu Button</name>
@@ -588,7 +588,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7f6a</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd7</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>14</height>
@@ -630,7 +630,7 @@ $(pv_value)</tooltip>
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
     <actions_from_pv>true</actions_from_pv>
-    <wuid>36953e20:13dc664cb7e:-7f69</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd6</wuid>
     <scripts />
     <height>20</height>
     <name>Menu Button</name>
@@ -674,7 +674,7 @@ $(pv_value)</tooltip>
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
     <show_units>false</show_units>
-    <wuid>36953e20:13dc664cb7e:-7f67</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd4</wuid>
     <auto_size>false</auto_size>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
@@ -723,7 +723,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0">
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
-    <wuid>36953e20:13dc664cb7e:-7f66</wuid>
+    <wuid>-3e043223:13e0e87519f:-4fd3</wuid>
     <scripts />
     <height>20</height>
     <name>Action Button</name>

@@ -3,7 +3,7 @@
   <macros>
     <include_parent_macros>true</include_parent_macros>
   </macros>
-  <wuid>36953e20:13dc664cb7e:-7ed3</wuid>
+  <wuid>-3e043223:13e0e87519f:-4f40</wuid>
   <boy_version>3.1.2.20120830</boy_version>
   <scripts />
   <show_ruler>true</show_ruler>
@@ -34,7 +34,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ed2</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3f</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -75,7 +75,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ed1</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3e</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -116,7 +116,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ed0</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3d</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -157,7 +157,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ecf</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3c</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -198,7 +198,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ece</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3b</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -239,7 +239,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ecd</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f3a</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
@@ -280,7 +280,7 @@
   <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0">
     <visible>true</visible>
     <vertical_alignment>1</vertical_alignment>
-    <wuid>36953e20:13dc664cb7e:-7ecc</wuid>
+    <wuid>-3e043223:13e0e87519f:-4f39</wuid>
     <auto_size>false</auto_size>
     <scripts />
     <height>15</height>
