@@ -34,12 +34,12 @@ iocInit, via an EPICS initHook.  It restores PV values from files written by the
 run-time part, and does not persist after iocInit() returns.
 
 <P>In addition to the autosave software, the autosave module contains a client
-program, <i>asVerify</i>, to compare written autosave files with current PV values.
-This program can also write an autosave file from which PV values can be
+program, <i>asVerify</i>, to compare written autosave files with current PV
+values. This program can also write an autosave file from which PV values can be
 restored.  Because one use of asVerify is to retrieve PV values from an IOC that
-is having trouble (autosave has crashed, for example), asVerify connects with
-only one PV at a time.  This makes asVerify rather slow.  In one trial, it took
-two minutes to verify a .sav file containing 5000 PVs.
+is having trouble (the save_restore task has crashed, for example), asVerify
+connects with only one PV at a time.  This makes asVerify rather slow.  In one
+trial, it took two minutes to verify a .sav file containing 5000 PVs.
 
 <P>Autosave also contains a facility, called <i>configMenu</i>, for creating,
 saving, finding, restoring, and verifying IOC configurations (that is, sets of
@@ -318,7 +318,7 @@ software writes a backup copy of the ".sav" file from which it restored PV's.
 This file can either be named xxx.sav.bu, and be rewritten every reboot, or be
 named xxx.sav_YYMMDD-HHMMSS, where "YY..." is a date.  Dated backups are not
 overwritten.  If you want dated backup files, put the following line in your
-st.cmd file before the call toiocInit():
+st.cmd file before the call to iocInit():
 
 <pre>
 	save_restoreSet_DatedBackupFiles(1)
@@ -367,7 +367,7 @@ normal trigger mechanism is broken.
 
 </ul>
 
-<h4>11. Start the save task (required)</h4>
+<h4>11. Start the save task (required to save files)</h4>
 Invoke the "save" part of this software as part of the EPICS
 startup sequence, by calling create_XXX_set() &mdash; e.g., adding lines of the form
 <pre>
@@ -375,18 +375,15 @@ startup sequence, by calling create_XXX_set() &mdash; e.g., adding lines of the 
 	create_monitor_set("auto_settings.req", 30, "P=xxx:")
 </pre>
 
-to your EPICS startup file after iocInit.  You can call the files anything you
-want, but note that the file names "auto_positions" and "auto_settings" receive
-special treatment: they are default restore-file names specified by
-<code>asInitHooks()</code> if <code>set_passN_restoreFile()</code> were never
-called.  The third argument to <code>create_monitor_set()</code>  is a
-macro-substitution string, as described above in the discussion of request files
-(step 2).  If supplied, this macro-substitution string supplements any macro
-strings supplied in include-file directives of request files read for this save
-set.
+to your EPICS startup file after iocInit.  The third argument to
+<code>create_monitor_set()</code>  is a macro-substitution string, as described
+above in the discussion of request files (step 2).  If supplied, this
+macro-substitution string supplements any macro strings supplied in include-file
+directives of request files read for this save set.
 
-<P> If you want to start the save task without also creating a save set, you
-can make the call <code>create_monitor_set("", 0, "")</code>.
+<blockquote> <i>Note: if you want to start the save task without also creating a save set, you
+can call <code>create_monitor_set()</code> with no arguments.
+</i></blockquote>
 
 <P>The macro string can also be used to override the default path and name to
 which the <tt>.sav</tt> file will be written.  If the macro
@@ -398,9 +395,10 @@ of writing to the path specified in <tt>set_savefile_path()</tt>. If the macro
 (By default, the <tt>.sav</tt> file name is the request-file name, with <tt>.req</tt>
 replaced by <tt>.sav</tt>.)
 
-<P><b>NOTE:</b>  If either <tt>SAVEPATHPV</tt> or <tt>SAVENAMEPV</tt> occurs in
+<blockquote><b>NOTE:</b>  If either <tt>SAVEPATHPV</tt> or <tt>SAVENAMEPV</tt> occurs in
 the macro string, autosave will not attempt to save backup or sequence files for
 the save set.
+</blockquote>
 
 
 <P>For each <code>create_monitor_set(&lt;name&gt;.req, &lt;time&gt;, &lt;macro&gt;)</code> command, the
@@ -491,7 +489,7 @@ complete before perhaps triggering additional execution.
 scan types, and to give the user a GUI display for creating scan types and
 loading them.  (In the following, <font color="blue">scan1</font> is the name of
 this instance of configMenu.  The files it loads and saves will be named "<font
-color="blue">scan1</font>_&lt;<i>config-name</i>&gt;.cfg".)
+color="blue">scan1</font>_&lt;<i>config Name</i>&gt;.cfg".)
 
 <blockquote> <ol> <li>Create an autosave request file, which I'll call "<font
 color="blue">scan1</font>Menu.req", with the following content:
@@ -503,27 +501,23 @@ file scan_settings.req P=$(P),S=scan1
 file scan_settings.req P=$(P),S=scanH
 </pre>
 
-<blockquote>(This is required only if config files are to be written at run
-time.)</blockquote>
+<blockquote>(This is required only if <font color="blue">scan1</font> config
+files are to be written at run time.)</blockquote>
 
 <li>Add the following lines to <code>st.cmd</code>:
 
 <P><code>dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
 
-<blockquote>(This goes before <code>iocInit</code>.)</blockquote>
+<blockquote>(This goes before <code>iocInit</code>.  You can disable the saving
+of <font color="blue">scan1</font> config files by specifying the macro
+<code>ENABLE_SAVE=0</code>.)</blockquote>
 
 <P><code>create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
 
 <blockquote>(This goes after <code>iocInit</code>, and is required only if you
-intend for config files to be written at run time, or if you need to have macro
-substitution performed on a config file to be loaded.)</blockquote>
-
-<li>Add the following line to auto_settings.sav:
-
-<P><code>file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font></code>
-
-<blockquote>This autosaves the current configuration name and description, and
-the setting of the <code>enableSave</code> PV.</blockquote>
+intend for <font color="blue">scan1</font> config files to be written at run
+time, or if you need to have macro substitution performed on a <font
+color="blue">scan1</font> config file to be loaded.)</blockquote>
 
 <li>Add an MEDM related-display entry to bring up a configMenu*.adl display.
 
@@ -557,7 +551,7 @@ and is also the PV to which choices are written to cause loading.  This display
 cannot cause a configuration to be written.  When the menu is repopulated, MEDM
 will not automatically retrieve the new names for display by
 <code>$(P)$(CONFIG)Menu</code>.  This must be done manually, by closing and
-reopening the display, which is what the "Refresh menu choices button" does.
+reopening the display, which is what the "Refresh menu choices" button does.
 
 
 <P><b>configMenu.adl</b> and <b>configMenu_more.adl</b> show the menu choices as
