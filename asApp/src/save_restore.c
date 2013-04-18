@@ -129,7 +129,7 @@
  *                Report failed connections to PV's at connect time.
  *                Allow embedded '.' in save-file name.
  */
-#define		SRVERSION "autosave R5.0"
+#define		SRVERSION "autosave R5.1"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -765,6 +765,7 @@ STATIC int save_restore(void)
 	double timeDiff;
 	int NFS_managed = save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
 	op_msg msg;
+	struct restoreFileListItem *pLI;
 
 	if (save_restoreDebug > 1)
 			errlogPrintf("save_restore:save_restore: entry; status_prefix='%s'\n", status_prefix);
@@ -807,18 +808,23 @@ STATIC int save_restore(void)
 		/* Show reboot status */
 		SR_rebootStatus = SR_STATUS_OK;
 		strcpy(SR_rebootStatusStr, "Ok");
-		for (i = 0; i < restoreFileList.pass0cnt; i++) {
-			if (restoreFileList.pass0Status[i] < SR_rebootStatus) {
-				SR_rebootStatus = restoreFileList.pass0Status[i];
-				strncpy(SR_rebootStatusStr, restoreFileList.pass0StatusStr[i], (STRING_LEN-1));
+		maybeInitRestoreFileLists();
+
+		for (i=0; i<2; i++) {
+			if (i==0) {
+				pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
+			} else {
+				pLI = (struct restoreFileListItem *) ellFirst(&pass1List);
+			}
+			while (pLI) {
+				if (pLI->restoreStatus < SR_rebootStatus) {
+					SR_rebootStatus = pLI->restoreStatus;
+					strncpy(SR_rebootStatusStr, pLI->restoreStatusStr, (STRING_LEN-1));
+				}
+				pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 			}
 		}
-		for (i = 0; i < restoreFileList.pass1cnt; i++) {
-			if (restoreFileList.pass1Status[i] < SR_rebootStatus) {
-				SR_rebootStatus = restoreFileList.pass1Status[i];
-				strncpy(SR_rebootStatusStr, restoreFileList.pass1StatusStr[i], (STRING_LEN-1));
-			}
-		}
+
 		TRY_TO_PUT(DBR_LONG, SR_rebootStatus_chid, &SR_rebootStatus);
 		TRY_TO_PUT(DBR_STRING, SR_rebootStatusStr_chid, &SR_rebootStatusStr);
 		epicsTimeGetCurrent(&currTime);

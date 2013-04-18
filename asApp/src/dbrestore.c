@@ -60,7 +60,7 @@
  * 09/11/09  tmm  v4.12 If recordname is an alias (>=3.14.11), don't search for info nodes.
  *                
  */
-#define VERSION "4.12"
+#define VERSION "5.1"
 
 #include	<stdio.h>
 #include	<errno.h>
@@ -98,14 +98,7 @@
 
 STATIC char 	*RESTORE_VERSION = VERSION;
 
-struct restoreList restoreFileList = {0, 0, 
-			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-			{0,0,0,0,0,0,0,0},
-			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-			{0,0,0,0,0,0,0,0},
-			{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
-};
+int restoreFileListsInitialized=0;
 
 void myPrintErrno(char *s, char *file, int line) {
 	errlogPrintf("%s(%d): [0x%x]=%s:%s\n", file, line, errno, s, strerror(errno));
@@ -127,25 +120,35 @@ STATIC float mySafeDoubleToFloat(double d)
 	return(f);
 }
 
+void maybeInitRestoreFileLists() {
+	if (!restoreFileListsInitialized) {
+		ellInit(&pass0List);
+		ellInit(&pass1List);
+		restoreFileListsInitialized = 1;
+	}
+}
+
 void dbrestoreShow(void)
 {
-	int i;
+	struct restoreFileListItem *pLI;
+
+	maybeInitRestoreFileLists();
+
 	printf("  '     filename     ' -  status  - 'message'\n");
 	printf("  pass 0:\n");
-	for (i=0; i<MAXRESTOREFILES; i++) {
-		if (restoreFileList.pass0files[i]) {
-			printf("  '%s' - %s - '%s'\n", restoreFileList.pass0files[i],
-				SR_STATUS_STR[restoreFileList.pass0Status[i]],
-				restoreFileList.pass0StatusStr[i]);
-		}
+	pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
+	while (pLI) {
+		printf("  '%s' - %s - '%s'\n", pLI->filename,
+			SR_STATUS_STR[pLI->restoreStatus], pLI->restoreStatusStr);
+		pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 	}
+
 	printf("  pass 1:\n");
-	for (i=0; i<MAXRESTOREFILES; i++) {
-		if (restoreFileList.pass1files[i]) {
-			printf("  '%s' - %s - '%s'\n", restoreFileList.pass1files[i],
-				SR_STATUS_STR[restoreFileList.pass1Status[i]],
-				restoreFileList.pass1StatusStr[i]);
-		}
+	pLI = (struct restoreFileListItem *) ellFirst(&pass1List);
+	while (pLI) {
+		printf("  '%s' - %s - '%s'\n", pLI->filename,
+			SR_STATUS_STR[pLI->restoreStatus], pLI->restoreStatusStr);
+		pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 	}
 }
 
@@ -702,7 +705,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		datetime[32];
 	char		c;
 	FILE		*inp_fd;
-	int			i, found_field, pass;
+	int			found_field, pass;
 	DBENTRY		dbentry;
 	DBENTRY		*pdbentry = &dbentry;
 	long		status;
@@ -711,6 +714,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		*statusStr = 0;
 	char		realName[64];	/* name without trailing '$' */
 	int			is_long_string;
+	struct restoreFileListItem *pLI;
 
 	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
 	printf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
@@ -721,25 +725,22 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 	dbInitEntry(pdbbase,pdbentry);
 
+	maybeInitRestoreFileLists();
 	/* what are we supposed to do here? */
 	if (init_state >= initHookAfterInitDatabase) {
 		pass = 1;
-		for (i = 0; i < restoreFileList.pass1cnt; i++) {
-			if (restoreFileList.pass1files[i] &&
-				(strcmp(filename, restoreFileList.pass1files[i]) == 0)) {
-				pStatusVal = &(restoreFileList.pass1Status[i]);
-				statusStr = restoreFileList.pass1StatusStr[i];
-			}
-		}
+		pLI = (struct restoreFileListItem *) ellFirst(&pass1List);
 	} else {
 		pass = 0;
-		for (i = 0; i < restoreFileList.pass0cnt; i++) {
-			if (restoreFileList.pass0files[i] &&
-				(strcmp(filename, restoreFileList.pass0files[i]) == 0)) {
-				pStatusVal = &(restoreFileList.pass0Status[i]);
-				statusStr = restoreFileList.pass0StatusStr[i];
-			}
+		pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
+	}
+	while (pLI) {
+		if (pLI->filename && (strcmp(filename, pLI->filename) == 0)) {
+			pStatusVal = &(pLI->restoreStatus);
+			statusStr = pLI->restoreStatusStr;
+			break;
 		}
+		pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 	}
 
 	if ((pStatusVal == 0) || (statusStr == 0)) {
@@ -894,11 +895,13 @@ int reboot_restore(char *filename, initHookState init_state)
 	/* If this is the second pass for a restore file, don't write backup file again.*/
 	write_backup = 1;
 	if (init_state >= initHookAfterInitDatabase) {
-		for(i = 0; i < restoreFileList.pass0cnt; i++) {
-			if (strcmp(filename, restoreFileList.pass0files[i]) == 0) {
+		pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
+		while (pLI) {
+			if (strcmp(filename, pLI->filename) == 0) {
 				write_backup = 0;
 				break;
 			}
+			pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 		}
 	}
 
@@ -947,54 +950,53 @@ int reboot_restore(char *filename, initHookState init_state)
 }
 
 
-int set_pass0_restoreFile( char *filename)
+static int set_restoreFile(int pass, char *filename)
 {
-	char *cp;
-	int fileNum = restoreFileList.pass0cnt;
+	struct restoreFileListItem *pLI;
 
-	if (fileNum >= MAXRESTOREFILES) {
-		errlogPrintf("set_pass0_restoreFile: MAXFILE count exceeded\n");
+	maybeInitRestoreFileLists();
+
+	pLI = calloc(1, sizeof(struct restoreFileListItem));
+	if (pLI == NULL) {
+		errlogPrintf("set_pass%d_restoreFile: calloc failed\n", pass);
 		return(ERROR);
 	}
-	cp = (char *)calloc(strlen(filename) + 4,sizeof(char));
-	restoreFileList.pass0files[fileNum] = cp;
-	if (cp == NULL) {
-		errlogPrintf("set_pass0_restoreFile: calloc failed\n");
-		restoreFileList.pass0StatusStr[fileNum] = (char *)0;
+
+	pLI->filename = (char *)calloc(strlen(filename) + 4,sizeof(char));
+	if (pLI->filename == NULL) {
+		errlogPrintf("set_pass%d_restoreFile: calloc failed\n", pass);
+		free(pLI);
 		return(ERROR);
 	}
-	strcpy(cp, filename);
-	cp = (char *)calloc(STRING_LEN, 1);
-	restoreFileList.pass0StatusStr[fileNum] = cp;
-	strcpy(cp, "Unknown, probably failed");
-	restoreFileList.pass0Status[fileNum] = SR_STATUS_INIT;
-	restoreFileList.pass0cnt++;
+	strcpy(pLI->filename, filename);
+
+	pLI->restoreStatusStr = (char *)calloc(STRING_LEN, 1);
+	if (pLI->restoreStatusStr == NULL) {
+		errlogPrintf("set_pass%d_restoreFile: calloc failed\n", pass);
+		free(pLI->filename);
+		free(pLI);
+		return(ERROR);
+	}
+	strcpy(pLI->restoreStatusStr, "Unknown, probably failed");
+
+	pLI->restoreStatus = SR_STATUS_INIT;
+
+	if (pass==1) {
+		ellAdd(&pass1List, &(pLI->node));
+	} else {
+		ellAdd(&pass0List, &(pLI->node));
+	}
 	return(OK);
+}
+
+int set_pass0_restoreFile(char *filename)
+{
+	return(set_restoreFile(0, filename));
 }
 
 int set_pass1_restoreFile(char *filename)
 {
-	char *cp;
-	int fileNum = restoreFileList.pass1cnt;
-	
-	if (fileNum >= MAXRESTOREFILES) {
-		errlogPrintf("set_pass1_restoreFile: MAXFILE count exceeded\n");
-		return(ERROR);
-	}
-	cp = (char *)calloc(strlen(filename) + 4,sizeof(char));
-	restoreFileList.pass1files[fileNum] = cp;
-	if (cp == NULL) {
-		errlogPrintf("set_pass1_restoreFile: calloc failed\n");
-		restoreFileList.pass1StatusStr[fileNum] = (char *)0;
-		return(ERROR);
-	}
-	strcpy(cp, filename);
-	cp = (char *)calloc(STRING_LEN, 1);
-	restoreFileList.pass1StatusStr[fileNum] = cp;
-	strcpy(cp, "Unknown, probably failed");
-	restoreFileList.pass1Status[fileNum] = SR_STATUS_INIT;
-	restoreFileList.pass1cnt++;
-	return(OK);
+	return(set_restoreFile(1, filename));
 }
 
 /* file is ok if it ends in either of the two following ways:
