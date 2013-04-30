@@ -136,13 +136,15 @@
 #include	<stdlib.h>
 #ifndef _WIN32
 #include	<unistd.h>
+#include	<dirent.h> /* for dirList */
+#else
+#include	"tr_dirent.h" /* for dirList */
 #endif
 #include	<string.h>
 #include	<ctype.h>
 #include	<sys/stat.h>
 #include	<time.h>
 #include	<sys/types.h> /* for dirList */
-#include	<dirent.h> /* for dirList */
 
 #include	<dbDefs.h>
 #include	<cadef.h>		/* includes dbAddr.h */
@@ -2876,7 +2878,8 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			templatefile[i] = 0;
 
 			/* parse new macro string and fix obvious problems */
-			for (i=0; *t && *t != '#'; t++) {
+			/* for (i=0; *t && *t != '#'; t++) { */
+			for (i=0; *t; t++) {
 				if (isspace((int)(*t)) || *t == ',') {
 					if (i>=3 && (new_macro[i-1] != ','))
 						new_macro[i++] = ',';
