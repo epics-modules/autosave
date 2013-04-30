@@ -177,16 +177,19 @@ e.g.,
 	file motor_settings.req P=xxx:,M=m1
 </pre>
 
-<P>I've tried to defend against forseeable variations in syntax, so that
-"include" lines with embedded whitespace and/or quotes, macro strings without
-commas, empty macro strings, and lines with trailing comments will be parsed as
-one would want.  Generally, quotes are ignored, whitespace implies a comma but
-otherwise is ignored, and everything after the second sequence of non-whitespace
-characters (that is, after the file name) and before the (optional) comment
-character, '#', is taken as the macro-substitution string.  Macro substitution
-is performed on the entire line, so it's possible to parameterize names of
-included files, as well as PV names.  It is also possible to define a macro that
-replaces its target with nothing.
+<P>I've tried to defend against forseeable variations in syntax, so that "file"
+commands with embedded whitespace and/or quotes, macro strings without commas,
+and empty macro strings will be parsed as one would want.  Generally, quotes are
+ignored, whitespace implies a comma but otherwise is ignored, and everything
+after the second sequence of non-whitespace characters (that is, after the file
+name) is taken as the macro-substitution string.  Macro substitution is
+performed on the entire line, so it's possible to parameterize names of included
+files, as well as PV names.  It is also possible to define a macro that replaces
+its target with nothing.
+
+<P><b>NOTE:</b> Beginning with autosave 5.1, it's no longer legal to have a comment on the
+same line as a file command.  This change was made to permit the use of the '#'
+character in a macro definition.
 
 <p>Most synApps modules contain autosave-request files that are
 intended to be included in an ioc's autosave-request file(s).  For example,
