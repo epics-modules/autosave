@@ -562,14 +562,17 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 	char buffer[BUF_SIZE], *bp, *bp1;
 
 	if (names == NULL) return(-1);
+	if (save_restoreDebug) printf("findConfigFiles: config='%s'\n", config);
 	for (i=0; i<num; i++) {
 		names[i][0] = '\0';
 		if (descriptions) descriptions[i][0] = '\0';
 	}
 
-	pdir=opendir(saveRestoreFilePath);
+	pdir = opendir(saveRestoreFilePath);
 	if (pdir) {
+		if (save_restoreDebug) printf("findConfigFiles: opendir('%s') succeeded.\n", saveRestoreFilePath);
 		for (i=0; i<num && (pdirent=readdir(pdir)); ) {
+			if (save_restoreDebug>1) printf("findConfigFiles: checking '%s'.\n", pdirent->d_name);
 			if (strncmp(config, pdirent->d_name, strlen(config)) == 0) {
 				strncpy(filename, pdirent->d_name, FN_LEN-1);
 				if (save_restoreDebug) printf("findConfigFiles: found '%s'\n", filename);
@@ -608,8 +611,11 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 				printf("findConfigFiles: name='%s'; desc='%s'\n", names[i], descriptions[i]);
 			}
 		}
+		closedir(pdir);
 		return(0);
 	}
+	if (save_restoreDebug) printf("findConfigFiles: opendir('%s') failed.\n", saveRestoreFilePath);
+
 	return(-1);
 }
 
