@@ -373,7 +373,7 @@ STATIC void triggered_save(struct event_handler_args);
 STATIC void on_change_timer(CALLBACK *pcallback);
 STATIC void on_change_save(struct event_handler_args);
 STATIC int save_restore(void);
-STATIC int connect_list(struct chlist *plist);
+STATIC int connect_list(struct chlist *plist, int verbose);
 STATIC int enable_list(struct chlist *plist);
 STATIC int get_channel_values(struct chlist *plist);
 STATIC int write_it(char *filename, struct chlist *plist);
@@ -910,7 +910,7 @@ STATIC int save_restore(void)
 				}
 
 				/* qiao: second, connect the list */
-				plist->not_connected = connect_list(plist);
+				plist->not_connected = connect_list(plist, 1);
 				plist->reconnect_check_time = currTime;
 
 			} else if (save_restoreCAReconnect &&
@@ -918,7 +918,7 @@ STATIC int save_restore(void)
 				epicsTimeDiffInSeconds(&currTime, &plist->reconnect_check_time) > CA_RECONNECT_TIME_SECONDS) {
 				/* Try to connect to disconnected channels every CA_RECONNECT_TIME_SECONDS */
 				plist->reconnect_check_time = currTime;
-				plist->not_connected = connect_list(plist);
+				plist->not_connected = connect_list(plist, 0);
 			}
 
 			/*
@@ -1199,7 +1199,7 @@ STATIC int save_restore(void)
  *
  * NOTE: Assumes sr_mutex is locked
  */
-STATIC int connect_list(struct chlist *plist)
+STATIC int connect_list(struct chlist *plist, int verbose)
 {
 	struct channel	*pchannel;
 	int				n, m;
@@ -1242,7 +1242,9 @@ STATIC int connect_list(struct chlist *plist)
 				strcpy(pchannel->value,"Connected");
 				n++;
 			} else {
-				errlogPrintf("save_restore: connect failed for channel '%s'\n", pchannel->name);
+				if (verbose) {
+					errlogPrintf("save_restore: connect failed for channel '%s'\n", pchannel->name);
+				}
 			}
  		}
 
@@ -1272,8 +1274,10 @@ STATIC int connect_list(struct chlist *plist)
 		}
 	}
 	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
-	errlogPrintf(SR_recentlyStr);
-	errlogPrintf("\n");
+	if (verbose) {
+		errlogPrintf(SR_recentlyStr);
+		errlogPrintf("\n");
+	}
 
 	return(get_channel_values(plist));
 }
