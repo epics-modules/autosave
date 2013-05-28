@@ -189,8 +189,8 @@ mode_t file_permissions = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 #define MANUAL		0x10		/* set on request */
 #define	SINGLE_EVENTS	(PERIODIC|TRIGGERED|MANUAL)
 
-#define TIMEFMT "%a %b %d %I:%M:%S %Y\n"	/* e.g. 'Fri Sep 13 00:00:00 1986\n'	*/
-#define TIMEFMT_noY "%a %b %d %I:%M:%S"		/* e.g. 'Fri Sep 13 00:00:00'			*/
+#define TIMEFMT "%a %b %d %H:%M:%S %Y\n"	/* e.g. 'Fri Sep 13 00:00:00 1986\n'	*/
+#define TIMEFMT_noY "%a %b %d %H:%M:%S"		/* e.g. 'Fri Sep 13 00:00:00'			*/
 
 struct chlist {								/* save set list element */
 	struct chlist	*pnext;					/* next list */
@@ -373,7 +373,7 @@ STATIC void triggered_save(struct event_handler_args);
 STATIC void on_change_timer(CALLBACK *pcallback);
 STATIC void on_change_save(struct event_handler_args);
 STATIC int save_restore(void);
-STATIC int connect_list(struct chlist *plist);
+STATIC int connect_list(struct chlist *plist, int verbose);
 STATIC int enable_list(struct chlist *plist);
 STATIC int get_channel_values(struct chlist *plist);
 STATIC int write_it(char *filename, struct chlist *plist);
@@ -562,14 +562,17 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 	char buffer[BUF_SIZE], *bp, *bp1;
 
 	if (names == NULL) return(-1);
+	if (save_restoreDebug) printf("findConfigFiles: config='%s'\n", config);
 	for (i=0; i<num; i++) {
 		names[i][0] = '\0';
 		if (descriptions) descriptions[i][0] = '\0';
 	}
 
-	pdir=opendir(saveRestoreFilePath);
+	pdir = opendir(saveRestoreFilePath);
 	if (pdir) {
+		if (save_restoreDebug) printf("findConfigFiles: opendir('%s') succeeded.\n", saveRestoreFilePath);
 		for (i=0; i<num && (pdirent=readdir(pdir)); ) {
+			if (save_restoreDebug>1) printf("findConfigFiles: checking '%s'.\n", pdirent->d_name);
 			if (strncmp(config, pdirent->d_name, strlen(config)) == 0) {
 				strncpy(filename, pdirent->d_name, FN_LEN-1);
 				if (save_restoreDebug) printf("findConfigFiles: found '%s'\n", filename);
@@ -608,8 +611,11 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 				printf("findConfigFiles: name='%s'; desc='%s'\n", names[i], descriptions[i]);
 			}
 		}
+		closedir(pdir);
 		return(0);
 	}
+	if (save_restoreDebug) printf("findConfigFiles: opendir('%s') failed.\n", saveRestoreFilePath);
+
 	return(-1);
 }
 
@@ -904,7 +910,7 @@ STATIC int save_restore(void)
 				}
 
 				/* qiao: second, connect the list */
-				plist->not_connected = connect_list(plist);
+				plist->not_connected = connect_list(plist, 1);
 				plist->reconnect_check_time = currTime;
 
 			} else if (save_restoreCAReconnect &&
@@ -912,7 +918,7 @@ STATIC int save_restore(void)
 				epicsTimeDiffInSeconds(&currTime, &plist->reconnect_check_time) > CA_RECONNECT_TIME_SECONDS) {
 				/* Try to connect to disconnected channels every CA_RECONNECT_TIME_SECONDS */
 				plist->reconnect_check_time = currTime;
-				plist->not_connected = connect_list(plist);
+				plist->not_connected = connect_list(plist, 0);
 			}
 
 			/*
@@ -1193,7 +1199,7 @@ STATIC int save_restore(void)
  *
  * NOTE: Assumes sr_mutex is locked
  */
-STATIC int connect_list(struct chlist *plist)
+STATIC int connect_list(struct chlist *plist, int verbose)
 {
 	struct channel	*pchannel;
 	int				n, m;
@@ -1236,7 +1242,9 @@ STATIC int connect_list(struct chlist *plist)
 				strcpy(pchannel->value,"Connected");
 				n++;
 			} else {
-				errlogPrintf("save_restore: connect failed for channel '%s'\n", pchannel->name);
+				if (verbose) {
+					errlogPrintf("save_restore: connect failed for channel '%s'\n", pchannel->name);
+				}
 			}
  		}
 
@@ -1266,8 +1274,10 @@ STATIC int connect_list(struct chlist *plist)
 		}
 	}
 	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
-	errlogPrintf(SR_recentlyStr);
-	errlogPrintf("\n");
+	if (verbose) {
+		errlogPrintf(SR_recentlyStr);
+		errlogPrintf("\n");
+	}
 
 	return(get_channel_values(plist));
 }

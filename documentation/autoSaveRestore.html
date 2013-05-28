@@ -612,6 +612,19 @@ create_manual_set("SGMenu.req","P=xxx:,CONFIG=SG,H=softGlue:")
 </code><br>
 where the macros "P" and "H" agree with their definitions in softGlue.cmd.
 
+<li> configMenu needs to get a directory listing to search the autosave
+directory for .cfg files.  At APS, we've encountered a problem using nfs3Drv
+with vxWorks 5.5.2 to talk to a linux-hosted file server.  The source and nature
+of the problem are not thoroughly understood, but one symptom is that directory
+listings don't work. For example, typing "ls" at the ioc's console prompt yields
+the following error message:
+
+<pre>
+error reading dir &lt;mydirectoryname&gt; errno: 0x300016
+</pre>
+
+One solution is to modify the board-support package to use nfs2Drv.
+
 </ol>
 
 <hr>
