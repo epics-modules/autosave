@@ -189,8 +189,8 @@ mode_t file_permissions = (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 #define MANUAL		0x10		/* set on request */
 #define	SINGLE_EVENTS	(PERIODIC|TRIGGERED|MANUAL)
 
-#define TIMEFMT "%a %b %d %I:%M:%S %Y\n"	/* e.g. 'Fri Sep 13 00:00:00 1986\n'	*/
-#define TIMEFMT_noY "%a %b %d %I:%M:%S"		/* e.g. 'Fri Sep 13 00:00:00'			*/
+#define TIMEFMT "%a %b %d %H:%M:%S %Y\n"	/* e.g. 'Fri Sep 13 00:00:00 1986\n'	*/
+#define TIMEFMT_noY "%a %b %d %H:%M:%S"		/* e.g. 'Fri Sep 13 00:00:00'			*/
 
 struct chlist {								/* save set list element */
 	struct chlist	*pnext;					/* next list */
