@@ -64,8 +64,8 @@ struct restoreFileListItem {
 	char *restoreStatusStr;
 };
 
-ELLLIST pass0List;
-ELLLIST pass1List;
+extern ELLLIST pass0List;
+extern ELLLIST pass1List;
 
 extern void maybeInitRestoreFileLists();
 
