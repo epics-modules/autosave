@@ -100,6 +100,9 @@ STATIC char 	*RESTORE_VERSION = VERSION;
 
 int restoreFileListsInitialized=0;
 
+ELLLIST pass0List;
+ELLLIST pass1List;
+
 void myPrintErrno(char *s, char *file, int line) {
 	errlogPrintf("%s(%d): [0x%x]=%s:%s\n", file, line, errno, s, strerror(errno));
 }
