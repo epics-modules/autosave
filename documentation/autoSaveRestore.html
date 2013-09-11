@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.1</h1>
+<h1 align="center">autosave v5.1.1</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC (Input-Output
@@ -158,7 +158,9 @@ restore.  The save files corresponding to these request files will have the
 
 <P>Request files can also contain macro variables, whose values will be defined
 in the call that causes the request file to be processed. For example, the above
-request file could also be written as follows:
+request file could also be written as shown below, with the macro <code>P</code>
+defined by the command <code>create_monitor_set("auto_settings.req", 30,
+"P=xxx:")</code>:
 
 <pre>
 	$(P)m1.VAL
