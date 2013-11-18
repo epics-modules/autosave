@@ -1146,7 +1146,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 
 	errlogPrintf("save_restore: Can't find a file to restore from...");
 	errlogPrintf("save_restore: ...last tried '%s'. I give up.\n", file);
-	errlogPrintf("save_restore: **********************************\n\n");
+	printf("save_restore: **********************************\n\n");
 	return(0);
 }
 
