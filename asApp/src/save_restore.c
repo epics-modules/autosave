@@ -1834,9 +1834,9 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 				(void)myFileCopy(backup_file, tmpstr);
 			}
 			if (write_it(backup_file, plist) == ERROR) {
-				errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+				printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 				errlogPrintf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
-				errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+				printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 				plist->status = SR_STATUS_FAIL;
 				strcpy(plist->statusStr, "Can't write .savB file");
 				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
@@ -1865,9 +1865,9 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 	/*** Write the save file ***/
 	if (save_restoreDebug > 2) errlogPrintf("write_save_file: saving to %s\n", save_file);
 	if (write_it(save_file, plist) == ERROR) {
-		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+		printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		errlogPrintf("save_restore:write_save_file: Can't write save file. [%s]\n", datetime);
-		errlogPrintf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+		printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't write .sav file");
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
