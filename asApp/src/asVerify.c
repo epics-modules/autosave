@@ -46,7 +46,7 @@ void printUsage(void) {
 int main(int argc,char **argv)
 {
 	FILE	*fp=NULL, *ftmp=NULL;
-	char	s[BUF_SIZE], filename[PATH_SIZE];
+	char	s[BUF_SIZE], filename[PATH_SIZE], restoreFileName[PATH_SIZE];
 	char	*tempname;
 	int		n;
 	int		numDifferences;
@@ -91,7 +91,13 @@ int main(int argc,char **argv)
 	fclose(fp); fp = NULL;
 	fclose(ftmp); ftmp = NULL;
 
-	numDifferences = asVerify(tempname, verbose, debug, write_restore_file);
+	if (write_restore_file) {
+		strcpy(restoreFileName, filename);
+		strcat(restoreFileName, ".asVerify");
+	} else {
+		strcpy(restoreFileName, "");
+	}
+	numDifferences = asVerify(tempname, verbose, debug, write_restore_file, restoreFileName);
 
 	remove(tempname);
 	ca_context_destroy();
