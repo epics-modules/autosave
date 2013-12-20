@@ -29,15 +29,15 @@ printf("    =============================\n"); wrote_head=1;}
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count,
 	char *read_buffer, int debug);
 
-long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
+long asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
 	float	*pfvalue, *pf_read;
 	double	*pdvalue, *pd_read, diff, max_diff=0.;
 	short	*penum_value, *penum_value_read;
 	char	*svalue, *svalue_read;
 	chid	chid;
 	FILE	*fp=NULL, *fr=NULL, *fr1=NULL;
-	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE], filename[PATH_SIZE];
-	char	restoreFileName[PATH_SIZE], trial_restoreFileName[PATH_SIZE];
+	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE];
+	char	trial_restoreFileName[PATH_SIZE];
 	char	*CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
 	int		i, j, n, is_scalar, is_scalar_in_file, is_long_string;
@@ -45,14 +45,14 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 	int		different, wrote_head=0, status, file_ok=0;
 	long 	element_count=0, storageBytes=0, alloc_CA_buffer=0;
 
+
 	fp = fopen(fileName,"r");
 	if (fp == NULL) {printf("asVerify: Can't open '%s'.\n", fileName); return(-1);}
 
 	if (write_restore_file) {
-		strcpy(restoreFileName, filename);
-		strcat(restoreFileName, ".asVerify");
 		strcpy(trial_restoreFileName, restoreFileName);
 		strcat(trial_restoreFileName, "B");
+		if (debug) {printf("asVerify: restoreFileName '%s'.\n", restoreFileName);}
 		fr = fopen(trial_restoreFileName,"w");
 		if (fr == NULL) {
 			printf("asVerify: Can't open restore_file '%s' for writing.\n", trial_restoreFileName);
@@ -95,7 +95,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 	}
 
 	while ((bp=fgets(s, BUF_SIZE, fp))) {
-		if (debug) printf("\nasVerify: buffer '%s'\n", bp);
+		if (debug>3) printf("\nasVerify: buffer '%s'\n", bp);
 		if (bp[0] == '#') {
 			/* A PV to which autosave could not connect, or just a comment in the file. */
 			if (strstr(bp, "Search Issued")) numPVsNotConnected++;
@@ -105,7 +105,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 		/* NOTE value_string must have room for nearly  BUF_SIZE characters */
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
 		/* if (!debug && !verbose) printf("%-61s\r", PVname); */
-		if (debug) printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n",
+		if (debug>3) printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n",
 				PVname, (int)strlen(value_string), value_string);
 		if (n<3) *value_string = 0;
 		if (strlen(PVname) >= PVNAME_STRINGSZ) {
@@ -125,7 +125,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 			}
 			numPVs++;
 			field_type = ca_field_type(chid);
-			if (debug) printf("'%s' native field_type=%d\n", PVname, field_type);
+			if (debug>3) printf("'%s' native field_type=%d\n", PVname, field_type);
 			is_long_string = (field_type==DBF_CHAR) && (PVname[strlen(PVname)-1]=='$');
 			/* If DBF_STRING will work, use it. */
 			if (field_type!=DBF_FLOAT && field_type!=DBF_DOUBLE && field_type!=DBF_ENUM)
@@ -136,13 +136,13 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 			is_scalar_in_file = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
 			is_scalar = is_scalar_in_file;
 			if (element_count > 1) is_scalar = 0;
-			if (debug) printf("asVerify: is_scalar=%d, is_scalar_in_file=%d, is_long_string=%d\n",
+			if (debug>3) printf("asVerify: is_scalar=%d, is_scalar_in_file=%d, is_long_string=%d\n",
 				is_scalar, is_scalar_in_file, is_long_string);
 
 			/* allocate storage for CA and for reading the file */
 			storageBytes = dbr_size_n(field_type, element_count);
 			if (is_long_string) storageBytes = dbr_size_n(DBF_CHAR, element_count);
-			if (debug) printf("asVerify:type=%d,elements=%ld, storageBytes=%ld\n",
+			if (debug>3) printf("asVerify:type=%d,elements=%ld, storageBytes=%ld\n",
 					field_type, element_count, storageBytes);
 			if (alloc_CA_buffer < storageBytes) {
 				if (CA_buffer) free(CA_buffer);
@@ -158,7 +158,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 			read_buffer = CA_buffer+storageBytes;
 
 			if (!is_scalar_in_file) {
-				if (debug) printf("asVerify: calling read_array\n");
+				if (debug>3) printf("asVerify: calling read_array\n");
 				memset(read_buffer, 0, storageBytes);
 				read_array(fp, PVname, value_string, field_type, element_count, read_buffer, debug);
 			}
@@ -295,7 +295,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 					/* See if we got the whole line */
 					if (bp[strlen(bp)-1] != '\n') {
 						/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
-						if (debug) printf("did not reach end of line for long-string PV\n");
+						if (debug>3) printf("did not reach end of line for long-string PV\n");
 						bp = fgets(s, BUF_SIZE, fp);
 						n = BUF_SIZE-strlen(value_string)-1;
 						strncat(value_string, bp, n);
@@ -324,7 +324,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file) {
 						for (i=0, different=0; i<element_count; i++) {
 							j = strncmp(&svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE], MAX_STRING_SIZE);
 							different += (j != 0);
-							if (debug) printf("'%40s' != '%40s'\n", &svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE]);
+							if (debug>3) printf("'%40s' != '%40s'\n", &svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE]);
 						}
 					}
 					if (different) numDifferences++;
