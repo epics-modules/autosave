@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.1.1</h1>
+<h1 align="center">autosave v5.2</h1>
 
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC (Input-Output
@@ -506,23 +506,25 @@ file scan_settings.req P=$(P),S=scan1
 file scan_settings.req P=$(P),S=scanH
 </pre>
 
-<blockquote>(This is required only if <font color="blue">scan1</font> config
-files are to be written at run time.)</blockquote>
+<blockquote>This is required only if <font color="blue">scan1</font> config
+files are to be written at run time.</blockquote>
 
 <li>Add the following lines to <code>st.cmd</code>:
 
 <P><code>dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
 
-<blockquote>(This goes before <code>iocInit</code>.  You can disable the saving
+<blockquote>This goes before <code>iocInit</code>.  You can disable the saving
 of <font color="blue">scan1</font> config files by specifying the macro
-<code>ENABLE_SAVE=0</code>.)</blockquote>
+<code>ENABLE_SAVE=0</code>.</blockquote>
 
-<P><code>create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>")</code>
+<P><code>create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>,CONFIGMENU=1")</code>
 
-<blockquote>(This goes after <code>iocInit</code>, and is required only if you
+<blockquote>This goes after <code>iocInit</code>, and is required only if you
 intend for <font color="blue">scan1</font> config files to be written at run
 time, or if you need to have macro substitution performed on a <font
-color="blue">scan1</font> config file to be loaded.)</blockquote>
+color="blue">scan1</font> config file to be loaded.  The macro
+<code>CONFIGMENU</code> tells autosave to refrain from writing backup (.savB)
+and sequence (.sav1, .sav2, etc.) files for this save set.</blockquote>
 
 <li>Add an MEDM related-display entry to bring up a configMenu*.adl display.
 
@@ -531,6 +533,18 @@ label="scan1Menu"
 name="configMenu.adl"
 args="P=xxx:,CONFIG=<font color="blue">scan1</font>"
 </pre>
+
+<li> If all of the PVs in a configuration are being autosaved, and you want the
+current configuration name and description, and the <code>enableSave</code>
+selection also to be autosaved, add the following line to auto_settings.req:
+<pre> file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font>
+</pre>
+
+<blockquote>I'm not sure this is really a great idea, because the autosaved
+values aren't guaranteed to be the same as the values in the .cfg file.  (The
+user might have loaded a .cfg file and then made some changes, for example.) 
+But it's disconcerting for a user to reboot the ioc and not have everything come
+back just as it was, so I normally do this.</blockquote>
 
 </ol>
 </blockquote>
@@ -610,7 +624,7 @@ scan1_blank.cfg_130401-140546 was written at 2:05:46 PM on 4/1/2013.
 standard example circuits can be loaded without modification into any softGlue
 instance by specifying macros as follows:
 <br><code>
-create_manual_set("SGMenu.req","P=xxx:,CONFIG=SG,H=softGlue:")
+create_manual_set("SGMenu.req","P=xxx:,CONFIG=SG,CONFIGMENU=1,H=softGlue:")
 </code><br>
 where the macros "P" and "H" agree with their definitions in softGlue.cmd.
 
