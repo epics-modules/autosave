@@ -10,6 +10,24 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.2</h3>
+<ul>
+<li>In autosave 5.1 and 5.1.1, asVerify did not print anything if all PVs
+had the same values as in the supplied .sav file.  Now asVerify goes back to
+the original behavior, printing, for example, "0 PVs differed.  (8 PVs checked;
+0 PVs not connected)".
+
+<li>In autosave 5.1 and 5.1.1, the presence of the macro "CONFIG" anywhere in a
+request file, or in a create_xxx_set() command, told autosave to refrain from
+writing backup (".savB") and sequence (".savN") files.  This didn't work very
+well, because you generally want to include configMenu_settings.req in
+auto_settings.req, and that requires the CONFIG macro.  Now, autosave will
+refrain from backups and sequence files if the macro CONFIGMENU is defined
+with any value. 
+
+</ul>
+
+
 <h3>5.1.1</h3>
 <ul>
 <li>Declare pass0List and pass1List extern in save_restore.h
