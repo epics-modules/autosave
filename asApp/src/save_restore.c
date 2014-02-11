@@ -2952,8 +2952,10 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			strncpy(plist->saveNamePV, name, 80);
 		}
 		if (macGetValue(handle, "CONFIG", name, 80) > 0) {
-			plist->do_backups = 0;
 			strncpy(plist->config, name, 80);
+		}
+		if (macGetValue(handle, "CONFIGMENU", name, 80) > 0) {
+			plist->do_backups = 0;
 		}
 		macDeleteHandle(handle);
 		if (pairs) free(pairs);
