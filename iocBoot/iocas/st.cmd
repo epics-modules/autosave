@@ -48,3 +48,10 @@ create_monitor_set("auto_settings.req",30,"P=as:")
 makeAutosaveFiles()
 create_monitor_set("info_positions.req",5,"P=as:")
 create_monitor_set("info_settings.req",30,"P=as:")
+
+# configMenu example
+# Note that the request file MUST be named $(CONFIG)Menu.req
+# If the macro CONFIGMENU is defined with any value, backup (".savB") and
+# sequence files (".savN") will not be written.  We don't want these for
+# configMenu.
+create_manual_set("scan1Menu.req","P=xxxL:,CONFIG=scan1,CONFIGMENU=1")
