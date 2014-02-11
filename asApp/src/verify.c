@@ -386,7 +386,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 	if (CA_buffer) free(CA_buffer);
 	fclose(fp);
 
-	if (verbose) printf("%d PV%sdiffered.  (%d PV%schecked; %d PV%snot connected)\n",
+	printf("%d PV%sdiffered.  (%d PV%schecked; %d PV%snot connected)\n",
 		numDifferences, numDifferences==1?" ":"s ", numPVs, numPVs==1?" ":"s ",
 		numPVsNotConnected, numPVsNotConnected==1?" ":"s ");
 
