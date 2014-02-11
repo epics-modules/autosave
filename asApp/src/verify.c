@@ -29,6 +29,7 @@ printf("    =============================\n"); wrote_head=1;}
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count,
 	char *read_buffer, int debug);
 
+/* verbose==-1 means don't say anything unless there's a problem. */
 long asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
 	float	*pfvalue, *pf_read;
 	double	*pdvalue, *pd_read, diff, max_diff=0.;
@@ -71,7 +72,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 		if (strncmp(s, "<END>", 5) == 0) file_ok = 1;
 	}
 	if (status || !file_ok) {
-		if (verbose) printf("asVerify: Can't find <END> marker.  File may be bad.\n");
+		if (verbose>0) printf("asVerify: Can't find <END> marker.  File may be bad.\n");
 		if (write_restore_file) fprintf(fr,"# # # Could not find end marker in original .sav file.  File may be bad.\n");
 	}
 	status = fseek(fp, 0, SEEK_SET); /* file is ok.  go to beginning */
@@ -104,7 +105,6 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 		}
 		/* NOTE value_string must have room for nearly  BUF_SIZE characters */
 		n = sscanf(bp,"%80s%c%[^\n\r]", PVname, &c, value_string);
-		/* if (!debug && !verbose) printf("%-61s\r", PVname); */
 		if (debug>3) printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n",
 				PVname, (int)strlen(value_string), value_string);
 		if (n<3) *value_string = 0;
@@ -181,7 +181,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 						}
 					}
 					if (different) numDifferences++;
-					if (different || verbose) {
+					if (different || (verbose>0)) {
 						WRITE_HEADER;
 						if (is_scalar) {
 							printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, (float)(atof(value_string)), *pfvalue);
@@ -224,7 +224,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 						}
 					}
 					if (different) numDifferences++;
-					if (different || verbose) {
+					if (different || (verbose>0)) {
 						WRITE_HEADER;
 						if (is_scalar) {
 							printf("%s%-25s %-25f %f\n", different?"*** ":"    ", PVname, atof(value_string), *pdvalue);
@@ -265,7 +265,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 						}
 					}
 					if (different) numDifferences++;
-					if (different || verbose) {
+					 if (different || (verbose>0)) {
 						WRITE_HEADER;
 						if (is_scalar) {
 							printf("%s%-25s %-25d %d\n", different?"*** ":"    ", PVname, atoi(value_string), *penum_value);
@@ -328,7 +328,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 						}
 					}
 					if (different) numDifferences++;
-					if (different || verbose) {
+					if (different || (verbose>0)) {
 						WRITE_HEADER;
 						if (is_scalar || is_long_string) {
 							nspace = 24-strlen(value_string); if (nspace < 1) nspace = 1;
@@ -386,7 +386,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 	if (CA_buffer) free(CA_buffer);
 	fclose(fp);
 
-	printf("%d PV%sdiffered.  (%d PV%schecked; %d PV%snot connected)\n",
+	if (verbose >= 0) printf("%d PV%sdiffered.  (%d PV%schecked; %d PV%snot connected)\n",
 		numDifferences, numDifferences==1?" ":"s ", numPVs, numPVs==1?" ":"s ",
 		numPVsNotConnected, numPVsNotConnected==1?" ":"s ");
 
