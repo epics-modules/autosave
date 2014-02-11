@@ -1098,7 +1098,7 @@ STATIC int save_restore(void)
 				sprintf(SR_recentlyStr, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				if (status == 0) {
 					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
-					status = asVerify(fullPath, 0, save_restoreDebug, 0, "");
+					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
@@ -1166,7 +1166,7 @@ STATIC int save_restore(void)
 				unlockList();
 				if (status == 0) {
 					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
-					status = asVerify(fullPath, 0, save_restoreDebug, 0, "");
+					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
