@@ -21,7 +21,7 @@
 
 #define FSMALL 1.e-6
 #define DSMALL 1.e-8
-#define	ASVERSION "asVerify R5.1"
+#define	ASVERSION "asVerify R5.3"
 
 #define WRITE_HEADER if (!wrote_head) {printf("    PVname saved_value live_value\n"); \
 printf("    =============================\n"); wrote_head=1;}
