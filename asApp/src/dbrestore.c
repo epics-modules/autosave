@@ -96,8 +96,6 @@
 #define LT_EPICSBASE(v,r,l) ((EPICS_VERSION<=(v)) && (EPICS_REVISION<=(r)) && (EPICS_MODIFICATION<(l)))
 #define GE_EPICSBASE(v,r,l) ((EPICS_VERSION>=(v)) && (EPICS_REVISION>=(r)) && (EPICS_MODIFICATION>=(l)))
 
-STATIC char 	*RESTORE_VERSION = VERSION;
-
 int restoreFileListsInitialized=0;
 
 ELLLIST pass0List;
@@ -465,7 +463,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			if (save_restoreDebug >= 10) {
 				errlogPrintf("dbrestore:SR_array_restore: looking for element[%ld] \n", num_read);
 			}
-			while ((*bp != ELEMENT_BEGIN) && !end_mark_found && !end_of_file) {
+			/* If truncated-file detector (checkFile) fails, test for end of file before
+			 * using *bp */
+			while (!end_mark_found && !end_of_file && (*bp != ELEMENT_BEGIN)) {
 				if (save_restoreDebug >= 12) {
 					errlogPrintf("dbrestore:SR_array_restore: ...buffer contains '%s'\n", bp);
 				}
@@ -720,7 +720,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	struct restoreFileListItem *pLI;
 
 	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
-	printf("reboot_restore (v%s): entry for file '%s'\n", RESTORE_VERSION, filename);
+	printf("reboot_restore: entry for file '%s'\n", filename);
 	/* initialize database access routines */
 	if (!pdbbase) {
 		errlogPrintf("reboot_restore: No Database Loaded\n");
@@ -1015,6 +1015,8 @@ FILE *checkFile(const char *file)
 	char datetime[32];
 	int status;
 
+	if (save_restoreDebug >= 2) printf("checkFile: entry\n");
+
 	if ((inp_fd = fopen(file, "r")) == NULL) {
 		errlogPrintf("save_restore: Can't open file '%s'.\n", file);
 		return(0);
@@ -1022,7 +1024,8 @@ FILE *checkFile(const char *file)
 
 	/* Get the version number of the code that wrote the file */
 	fgets(tmpstr, 29, inp_fd);
-	versionstr = strchr(tmpstr,(int)'V');
+	versionstr = strchr(tmpstr,(int)'R');
+	if (!versionstr) versionstr = strchr(tmpstr,(int)'V');
 	if (!versionstr) {
 		/* file has no version number */
 		status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
@@ -1033,6 +1036,7 @@ FILE *checkFile(const char *file)
 		version = atof(versionstr+1);
 	else
 		version = 0;
+	if (save_restoreDebug >= 2) printf("checkFile: version=%f\n", version);
 
 	/* <END> check started in v1.8 */
 	if (version < 1.8) {
@@ -1044,6 +1048,7 @@ FILE *checkFile(const char *file)
 	status = fseek(inp_fd, -6, SEEK_END);
 	if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 	fgets(tmpstr, 6, inp_fd);
+	if (save_restoreDebug >= 5) printf("checkFile: files ends with '%s'\n", tmpstr);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
 		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
 		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
@@ -1053,6 +1058,7 @@ FILE *checkFile(const char *file)
 	status = fseek(inp_fd, -7, SEEK_END);
 	if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
 	fgets(tmpstr, 7, inp_fd);
+	if (save_restoreDebug >= 5) printf("checkFile: files ends with '%s'\n", tmpstr);
 	if (strncmp(tmpstr, "<END>", 5) == 0) {
 		status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
 		if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
@@ -1086,6 +1092,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 	*status = 0;	/* presume success */
 	strncpy(file, fname, PATH_SIZE);
 	inp_fd = checkFile(file);
+	if (save_restoreDebug >=1) printf("fopen_and_check: checkFile returned %p\n", inp_fd);
 	if (inp_fd) return(inp_fd);
 
 	/* Still here?  Try the backup file. */
