@@ -129,7 +129,7 @@
  *                Report failed connections to PV's at connect time.
  *                Allow embedded '.' in save-file name.
  */
-#define		SRVERSION "autosave R5.1"
+#define		SRVERSION "autosave R5.3"
 
 #include	<stdio.h>
 #include	<errno.h>
