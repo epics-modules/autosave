@@ -10,6 +10,15 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.3</h3>
+<ul>
+
+<li>Beginning with R5.0, autosave failed to detect and reject a truncated .sav
+file, and would segfault if the file was truncated in the middle of an array. 
+Thanks to Jon Thompson (Diamond) for reporting the problem.
+
+</ul>
+
 <h3>5.2</h3>
 <ul>
 <li>In autosave 5.1 and 5.1.1, asVerify did not print anything if all PVs
