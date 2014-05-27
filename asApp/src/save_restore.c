@@ -558,11 +558,14 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 	DIR *pdir=0;
 	FILE *fd;
 	struct dirent *pdirent=0;
-	char thisname[FN_LEN], filename[FN_LEN], *pchar, *p_char, fullpath[NFS_PATH_LEN];
-	char buffer[BUF_SIZE], *bp, *bp1;
+	char thisname[FN_LEN], filename[FN_LEN], *pchar, fullpath[NFS_PATH_LEN];
+	char buffer[BUF_SIZE], *bp, *bp1, config_underscore[FN_LEN];
 
 	if (names == NULL) return(-1);
-	if (save_restoreDebug) printf("findConfigFiles: config='%s'\n", config);
+	strncpy(config_underscore, config, FN_LEN-2);
+	strcat(config_underscore, "_");
+	if (save_restoreDebug) printf("findConfigFiles: config='%s', config_underscore=%s\n",
+		config, config_underscore);
 	for (i=0; i<num; i++) {
 		names[i][0] = '\0';
 		if (descriptions) descriptions[i][0] = '\0';
@@ -573,17 +576,17 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 		if (save_restoreDebug) printf("findConfigFiles: opendir('%s') succeeded.\n", saveRestoreFilePath);
 		for (i=0; i<num && (pdirent=readdir(pdir)); ) {
 			if (save_restoreDebug>1) printf("findConfigFiles: checking '%s'.\n", pdirent->d_name);
-			if (strncmp(config, pdirent->d_name, strlen(config)) == 0) {
+			if (strncmp(config_underscore, pdirent->d_name, strlen(config_underscore)) == 0) {
 				strncpy(filename, pdirent->d_name, FN_LEN-1);
 				if (save_restoreDebug) printf("findConfigFiles: found '%s'\n", filename);
-				strncpy(thisname, &(filename[strlen(config)+1]), FN_LEN-1);
+				strncpy(thisname, &(filename[strlen(config_underscore)]), FN_LEN-1);
 				if (save_restoreDebug) printf("findConfigFiles: searching '%s' for .cfg\n", thisname);
-				pchar = strstr(thisname, ".cfg");
-				p_char = strstr(thisname, ".cfg_"); /* Don't include backup copies */
-				if (pchar && !p_char) {
+				/* require that file end with ".cfg" */
+				pchar = strstr(&thisname[strlen(thisname)-strlen(".cfg")], ".cfg");
+				if (pchar) {
 					*pchar = '\0';
 					strncpy(names[i], thisname, len-1);
-					if (save_restoreDebug) printf("findConfigFiles: found config '%s'\n", names[i]);
+					if (save_restoreDebug) printf("findConfigFiles: found config file '%s'\n", names[i]);
 					makeNfsPath(fullpath, saveRestoreFilePath, filename);
 					if ((fd = fopen(fullpath, "r"))) {
 						if (save_restoreDebug) printf("findConfigFiles: searching '%s' for description\n", fullpath);
