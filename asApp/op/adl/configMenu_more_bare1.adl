@@ -5,10 +5,10 @@ file {
 }
 display {
 	object {
-		x=875
-		y=100
+		x=1146
+		y=310
 		width=240
-		height=40
+		height=43
 	}
 	clr=14
 	bclr=3
@@ -161,5 +161,24 @@ composite {
 	"dynamic attribute" {
 		vis="if zero"
 		chan="$(P)$(CONFIG)Menu:disable"
+	}
+}
+polyline {
+	object {
+		x=0
+		y=41
+		width=238
+		height=2
+	}
+	"basic attribute" {
+		clr=14
+		width=2
+	}
+	"dynamic attribute" {
+		chan="$(P)$(CONFIG)Menu:loadConfig$(N).PROC"
+	}
+	points {
+		(1,42)
+		(237,42)
 	}
 }

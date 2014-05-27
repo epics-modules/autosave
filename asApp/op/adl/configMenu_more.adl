@@ -102,100 +102,100 @@ text {
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=290
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=5"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=110
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=1"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=155
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=2"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=200
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=3"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=245
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=4"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=515
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=10"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=335
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=6"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=380
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=7"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=425
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=8"
 }
 composite {
 	object {
-		x=5
+		x=0
 		y=470
-		width=230
-		height=40
+		width=239
+		height=43
 	}
 	"composite name"=""
 	"composite file"="configMenu_more_bare1.adl;P=$(P),CONFIG=$(CONFIG),N=9"
