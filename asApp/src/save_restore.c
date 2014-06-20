@@ -2756,7 +2756,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 						if (value_string[strlen(value_string)-1] == '\n') value_string[strlen(value_string)-1] = '\0';
 					}
 					/* Discard additional characters until end of line */
-					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+					while (bp[strlen(bp)-1] != '\n') bp = fgets(buffer, BUF_SIZE, inp_fd);
 					if (ca_search(PVname, &chanid) != ECA_NORMAL) {
 						errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 						num_errs++;
