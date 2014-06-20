@@ -38,13 +38,9 @@
 #include	<initHooks.h>
 #include	<epicsPrint.h>
 #include	"save_restore.h"
-#include        <iocsh.h>
-#include        <epicsExport.h>
+#include	<iocsh.h>
+#include	<epicsExport.h>
 
-extern int reboot_restore(char *filename, initHookState init_state);
-extern int set_pass0_restoreFile(char *filename);
-extern int set_pass1_restoreFile(char *filename);
-extern struct restoreList restoreFileList;
 
 /*
  * INITHOOKS
