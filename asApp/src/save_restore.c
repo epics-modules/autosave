@@ -2781,6 +2781,8 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 			if (!save_restoreIncompleteSetsOk) {
 				errlogPrintf("save_restore:do_manual_restore: aborting restore\n");
 				fclose(inp_fd);
+				if (handle) macDeleteHandle(handle);
+				if (pairs) free(pairs);
 				strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
 				return(ERROR);
 			}
