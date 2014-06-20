@@ -1,6 +1,7 @@
 /* save_restore.h */
 
 #include <ellLib.h> /* pass0List, pass1List */
+#include <initHooks.h>
 
 #define STATIC_VARS 0
 #define DEBUG 1
@@ -62,6 +63,7 @@ struct restoreFileListItem {
 	char *filename;
 	long restoreStatus;
 	char *restoreStatusStr;
+	char *macrostring;
 };
 
 extern ELLLIST pass0List;
@@ -95,6 +97,10 @@ extern int	save_restoreNFSOK;
 extern int	save_restoreIoErrors;
 extern volatile int	save_restoreRemountThreshold;
 
+extern int reboot_restore(char *filename, initHookState init_state);
+extern int set_pass0_restoreFile(char *filename, char *macrostring);
+extern int set_pass1_restoreFile(char *filename, char *macrostring);
+extern struct restoreList restoreFileList;
 
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
 #define strNcpy(dest, src, N) {			\
