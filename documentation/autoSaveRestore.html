@@ -10,6 +10,24 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave v5.3</h1>
 
+<h2>Table of Contents</h2>
+<ul>
+  <li><a href="#Overview">Overview</a></li>
+  <li><a href="#Important nuances">Important nuances</a></li>
+  <li><a href="#How to use autosave">How to use autosave</a></li>
+  <li><a href="#asVerify">asVerify</a></li>
+  <li><a href="#configMenu">configMenu</a></li>
+  <li><a href="#About save files">About save files</a></li>
+  <li><a href="#Module contents">Module contents</a></li>
+  <li><a href="#User-callable functions">User-callable functions</a></li>
+  <li><a href="#Example of use">Example of use</a></li>
+</ul>
+
+<a name="Overview"></a>
+<hr>
+<h2>Overview</h2>
+<hr>
+
 Autosave automatically saves the values of EPICS process variables (PVs) to
 files on a server, and restores those values when the IOC (Input-Output
 Controller &mdash; the business end of EPICS) is rebooted.  The original author
@@ -47,8 +65,9 @@ PV values).  configMenu is roughly comparable to the EPICS Backup and Restore
 Tool, BURT, but it uses autosave files, and is driven by EPICS PVs, so it can be
 used manually, by software clients, and by other IOC code.
 
+<a name="Important nuances"></a>
 <hr>
-<h2> Important nuances </h2>
+<h2>Important nuances</h2>
 <hr>
 
 <ul>
@@ -97,6 +116,7 @@ individual PVs, only for entire files of PVs.
 </ul>
 
 
+<a name="How to use autosave"></a>
 <hr>
 <h2>How to use autosave</h2>
 <hr>
@@ -112,9 +132,7 @@ files in that module are the following:
 <dt>xxx/configure/RELEASE
 <dd>look for "AUTOSAVE"
 <dt>xxx/xxxApp/src/Makefile
-<dd>look for "autosave"
-<dt>xxx/xxxApp/src/xxxCommonInclude.dbd
-<dd>look for "asSupport.dbd"
+<dd>look for "autosave" and "asSupport.dbd"
 <dt>xxx/iocBoot/iocvxWorks/save_restore.cmd
 <dd>the whole file
 <dt>xxx/iocBoot/iocvxWorks/auto_positions.req
@@ -231,8 +249,9 @@ Use NFS, preferably as described above, or by including an
 <code>nfsMount()</code> command in your startup script.  Save_restore is only
 tested with NFS, and probably will not work with vxWorks' netDrv .
 
-<P>When autosave runs under operating systems other than vxWorks, it simply uses
-whatever mount the operating system, or a system administrator, has provided.
+<P>When autosave runs under operating systems other than vxWorks and RTEMS, it
+simply uses whatever mount the operating system, or a system administrator, has
+provided.
 
 <h4>6. Set save-file path (optional, though this is the intended and most common
 use)</h4>
@@ -293,7 +312,7 @@ zero.  If the value from hardware is nonzero, it is used instead of the
 restored value.
 <li><P>Arrays cannot be restored during pass 0. 
 
-<li><P>Scalar PV's which have type DBF_NOACCESS in the .dbd file, and are set
+<li><P>Scalar PV's that have type DBF_NOACCESS in the .dbd file, and are set
 to some other DBF type during record initialization, cannot be restored during
 pass 0. 
 
@@ -426,6 +445,7 @@ Under vxWorks, you can avoid this by putting a
 </pre>
 before <code>create_monitor_set()</code>.
 
+<a name="asVerify"></a>
 <hr>
 <h2>asVerify</h2>
 <hr>
@@ -472,6 +492,7 @@ that occur in a .req file.  (It will look for a PV named 'file'.)
 any PV names contained in the file, but it cannot parse the "file" command,
 perform macro substitutions, or include other request files.
 
+<a name="configMenu"></a>
 <hr>
 <h2>configMenu</h2>
 <hr>
@@ -618,7 +639,7 @@ save_restoreSet_CAReconnect(1)
 
 <li>When configMenu overwrites an existing .cfg file, it makes a backup copy
 of the current version, named <i>filename</i>_YYMMDD-HHMMSS.  For example:
-scan1_blank.cfg_130401-140546 was written at 2:05:46 PM on 4/1/2013.
+scan1_blank.cfg_130401-140546 was written at 2:05:46 PM on April 1, 2013.
 
 <li>You can load .cfg files that contain macros.  For example, softGlue
 standard example circuits can be loaded without modification into any softGlue
@@ -643,6 +664,7 @@ One solution is to modify the board-support package to use nfs2Drv.
 
 </ol>
 
+<a name="About save files"></a>
 <hr>
 <h2>About save files</h2>
 <hr>
@@ -718,8 +740,9 @@ the save file was successfully written.
 
 <P>You can comment out lines in a .sav file by beginning them with '#'.
 
+<a name="Module contents"></a>
 <hr>
-<h2> Module contents</h2>
+<h2>Module contents</h2>
 <hr>
 
 <h3>asApp/src</h3>
@@ -788,6 +811,7 @@ SR_X_Status.adl
 <!-------------------------------------------------------------------------------------->
 <!-------------------------------------------------------------------------------------->
 <!-------------------------------------------------------------------------------------->
+<a name="User-callable functions"></a>
 <hr>
 <h2>User-callable functions</h2>
 <hr>
@@ -1118,6 +1142,7 @@ void *puser);</code>
 
 </dl>
 
+<a name="Example of use"></a>
 <hr>
 <h2>Example of use</h2>
 <hr>
