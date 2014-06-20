@@ -86,6 +86,7 @@
 #include	"save_restore.h"
 #include	<epicsExport.h>
 #include	<special.h>
+#include	<macLib.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -135,12 +136,13 @@ void dbrestoreShow(void)
 
 	maybeInitRestoreFileLists();
 
-	printf("  '     filename     ' -  status  - 'message'\n");
+	printf("  '     filename     ' -  status  - 'message' - 'macro string'\n");
 	printf("  pass 0:\n");
 	pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
 	while (pLI) {
-		printf("  '%s' - %s - '%s'\n", pLI->filename,
-			SR_STATUS_STR[pLI->restoreStatus], pLI->restoreStatusStr);
+		printf("  '%s' - %s - '%s' - '%s'\n", pLI->filename,
+			SR_STATUS_STR[pLI->restoreStatus], pLI->restoreStatusStr,
+			pLI->macrostring ? pLI->macrostring : "None");
 		pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 	}
 
@@ -704,6 +706,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		PVname[81]; /* Must be greater than max field width ("%80s") in the sscanf format below */
 	char		bu_filename[PATH_SIZE+1], fname[PATH_SIZE+1] = "";
 	char		buffer[BUF_SIZE], *bp;
+	char		ebuffer[BUF_SIZE];
 	char		value_string[BUF_SIZE];
 	char		datetime[32];
 	char		c;
@@ -718,6 +721,10 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		realName[64];	/* name without trailing '$' */
 	int			is_long_string;
 	struct restoreFileListItem *pLI;
+	/* macrostring */
+	MAC_HANDLE	*handle = NULL;
+	char		**pairs = NULL;
+	char		*macrostring = NULL;
 
 	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
 	printf("reboot_restore: entry for file '%s'\n", filename);
@@ -741,6 +748,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		if (pLI->filename && (strcmp(filename, pLI->filename) == 0)) {
 			pStatusVal = &(pLI->restoreStatus);
 			statusStr = pLI->restoreStatusStr;
+			macrostring = pLI->macrostring;
 			break;
 		}
 		pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
@@ -755,7 +763,11 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* open file */
-	makeNfsPath(fname, saveRestoreFilePath, filename);
+	if (filename[0] == '/') {
+		strncpy(fname, filename, PATH_SIZE);
+	} else {
+		makeNfsPath(fname, saveRestoreFilePath, filename);
+	}
 	errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n",
 		fname, (int)init_state, pass ? "after" : "before");
 	if ((inp_fd = fopen_and_check(fname, &status)) == NULL) {
@@ -770,6 +782,20 @@ int reboot_restore(char *filename, initHookState init_state)
 		if (statusStr) strcpy(statusStr, "Bad .sav(B) files; used seq. backup");
 	}
 
+	/* Prepare to use macro substitution */
+	if (macrostring && macrostring[0]) {
+		macCreateHandle(&handle, NULL);
+		if (handle) {
+			macParseDefns(handle, macrostring, &pairs);
+			if (pairs) macInstallMacros(handle, pairs);
+			if (save_restoreDebug >= 5) {
+				errlogPrintf("save_restore:reboot_restore: Current macro definitions:\n");
+				macReportMacros(handle);
+				errlogPrintf("save_restore:reboot_restore: --------------------------\n");
+			}
+		}
+	}
+
 	(void)fgets(buffer, BUF_SIZE, inp_fd); /* discard header line */
 	if (save_restoreDebug >= 1) {
 		errlogPrintf("dbrestore:reboot_restore: header line '%s'\n", buffer);
@@ -780,6 +806,12 @@ int reboot_restore(char *filename, initHookState init_state)
 	/* restore from data file */
 	num_errors = 0;
 	while ((bp=fgets(buffer, BUF_SIZE, inp_fd))) {
+		if (handle && pairs) {
+			ebuffer[0] = '\0';
+			macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
+			bp = ebuffer;
+		}
+
 		/*
 		 * get PV_name, one space character, value
 		 * (value may be a string with leading whitespace; it may be
@@ -835,13 +867,18 @@ int reboot_restore(char *filename, initHookState init_state)
 					/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
 					if (save_restoreDebug > 9) printf("reboot_restore: did not reach end of line for long-string PV\n");
 					bp = fgets(buffer, BUF_SIZE, inp_fd);
+					if (handle && pairs) {
+						ebuffer[0] = '\0';
+						macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
+						bp = ebuffer;
+					}
 					n = BUF_SIZE-strlen(value_string)-1;
 					strncat(value_string, bp, n);
 					/* we don't want that '\n' in the string */
 					if (value_string[strlen(value_string)-1] == '\n') value_string[strlen(value_string)-1] = '\0';
 				}
-				/* Discard additional characters until end of line */
-				while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+				/* We aren't prepared to handle more than BUF_SIZE characters.  Discard additional characters until end of line */
+				while (bp[strlen(bp)-1] != '\n') bp = fgets(buffer, BUF_SIZE, inp_fd);
 			}
 
 			found_field = 1;
@@ -882,6 +919,8 @@ int reboot_restore(char *filename, initHookState init_state)
 			if (!save_restoreIncompleteSetsOk) {
 				errlogPrintf("aborting restore\n");
 				fclose(inp_fd);
+				if (handle) macDeleteHandle(handle);
+				if (pairs) free(pairs);
 				dbFinishEntry(pdbentry);
 				if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
 				if (statusStr) strcpy(statusStr, "restore aborted");
@@ -893,6 +932,8 @@ int reboot_restore(char *filename, initHookState init_state)
 		}
 	}
 	fclose(inp_fd);
+	if (handle) macDeleteHandle(handle);
+	if (pairs) free(pairs);
 	dbFinishEntry(pdbentry);
 
 	/* If this is the second pass for a restore file, don't write backup file again.*/
@@ -907,6 +948,9 @@ int reboot_restore(char *filename, initHookState init_state)
 			pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
 		}
 	}
+
+	/* For now, don't write boot-time backups for files specified with full path. */
+	if (filename[0] == '/') write_backup = 0;
 
 	if (write_backup) {
 		/* write  backup file*/
@@ -953,7 +997,7 @@ int reboot_restore(char *filename, initHookState init_state)
 }
 
 
-static int set_restoreFile(int pass, char *filename)
+static int set_restoreFile(int pass, char *filename, char *macrostring)
 {
 	struct restoreFileListItem *pLI;
 
@@ -982,6 +1026,12 @@ static int set_restoreFile(int pass, char *filename)
 	}
 	strcpy(pLI->restoreStatusStr, "Unknown, probably failed");
 
+	if (macrostring && macrostring[0]) {
+		pLI->macrostring = (char *)calloc(strlen(macrostring),sizeof(char));
+		strcpy(pLI->macrostring, macrostring);
+	}
+
+
 	pLI->restoreStatus = SR_STATUS_INIT;
 
 	if (pass==1) {
@@ -992,14 +1042,14 @@ static int set_restoreFile(int pass, char *filename)
 	return(OK);
 }
 
-int set_pass0_restoreFile(char *filename)
+int set_pass0_restoreFile(char *filename, char *macrostring)
 {
-	return(set_restoreFile(0, filename));
+	return(set_restoreFile(0, filename, macrostring));
 }
 
-int set_pass1_restoreFile(char *filename)
+int set_pass1_restoreFile(char *filename, char *macrostring)
 {
-	return(set_restoreFile(1, filename));
+	return(set_restoreFile(1, filename, macrostring));
 }
 
 /* file is ok if it ends in either of the two following ways:
@@ -1381,19 +1431,20 @@ void makeAutosaveFiles() {
 }
 
 /* set_pass0_restoreFile() */
-STATIC const iocshArg set_passN_Arg = {"file",iocshArgString};
-STATIC const iocshArg * const set_passN_Args[1] = {&set_passN_Arg};
-STATIC const iocshFuncDef set_pass0_FuncDef = {"set_pass0_restoreFile",1,set_passN_Args};
+STATIC const iocshArg set_passN_Arg1 = {"file",iocshArgString};
+STATIC const iocshArg set_passN_Arg2 = {"macrostring",iocshArgString};
+STATIC const iocshArg * const set_passN_Args[2] = {&set_passN_Arg1, &set_passN_Arg2};
+STATIC const iocshFuncDef set_pass0_FuncDef = {"set_pass0_restoreFile",2,set_passN_Args};
 STATIC void set_pass0_CallFunc(const iocshArgBuf *args)
 {
-    set_pass0_restoreFile(args[0].sval);
+    set_pass0_restoreFile(args[0].sval, args[1].sval);
 }
 
 /* set_pass1_restoreFile() */
-STATIC const iocshFuncDef set_pass1_FuncDef = {"set_pass1_restoreFile",1,set_passN_Args};
+STATIC const iocshFuncDef set_pass1_FuncDef = {"set_pass1_restoreFile",2,set_passN_Args};
 STATIC void set_pass1_CallFunc(const iocshArgBuf *args)
 {
-    set_pass1_restoreFile(args[0].sval);
+    set_pass1_restoreFile(args[0].sval, args[2].sval);
 }
 
 /* void dbrestoreShow(void) */
