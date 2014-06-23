@@ -10,6 +10,32 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.4</h3>
+<ul>
+
+<li>Can now do boot-time restore from a read-only .sav file located anywhere,
+and can do macro substitution on the file contents.  This is intended to support
+a generic, default configuration for highly mobile iocs, such as those
+supporting areaDetector.
+
+<li>Fixed bug in boot-time treatment of long-string values that are longer than
+120 chars.
+
+</ul>
+
+
+<h3>5.3.1</h3>
+<ul>
+
+<li>configMenu: In building the list of .cfg files from the autosave directory,
+now require that .cfg file names begin with the config name followed by an
+underscore, and end with ".cfg".  Previously, they were only required to begin
+with the config name (so config names SG and SG2 got mixed) and contain .cfg
+without also containing .cfg_.
+
+</ul>
+
+
 <h3>5.3</h3>
 <ul>
 
