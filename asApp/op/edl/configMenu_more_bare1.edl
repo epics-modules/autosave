@@ -1,0 +1,195 @@
+4 0 0
+beginScreenProperties
+major 4
+minor 0
+release 0
+x 1146
+y 310
+w 240
+h 43
+font "helvetica-medium-r-18.0"
+ctlFont "helvetica-medium-r-8.0"
+btnFont "helvetica-medium-r-18.0"
+fgColor index 14
+bgColor index 3
+textColor index 14
+ctlFgColor1 index 30
+ctlFgColor2 index 32
+ctlBgColor1 index 34
+ctlBgColor2 index 35
+topShadowColor index 37
+botShadowColor index 44
+snapToGrid
+gridSize 5
+endScreenProperties
+
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 45
+y 0
+w 150
+h 20
+controlPv "$(P)$(CONFIG)Menu:name$(N)"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 51
+editable
+autoHeight
+format decimal
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 20
+w 230
+h 20
+controlPv "$(P)$(CONFIG)Menu:desc$(N)"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 1
+editable
+autoHeight
+format "string"
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 0
+w 35
+h 20
+
+beginGroup
+
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(P)$(CONFIG)Menu:disable)"
+visMin 0
+visMax 1
+endObjectProperties
+
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 41
+w 238
+h 2
+lineColor index 14
+fillColor index 14
+lineWidth 2
+numPoints 2 {
+xPoints  {
+0 1
+1 237
+}
+yPoints  {
+0 42
+1 42
+}
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 5
+y 0
+w 35
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:loadConfig$(N).PROC"
+pressValue "1"
+releaseValue 
+onLabel "Load"
+offLabel "Load"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 0
+w 35
+h 20
+
+beginGroup
+
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 0
+w 35
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:saveConfig$(N).PROC"
+pressValue "1"
+releaseValue 
+onLabel "Save"
+offLabel "Save"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+
+endGroup
+
+visPv "CALC\\\{(A)\}($(P)$(CONFIG)Menu:disable)"
+visMin 0
+visMax 1
+endObjectProperties
+
+
