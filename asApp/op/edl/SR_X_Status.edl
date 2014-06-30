@@ -1,12 +1,12 @@
-4 0 1
+4 0 0
 beginScreenProperties
 major 4
 minor 0
-release 1
-x 683
-y 302
-w 563
-h 191
+release 0
+x 281
+y 235
+w 400
+h 115
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-8.0"
 btnFont "helvetica-medium-r-18.0"
@@ -23,6 +23,7 @@ snapToGrid
 gridSize 5
 endScreenProperties
 
+
 # (Rectangle)
 object activeRectangleClass
 beginObjectProperties
@@ -31,8 +32,8 @@ minor 0
 release 0
 x 0
 y 0
-w 495
-h 80
+w 399
+h 56
 lineColor index 0
 fill
 fillColor index 0
@@ -43,68 +44,67 @@ endObjectProperties
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 100
-y 10
+x 40
+y -2
 w 300
-h 20
-font "helvetica-bold-r-18.0"
+h 22
+font "helvetica-medium-r-8.0"
 fontAlign "center"
 fgColor index 14
-bgColor index 0
 useDisplayBg
 value {
-  "save_restore status"
+ "save_restore status"
 }
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 170
-y 40
-w 195
-h 20
+x 120
+y 32
+w 270
+h 12
 controlPv "$(P)SR_statusStr"
-format "decimal"
-font "helvetica-medium-r-10.0"
-fgColor index 12
-bgColor index 0
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 0
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
 x 10
-y 45
+y 25
 w 100
-h 14
+h 20
 controlPv "$(P)SR_status"
-format "decimal"
-font "helvetica-bold-r-12.0"
-fgColor index 12
-bgColor index 0
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 0
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
 # (Lines)
@@ -112,22 +112,22 @@ object activeLineClass
 beginObjectProperties
 major 4
 minor 0
-release 1
+release 0
 x 0
-y 80
-w 495
-h 10
+y 58
+w 402
+h 3
 lineColor index 54
 fillColor index 54
 lineWidth 3
-numPoints 2
-xPoints {
-  0 1
-  1 495
+numPoints 2 {
+xPoints  {
+0 1
+1 400
 }
-yPoints {
-  0 83
-  1 83
+yPoints  {
+0 59
+1 59
 }
 endObjectProperties
 
@@ -136,65 +136,64 @@ object activeLineClass
 beginObjectProperties
 major 4
 minor 0
-release 1
-x 5
-y 30
-w 490
-h 15
+release 0
+x 0
+y 22
+w 402
+h 3
 lineColor index 54
 fillColor index 54
 lineWidth 3
-numPoints 2
-xPoints {
-  0 5
-  1 495
+numPoints 2 {
+xPoints  {
+0 1
+1 400
 }
-yPoints {
-  0 35
-  1 35
+yPoints  {
+0 23
+1 23
 }
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 170
-y 60
-w 175
-h 15
+x 60
+y 45
+w 270
+h 12
 controlPv "$(P)SR_recentlyStr"
-format "decimal"
-font "helvetica-medium-r-10.0"
-fgColor index 12
-bgColor index 0
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 0
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
 # (Static Text)
 object activeXTextClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 10
-y 65
+x 5
+y 45
 w 55
 h 10
-font "helvetica-bold-r-12.0"
+font "helvetica-medium-r-8.0"
 fgColor index 14
-bgColor index 0
 useDisplayBg
 value {
-  "Recently:"
+ "Recently:"
 }
 endObjectProperties
 
@@ -203,137 +202,137 @@ object activeLineClass
 beginObjectProperties
 major 4
 minor 0
-release 1
-x 430
-y 5
-w 35
-h 25
+release 0
+x 370
+y 0
+w 17
+h 20
 lineColor index 21
 fill
 fillColor index 21
 lineWidth 0
+closePolygon
+numPoints 20 {
+xPoints  {
+0 378
+1 374
+2 371
+3 370
+4 370
+5 370
+6 372
+7 375
+8 378
+9 378
+10 379
+11 382
+12 385
+13 386
+14 387
+15 387
+16 385
+17 382
+18 379
+19 378
+}
+yPoints  {
+0 20
+1 17
+2 13
+3 8
+4 4
+5 1
+6 0
+7 0
+8 2
+9 5
+10 2
+11 0
+12 0
+13 1
+14 4
+15 8
+16 13
+17 17
+18 20
+19 20
+}
 visPv "CALC\\\{(A)\}($(P)SR_heartbeat)"
 visInvert
-visMin "0"
-visMax "1"
-closePolygon
-numPoints 20
-xPoints {
-  0 446
-  1 439
-  2 432
-  3 430
-  4 430
-  5 430
-  6 434
-  7 440
-  8 446
-  9 446
-  10 449
-  11 455
-  12 461
-  13 463
-  14 465
-  15 465
-  16 461
-  17 455
-  18 449
-  19 446
-}
-yPoints {
-  0 30
-  1 26
-  2 21
-  3 15
-  4 10
-  5 6
-  6 5
-  7 5
-  8 8
-  9 11
-  10 8
-  11 5
-  12 5
-  13 6
-  14 10
-  15 15
-  16 21
-  17 26
-  18 30
-  19 30
-}
+visMin 0
+visMax 1
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
-x 170
-y 120
-w 210
-h 20
+x 120
+y 94
+w 270
+h 12
 controlPv "$(P)SR_$(N)_StatusStr"
-format "decimal"
-font "helvetica-medium-r-10.0"
-fgColor index 12
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 54
 bgColor index 2
 autoHeight
+format decimal
 nullColor index 32
-smartRefresh
-fastUpdate
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
 x 10
-y 126
-w 145
-h 14
+y 88
+w 100
+h 20
 controlPv "$(P)SR_$(N)_Status"
-format "decimal"
-font "helvetica-medium-r-12.0"
-fgColor index 12
-bgColor index 3
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
 x 170
-y 90
-w 145
-h 12
+y 71
+w 150
+h 14
 controlPv "$(P)SR_$(N)_Time"
-format "decimal"
-font "helvetica-medium-r-10.0"
-fgColor index 12
-bgColor index 3
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
 # (Byte)
@@ -342,64 +341,69 @@ beginObjectProperties
 major 4
 minor 0
 release 0
-x 350
-y 90
-w 145
-h 20
+x 340
+y 73
+w 43
+h 10
 controlPv "$(P)SR_$(N)_State"
 lineColor index 14
 onColor index 14
 offColor index 3
+endian "big"
 numBits 6
+shift -1
 endObjectProperties
 
-# (Text)
+# (Text Control)
 object activeXTextDspClass
 beginObjectProperties
 major 4
-minor 1
+minor 0
 release 0
 x 10
-y 90
-w 145
-h 14
+y 68
+w 150
+h 20
 controlPv "$(P)SR_$(N)_Name"
-format "decimal"
-font "helvetica-medium-r-12.0"
-fgColor index 12
-bgColor index 3
-autoHeight
-nullColor index 32
+font "helvetica-medium-r-8.0"
 smartRefresh
 fastUpdate
+fgColor index 54
+bgColor index 3
+autoHeight
+format decimal
+nullColor index 32
 useHexPrefix
-newPos
 objType "controls"
+newPos
 endObjectProperties
 
 # (Related Display)
 object relatedDisplayClass
 beginObjectProperties
 major 4
-minor 2
+minor 0
 release 0
-x 440
-y 50
+x 335
+y 36
 w 55
-h 25
+h 22
 fgColor index 0
 bgColor index 63
 topShadowColor index 2
 botShadowColor index 12
-font "helvetica-bold-r-12.0"
+font "helvetica-medium-r-10.0"
 buttonLabel "MCTRP"
-numPvs 4
+numPvs 2
 numDsps 1
 displayFileName {
-  0 "save_restoreStatusLegend.edl"
+  0 save_restoreStatusLegend.edl
 }
 menuLabel {
-  0 "Legend"
+  0 Legend
+}
+symbols {
+  0 
 }
 endObjectProperties
 

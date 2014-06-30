@@ -22,14 +22,6 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
             <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
             </property>
-            <property name="geometry">
-                <rect>
-                    <x>45</x>
-                    <y>95</y>
-                    <width>150</width>
-                    <height>13</height>
-                </rect>
-            </property>
             <property name="foreground">
                 <color alpha="255">
                     <red>0</red>
@@ -48,27 +40,35 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 <string>config Name</string>
             </property>
             <property name="fontScaleMode">
-                <enum>ESimpleLabel::Height</enum>
+                <enum>ESimpleLabel::WidthAndHeight</enum>
             </property>
             <property name="alignment">
                 <set>Qt::AlignAbsolute|Qt::AlignHCenter|Qt::AlignVCenter</set>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>45</x>
+                    <y>95</y>
+                    <width>150</width>
+                    <height>13</height>
+                </rect>
             </property>
         </widget>
         <widget class="caInclude" name="caInclude_0">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>290</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>290</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -81,18 +81,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_1">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>110</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>110</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -105,18 +105,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_2">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>155</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>155</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -129,18 +129,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_3">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>200</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>200</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -153,18 +153,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_4">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>245</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>245</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -177,18 +177,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_5">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>515</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>515</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -201,18 +201,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_6">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>335</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>335</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -225,18 +225,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_7">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>380</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>380</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -249,18 +249,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_8">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>425</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>425</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -273,18 +273,18 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
         <widget class="caInclude" name="caInclude_9">
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>470</y>
                     <width>242</width>
-                    <height>42</height>
+                    <height>45</height>
                 </rect>
             </property>
             <property name="geometry">
                 <rect>
-                    <x>5</x>
+                    <x>0</x>
                     <y>470</y>
                     <width>240</width>
-                    <height>40</height>
+                    <height>43</height>
                 </rect>
             </property>
             <property name="filename">
@@ -340,14 +340,6 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
             <property name="frameShape">
                 <enum>QFrame::NoFrame</enum>
             </property>
-            <property name="geometry">
-                <rect>
-                    <x>5</x>
-                    <y>565</y>
-                    <width>80</width>
-                    <height>14</height>
-                </rect>
-            </property>
             <property name="foreground">
                 <color alpha="255">
                     <red>0</red>
@@ -366,7 +358,15 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 <string>permit save?</string>
             </property>
             <property name="fontScaleMode">
-                <enum>ESimpleLabel::Height</enum>
+                <enum>ESimpleLabel::WidthAndHeight</enum>
+            </property>
+            <property name="geometry">
+                <rect>
+                    <x>5</x>
+                    <y>565</y>
+                    <width>100</width>
+                    <height>14</height>
+                </rect>
             </property>
             <property name="alignment">
                 <set>Qt::AlignAbsolute|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -436,7 +436,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </rect>
             </property>
             <property name="fontScaleMode">
-                <enum>caLineEdit::Height</enum>
+                <enum>caLineEdit::WidthAndHeight</enum>
             </property>
             <property name="channel">
                 <string>$(P)$(CONFIG)Menu:busy</string>
@@ -490,7 +490,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </rect>
             </property>
             <property name="fontScaleMode">
-                <enum>EPushButton::Height</enum>
+                <enum>EPushButton::WidthAndHeight</enum>
             </property>
             <property name="channel">
                 <string>$(P)$(CONFIG)Menu:menuName.PROC</string>

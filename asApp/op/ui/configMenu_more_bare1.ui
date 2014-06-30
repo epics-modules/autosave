@@ -4,10 +4,10 @@
 <widget class="QMainWindow" name="MainWindow">
     <property name="geometry">
         <rect>
-            <x>875</x>
-            <y>100</y>
+            <x>1146</x>
+            <y>310</y>
             <width>240</width>
-            <height>40</height>
+            <height>43</height>
         </rect>
     </property>
     <property name="styleSheet">
@@ -28,7 +28,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </rect>
             </property>
             <property name="fontScaleMode">
-                <enum>caLineEdit::Height</enum>
+                <enum>caLineEdit::WidthAndHeight</enum>
             </property>
             <property name="channel">
                 <string>$(P)$(CONFIG)Menu:name$(N)</string>
@@ -79,7 +79,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </rect>
             </property>
             <property name="fontScaleMode">
-                <enum>EPushButton::Height</enum>
+                <enum>EPushButton::WidthAndHeight</enum>
             </property>
             <property name="channel">
                 <string>$(P)$(CONFIG)Menu:loadConfig$(N).PROC</string>
@@ -118,7 +118,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 </rect>
             </property>
             <property name="fontScaleMode">
-                <enum>caLineEdit::Height</enum>
+                <enum>caLineEdit::WidthAndHeight</enum>
             </property>
             <property name="channel">
                 <string>$(P)$(CONFIG)Menu:desc$(N)</string>
@@ -178,7 +178,7 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                     </rect>
                 </property>
                 <property name="fontScaleMode">
-                    <enum>EPushButton::Height</enum>
+                    <enum>EPushButton::WidthAndHeight</enum>
                 </property>
                 <property name="channel">
                     <string>$(P)$(CONFIG)Menu:saveConfig$(N).PROC</string>
@@ -214,7 +214,47 @@ QWidget#centralWidget {background: rgba(200, 200, 200, 255);}
                 <string>$(P)$(CONFIG)Menu:disable</string>
             </property>
         </widget>
+        <widget class="caPolyLine" name="caPolyLine_0">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>41</y>
+                    <width>238</width>
+                    <height>2</height>
+                </rect>
+            </property>
+            <property name="lineSize">
+                <number>2</number>
+            </property>
+            <property name="foreground">
+                <color alpha="255">
+                    <red>0</red>
+                    <green>0</green>
+                    <blue>0</blue>
+                </color>
+            </property>
+            <property name="fillstyle">
+                <enum>Filled</enum>
+            </property>
+            <property name="lineColor">
+                <color alpha="255">
+                    <red>0</red>
+                    <green>0</green>
+                    <blue>0</blue>
+                </color>
+            </property>
+            <property name="linestyle">
+                <enum>Solid</enum>
+            </property>
+            <property name="channel">
+                <string>$(P)$(CONFIG)Menu:loadConfig$(N).PROC</string>
+            </property>
+            <property name="xyPairs">
+                <string>1,1;237,1;</string>
+            </property>
+        </widget>
         <zorder>caFrame_0</zorder>
+        <zorder>caPolyLine_0</zorder>
         <zorder>caTextEntry_0</zorder>
         <zorder>caMessageButton_0</zorder>
         <zorder>caTextEntry_1</zorder>

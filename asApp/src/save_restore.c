@@ -1839,7 +1839,7 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 			}
 			if (write_it(backup_file, plist) == ERROR) {
 				printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
-				errlogPrintf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
+				printf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
 				printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 				plist->status = SR_STATUS_FAIL;
 				strcpy(plist->statusStr, "Can't write .savB file");
