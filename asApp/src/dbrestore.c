@@ -279,6 +279,10 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 				/* record initilization may have changed the field type */
 				field_type = paddr->field_type;
 				if (field_type <= DBF_MENU) {
+					if (save_restoreDebug > 1) {
+						errlogPrintf("dbrestore:scalar_restore: calling dbFastPutConvertRoutine for field (%s), type %d, with value '%s'.\n",
+							PVname, field_type, value_string);
+					}
 					status = (*dbFastPutConvertRoutine[DBR_STRING][field_type])
 						(value_string, paddr->pfield, paddr);
 					if (status) {
@@ -455,7 +459,11 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 	if (save_restoreDebug >= 11) {
 		errlogPrintf("dbrestore:SR_array_restore: parsing buffer '%s'\n", value_string);
 	}
-	if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
+
+	if (value_string==NULL || *value_string=='\0') {
+		/* nothing to write, and, because dbStatic doesn't do arrays, nothing to overwrite */
+		;
+	} else if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
 		begin_mark_found = 1;
 		if (save_restoreDebug >= 10) {
 			errlogPrintf("dbrestore:SR_array_restore: parsing array buffer '%s'\n", bp);
@@ -647,7 +655,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		if (save_restoreDebug >= 10) {
 			errlogPrintf("dbrestore:SR_array_restore: ARRAY_BEGIN wasn't found; going to next line of input file\n");
 		}
-		status = -1;
+		if (value_string && *value_string) {
+			/* there was some text there, but it wasn't an array */
+			status = -1;
+		}
 		/* just get next line, assuming it contains the next PV */
 		if (!end_of_file) {
 			if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) end_of_file = 1;
@@ -727,7 +738,6 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		*macrostring = NULL;
 
 	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
-	printf("reboot_restore: entry for file '%s'\n", filename);
 	/* initialize database access routines */
 	if (!pdbbase) {
 		errlogPrintf("reboot_restore: No Database Loaded\n");
@@ -810,6 +820,10 @@ int reboot_restore(char *filename, initHookState init_state)
 			ebuffer[0] = '\0';
 			macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
 			bp = ebuffer;
+			if (save_restoreDebug >= 1) {
+				printf("dbrestore:reboot_restore: buffer='%s'\n", buffer);
+				printf("                         ebuffer='%s'\n", ebuffer);
+			}
 		}
 
 		/*
@@ -852,12 +866,25 @@ int reboot_restore(char *filename, initHookState init_state)
 			if (strchr(PVname,'.') == 0) strcat(PVname,".VAL"); /* if no field name, add default */
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (save_restoreDebug > 9) errlogPrintf("\n");
+			if (is_scalar) {
+				long num_elements, field_size, field_type;
+				/* check the field itself, because an empty string is saved as no value at all , which would look like a scalar. */
+				SR_get_array_info(PVname, &num_elements, &field_size, &field_type);
+				if (num_elements > 1) {
+					if (save_restoreDebug >= 5) {
+						printf("reboot_restore: PV '%s' is scalar in .sav file, but has %ld elements.  Treating as array.\n",
+							PVname, num_elements);
+					}
+					is_scalar = 0;
+				}
+			}
 			if (save_restoreDebug >= 10) {
 				errlogPrintf("dbrestore:reboot_restore: Attempting to put %s '%s' to '%s'\n",
 					is_scalar?"scalar":"array", value_string, PVname);
 			}
 
 			/* dbStatic doesn't know about long-string fields (PV name with appended '$'). */
+			is_long_string = 0;
 			strcpy(realName, PVname);
 			if (realName[strlen(realName)-1] == '$') {
 				realName[strlen(realName)-1] = '\0';
@@ -871,6 +898,10 @@ int reboot_restore(char *filename, initHookState init_state)
 						ebuffer[0] = '\0';
 						macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
 						bp = ebuffer;
+						if (save_restoreDebug >= 1) {
+							printf("dbrestore:reboot_restore: buffer='%s'\n", buffer);
+							printf("                         ebuffer='%s'\n", ebuffer);
+						}
 					}
 					n = BUF_SIZE-strlen(value_string)-1;
 					strncat(value_string, bp, n);
@@ -890,7 +921,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				num_errors++; found_field = 0;
 			}
 			if (found_field) {
-				if (is_scalar) {
+				if (is_scalar || is_long_string) {
 					status = scalar_restore(pass, pdbentry, PVname, value_string);
 				} else {
 					status = SR_array_restore(pass, inp_fd, PVname, value_string, 0);
