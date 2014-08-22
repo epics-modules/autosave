@@ -461,8 +461,84 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 	}
 
 	if (value_string==NULL || *value_string=='\0') {
-		/* nothing to write, and, because dbStatic doesn't do arrays, nothing to overwrite */
-		;
+		if (save_restoreDebug >= 11) {
+			errlogPrintf("dbrestore:SR_array_restore: value_string is null or empty\n");
+		}
+		/* nothing to write; write zero or "" */
+		if (p_data) {
+			switch (field_type) {
+			case DBF_STRING:
+				strcpy(p_char, "");
+				break;
+			case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
+				p_ushort[num_read++] = (unsigned short)0;
+				break;
+			case DBF_UCHAR:
+				p_uchar[num_read++] = (unsigned char)0;
+				break;
+			case DBF_CHAR:
+				p_char[num_read++] = (char)0;
+				break;
+			case DBF_SHORT:
+				p_short[num_read++] = (short)0;
+				break;
+			case DBF_LONG:
+				p_long[num_read++] = (epicsInt32) 0;
+				break;
+			case DBF_ULONG:
+				p_ulong[num_read++] = (epicsUInt32) 0;
+				break;
+			case DBF_FLOAT:
+				p_float[num_read++] = 0;
+				break;
+			case DBF_DOUBLE:
+				p_double[num_read++] = 0;
+				break;
+			case DBF_NOACCESS:
+			default:
+				break;
+			}
+		}
+	} else if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) == NULL) {
+		if (save_restoreDebug >= 11) {
+			errlogPrintf("dbrestore:SR_array_restore: ARRAY_BEGIN not found\n");
+		}
+		/* doesn't look like array data.  just restore what we have */
+		if (p_data) {
+			switch (field_type) {
+			case DBF_STRING:
+				/* future: translate escape sequence */
+				strncpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), value_string, MAX_STRING_SIZE);
+				break;
+			case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
+				p_ushort[num_read++] = (unsigned short)atol(value_string);
+				break;
+			case DBF_UCHAR:
+				p_uchar[num_read++] = (unsigned char)atol(value_string);
+				break;
+			case DBF_CHAR:
+				p_char[num_read++] = (char)atol(value_string);
+				break;
+			case DBF_SHORT:
+				p_short[num_read++] = (short)atol(value_string);
+				break;
+			case DBF_LONG:
+				p_long[num_read++] = (epicsInt32) atol(value_string);
+				break;
+			case DBF_ULONG:
+				p_ulong[num_read++] = (epicsUInt32) strtoul(value_string,NULL,0);
+				break;
+			case DBF_FLOAT:
+				p_float[num_read++] = mySafeDoubleToFloat(atof(value_string));
+				break;
+			case DBF_DOUBLE:
+				p_double[num_read++] = atof(value_string);
+				break;
+			case DBF_NOACCESS:
+			default:
+				break;
+			}
+		}
 	} else if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
 		begin_mark_found = 1;
 		if (save_restoreDebug >= 10) {
@@ -653,15 +729,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		}
 	} else {
 		if (save_restoreDebug >= 10) {
-			errlogPrintf("dbrestore:SR_array_restore: ARRAY_BEGIN wasn't found; going to next line of input file\n");
-		}
-		if (value_string && *value_string) {
-			/* there was some text there, but it wasn't an array */
-			status = -1;
-		}
-		/* just get next line, assuming it contains the next PV */
-		if (!end_of_file) {
-			if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) end_of_file = 1;
+			errlogPrintf("dbrestore:SR_array_restore: ARRAY_BEGIN wasn't found.\n");
 		}
 	}
 	if (!status && end_of_file) status = end_of_file;
