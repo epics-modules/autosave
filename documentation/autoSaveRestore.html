@@ -235,7 +235,7 @@ request files, using one or more invocations of set_requestfile_path()
 <pre>
 	set_requestfile_path(startup, "")
 	set_requestfile_path(startup, "autosave")
-	set_requestfile_path("area_detector", "ADApp/Db")
+	set_requestfile_path(area_detector, "ADApp/Db")
 	...
 </pre>
 
@@ -501,10 +501,6 @@ examples:
     caput &lt;myStatusPV&gt; $?
         (writes number of differences found to a PV.)
 
-NOTE: For the purpose of writing a restore file, you can specify a .req
-file (or any file that contains PV names, one per line) instead of a
-.sav file.  However, this program will misunderstand any 'file' commands
-that occur in a .req file.  (It will look for a PV named 'file'.)
 </pre>
 
 <P>Note that asVerify cannot read an autosave request file; it will understand
