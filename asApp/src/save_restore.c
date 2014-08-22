@@ -2545,6 +2545,7 @@ int reload_manual_set(char * filename, char *macrostring)
 
 int fdbrestore(char *filename)
 {
+	printf("save_restore:fdbrestore:entry\n");
 	return(request_manual_restore(filename, FROM_SAVE_FILE, NULL, NULL, NULL));
 }
 
@@ -2561,6 +2562,9 @@ STATIC int request_manual_restore(char *filename, int file_type, char *macrostri
 {
 	op_msg msg;
 
+	if (save_restoreDebug >= 5) {
+		errlogPrintf("save_restore:request_manual_restore: entry\n");
+	}
 	msg.operation = (file_type==FROM_SAVE_FILE) ? op_RestoreFromSaveFile : op_RestoreFromAsciiFile;
 	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
 		printf("request_manual_restore: bad filename\n");
@@ -2622,7 +2626,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	int				n;
 	long			status, num_errs=0;
 	FILE			*inp_fd;
-	chid			chanid;
+	chid			chanid = 0;
 	char			realName[64];	/* name without trailing '$' */
 	int				is_long_string;
 	MAC_HANDLE      *handle = NULL;
@@ -2732,6 +2736,18 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 			}
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
 			if (is_scalar) {
+				long num_elements, field_size, field_type;
+				/* check the field itself, because an empty string is saved as no value at all , which would look like a scalar. */
+				SR_get_array_info(PVname, &num_elements, &field_size, &field_type);
+				if (num_elements > 1) {
+					if (save_restoreDebug >= 5) {
+						printf("save_restore:do_manual_restore: PV '%s' is scalar in .sav file, but has %ld elements.  Treating as array.\n",
+							PVname, num_elements);
+					}
+					is_scalar = 0;
+				}
+			}
+			if (is_scalar || is_long_string) {
 				if (!is_long_string) {
 					/* Discard additional characters until end of line */
 					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
@@ -2998,7 +3014,7 @@ IOCSH_ARG_ARRAY fdbrestore_Args[1] = {&fdbrestore_Arg0};
 IOCSH_FUNCDEF   fdbrestore_FuncDef = {"fdbrestore",1,fdbrestore_Args};
 static void     fdbrestore_CallFunc(const iocshArgBuf *args) {fdbrestore(args[0].sval);}
 
-/* int fdbrestoreX(char *filename); */
+/* int fdbrestoreX(char *filename, char *macrostring); */
 IOCSH_ARG       fdbrestoreX_Arg0    = {"filename",iocshArgString};
 IOCSH_ARG       fdbrestoreX_Arg1    = {"macrostring",iocshArgString};
 IOCSH_ARG_ARRAY fdbrestoreX_Args[2] = {&fdbrestoreX_Arg0, &fdbrestoreX_Arg1};
