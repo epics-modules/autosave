@@ -2632,6 +2632,9 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
 
+	if (save_restoreDebug >= 5) {
+		errlogPrintf("save_restore:do_manual_restore: entry for file '%s'\n", filename);
+	}
 	if (file_type == FROM_SAVE_FILE) {
 		/* if this is the current file name for a save set - restore from there */
 		if (waitForListLock(5) == 0) {
@@ -2726,6 +2729,9 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 		/* it might also consist of zero characters) */
 		n = sscanf(bp,"%s%c%[^\n]", PVname, &c, value_string);
 		if (n < 3) *value_string = 0;
+		if (save_restoreDebug >= 5) {
+			errlogPrintf("save_restore:do_manual_restore: PVname='%s'\n", PVname);
+		}
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			/* handle long string name */
 			strcpy(realName, PVname);
@@ -2788,7 +2794,10 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
 				if (status) num_errs++;
 			}
-			if (chanid) ca_clear_channel(chanid);
+			if (chanid) {
+				ca_clear_channel(chanid);
+				chanid = 0;
+			}
 		} else if (PVname[0] == '!') {
 			n = atoi(value_string);	/* value_string actually contains 2nd word of error msg */
 			num_errs += n;
