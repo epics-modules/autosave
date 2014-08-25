@@ -2747,7 +2747,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 				SR_get_array_info(PVname, &num_elements, &field_size, &field_type);
 				if (num_elements > 1) {
 					if (save_restoreDebug >= 5) {
-						printf("save_restore:do_manual_restore: PV '%s' is scalar in .sav file, but has %ld elements.  Treating as array.\n",
+						errlogPrintf("save_restore:do_manual_restore: PV '%s' is scalar in .sav file, but has %ld elements.  Treating as array.\n",
 							PVname, num_elements);
 					}
 					is_scalar = 0;
@@ -2769,6 +2769,9 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 						num_errs++;
 					}
 				} else  {
+					if (save_restoreDebug >= 5) {
+						errlogPrintf("save_restore:do_manual_restore: PV '%s' is long string; value='%s'.\n", PVname, value_string);
+					}
 					/* See if we got the whole line */
 					if (bp[strlen(bp)-1] != '\n') {
 						/* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
@@ -2783,9 +2786,9 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 						errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 						num_errs++;
 					} else if (ca_pend_io(0.5) != ECA_NORMAL) {
-						errlogPrintf("save_restore:do_manual_restore: ca_search for %s timeout\n", PVname);
 						num_errs++;
-					} else if (ca_array_put(DBR_CHAR, strlen(value_string), chanid, value_string) != ECA_NORMAL) {
+					/* Don't forget trailing null character: "strlen(value_string)+1" below */
+					} else if (ca_array_put(DBR_CHAR, strlen(value_string)+1, chanid, value_string) != ECA_NORMAL) {
 						errlogPrintf("save_restore:do_manual_restore: ca_array_put of '%s' to '%s' failed\n", value_string,PVname);
 						num_errs++;
 					}
