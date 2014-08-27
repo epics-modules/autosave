@@ -15,6 +15,7 @@
 #include <hostLib.h>
 #include <stdioLib.h>
 #include <ioLib.h>
+#include <string.h>
 
 #define NFS_PATH_LEN 255                /* string length for NFS related path */
 
