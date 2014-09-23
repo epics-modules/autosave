@@ -1543,7 +1543,7 @@ STATIC void set_pass0_CallFunc(const iocshArgBuf *args)
 STATIC const iocshFuncDef set_pass1_FuncDef = {"set_pass1_restoreFile",2,set_passN_Args};
 STATIC void set_pass1_CallFunc(const iocshArgBuf *args)
 {
-    set_pass1_restoreFile(args[0].sval, args[2].sval);
+    set_pass1_restoreFile(args[0].sval, args[1].sval);
 }
 
 /* void dbrestoreShow(void) */
