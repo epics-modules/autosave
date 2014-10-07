@@ -2843,7 +2843,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	struct channel	*pchannel = NULL;
 	FILE   			*inp_fd = NULL;
 	char			name[80] = "", *t=NULL, line[BUF_SIZE]="", eline[BUF_SIZE]="";
-	char            templatefile[FN_LEN] = "";
+	char            templatefile[NFS_PATH_LEN+1] = "";
 	char            new_macro[80] = "";
 	int             i=0;
 	MAC_HANDLE      *handle = NULL;
@@ -2892,6 +2892,16 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 
 	/* place all of the channels in the group */
 	while (fgets(line, BUF_SIZE, inp_fd)) {
+		/* If we didn't read the whole line, read/discard until we find newline or EOF */
+		if ((strlen(line)>0) && (line[strlen(line)-1] != '\n')) {
+			strcpy(eline, line);
+			while ((strlen(eline)>0) && (eline[strlen(eline)-1] != '\n')) {
+				if (save_restoreDebug) printf("save_restore:readReqFile: didn't reach newline:\n\t'%s'\n", eline);
+				if (fgets(eline, BUF_SIZE, inp_fd) == NULL) break;
+				if (save_restoreDebug) printf("save_restore:readReqFile: discard:\n\t'%s'\n", eline);
+			}
+		}
+
 		/* Expand input line. */
 		name[0] = '\0';
 		eline[0] = '\0';
@@ -2914,9 +2924,9 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			while (isspace((int)(*t))) t++;  /* delete leading whitespace */
 			if (*t == '"') t++;  /* delete leading quote */
 			while (isspace((int)(*t))) t++;  /* delete any additional whitespace */
-			/* copy to filename; terminate at whitespace or quote or comment */
+			/* copy to filename; terminate at null char or whitespace or quote or comment */
 			for (	i = 0;
-					i<NFS_PATH_LEN && !(isspace((int)(*t))) && (*t != '"') && (*t != '#');
+					i<NFS_PATH_LEN && *t && !(isspace((int)(*t))) && (*t != '"') && (*t != '#');
 					t++,i++) {
 				templatefile[i] = *t;
 			}
@@ -2935,6 +2945,8 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			new_macro[i] = 0;
 			if (i && new_macro[i-1] == ',') new_macro[--i] = 0;
 			if (i < 3) new_macro[0] = 0; /* if macro has less than 3 chars, punt */
+			if (save_restoreDebug >= 2) errlogPrintf("save_restore:readReqFile: calling readReqFile('%s', %p,'%s')\n",
+				templatefile, plist, new_macro);
 			readReqFile(templatefile, plist, new_macro);
 		} else if (isalpha((int)name[0]) || isdigit((int)name[0]) || name[0] == '$') {
 			pchannel = (struct channel *)calloc(1,sizeof (struct channel));
