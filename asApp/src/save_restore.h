@@ -102,6 +102,9 @@ extern int set_pass0_restoreFile(char *filename, char *macrostring);
 extern int set_pass1_restoreFile(char *filename, char *macrostring);
 extern struct restoreList restoreFileList;
 
+extern int eraseFile(const char *filename);
+extern int appendToFile(const char *filename, const char *line);
+
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
 #define strNcpy(dest, src, N) {			\
 	int ii;								\
