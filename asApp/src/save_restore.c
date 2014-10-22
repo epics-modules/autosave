@@ -2837,6 +2837,40 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	return(num_errs);
 }
 
+/* Try to open reqFile, using reqFilePathList.  If successful, return 1, else 0.
+ * If fpp is not null, put file pointer there, else close the file.
+ */
+int openReqFile(const char *reqFile, FILE **fpp)
+{
+	struct pathListElement *p;
+	char tmpfile[NFS_PATH_LEN+1] = "";
+	FILE *trial_fd = NULL;
+
+	if (fpp) *fpp = NULL;
+	if (save_restoreDebug >= 1) {
+		errlogPrintf("save_restore:openReqFile: entry: reqFile='%s', fpp=%p\n",	reqFile, fpp);
+	}
+
+	/* open request file */
+	if (reqFilePathList) {
+		/* try to find reqFile in every directory specified in reqFilePathList */
+		for (p = reqFilePathList; p; p = p->pnext) {
+			makeNfsPath(tmpfile, p->path, reqFile);
+			trial_fd = fopen(tmpfile, "r");
+			if (trial_fd) break;
+		}
+	} else {
+		/* try to find reqFile only in current working directory */
+		trial_fd = fopen(reqFile, "r");
+	}
+	if (fpp) *fpp = trial_fd;
+	if (trial_fd) {
+		if (fpp == NULL) fclose(trial_fd);
+		return(1);
+	} else {
+		return(0);
+	}
+}
 
 STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostring)
 {
@@ -2848,27 +2882,13 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	int             i=0;
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
-	struct pathListElement *p;
-	char tmpfile[NFS_PATH_LEN+1] = "";
 
 	if (save_restoreDebug > 1) {
 		errlogPrintf("save_restore:readReqFile: entry: reqFile='%s', plist=%p, macrostring='%s'\n",
 			reqFile, (void *)plist, macrostring?macrostring:"NULL");
 	}
 
-	/* open request file */
-	if (reqFilePathList) {
-		/* try to find reqFile in every directory specified in reqFilePathList */
-		for (p = reqFilePathList; p; p = p->pnext) {
-			makeNfsPath(tmpfile, p->path, reqFile);
-			inp_fd = fopen(tmpfile, "r");
-			if (inp_fd) break;
-		}
-	} else {
-		/* try to find reqFile only in current working directory */
-		inp_fd = fopen(reqFile, "r");
-	}
-
+	(void)openReqFile(reqFile, &inp_fd);
 	if (!inp_fd) {
 		plist->status = SR_STATUS_FAIL;
 		strcpy(plist->statusStr, "Can't open .req file");
