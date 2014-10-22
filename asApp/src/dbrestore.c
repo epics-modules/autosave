@@ -87,6 +87,7 @@
 #include	<epicsExport.h>
 #include	<special.h>
 #include	<macLib.h>
+#include	<epicsString.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -888,7 +889,7 @@ int reboot_restore(char *filename, initHookState init_state)
 			ebuffer[0] = '\0';
 			macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
 			bp = ebuffer;
-			if (save_restoreDebug >= 1) {
+			if (save_restoreDebug >= 5) {
 				printf("dbrestore:reboot_restore: buffer='%s'\n", buffer);
 				printf("                         ebuffer='%s'\n", ebuffer);
 			}
@@ -1524,6 +1525,145 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	return;
 }
 
+/**************************************************************************/
+/* support for building autosave-request files automatically from dbLoadRecords, dbLoadTemplate */
+
+int eraseFile(const char *filename) {
+	FILE *fd;
+	char *fname;
+
+	fname = macEnvExpand(filename);
+	if (fname == NULL) {
+		printf("save_restore:eraseFile: macEnvExpand('%s') returned NULL\n", filename);
+		return(ERROR);
+	}
+	if ((fd = fopen(fname, "w")) != NULL) {
+		fclose(fd);
+	}
+	free(fname);
+	return(0);
+}
+
+int appendToFile(const char *filename, const char *line) {
+	FILE *fd;
+	char *fname;
+	int status=0;
+
+	fname = macEnvExpand(filename);
+	if (fname == NULL) {
+		printf("save_restore:appendToFile: macEnvExpand('%s') returned NULL\n", filename);
+		return(ERROR);
+	}
+	if ((fd = fopen(fname, "a")) != NULL) {
+		fprintf(fd, "%s\n", line);
+		fclose(fd);
+	} else {
+		errlogPrintf("save_restore:appendToFile: Can't open file '%s'\n", fname);
+		status = -1;
+	}
+	free(fname);
+	return(status);
+}
+
+typedef void (*dbLoadRecordsHookFunction)(const char* file, const char* macroString);
+extern int dbLoadRecordsHookRegister(dbLoadRecordsHookFunction hook);
+
+static ELLLIST buildInfoList = ELLLIST_INIT;
+
+struct buildInfoItem {
+	ELLNODE node;
+	char *filename;
+	char *suffix;
+	int enabled;
+};
+
+static int autosaveBuildInitialized=0;
+#define MAXSTRING 300
+static void dbLoadRecordsHook(const char* dbFileName, const char* macroString) {
+	struct buildInfoItem *pitem;
+	char *p;
+	int n;
+	char requestFileCmd[MAXSTRING];
+	char requestFileBase[MAXSTRING];
+	char requestFileName[MAXSTRING];
+
+	printf("dbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
+
+	/* Should probably call basename(), but is it available on Windows? */
+	p = strrchr(dbFileName, (int)'/');
+	if (p) {
+		strncpy(requestFileBase, p+1, MAXSTRING-strlen(requestFileBase)-1);
+	} else {
+		strncpy(requestFileBase, dbFileName, MAXSTRING-strlen(requestFileBase)-1);
+	}
+	p = strstr(requestFileBase, ".db");
+	if (p == NULL) p = strstr(requestFileBase, ".vdb");
+	if (p == NULL) p = strstr(requestFileBase, ".template");
+	if (p == NULL) {
+		printf("dbLoadRecordsHook: Can't make request-file name from '%s'\n", dbFileName);
+		return;
+	}
+	*p = '\0';
+
+	pitem = (struct buildInfoItem *)ellFirst(&buildInfoList);
+	for (; pitem; pitem = (struct buildInfoItem *)ellNext(&(pitem->node)) ) {
+		if (pitem->enabled) {
+			n = snprintf(requestFileName, MAXSTRING, "%s%s", requestFileBase, pitem->suffix);
+			if ((n < MAXSTRING) && (openReqFile(requestFileName, NULL))) {
+				printf("dbLoadRecordsHook: found '%s'\n", requestFileName);
+				n = snprintf(requestFileCmd, MAXSTRING, "file %s %s", requestFileName, macroString);
+				if (n < MAXSTRING) appendToFile(pitem->filename, requestFileCmd);
+			}
+		}
+	}
+}
+
+int autosaveBuild(char *filename, char *reqFileSuffix, int on) {
+
+	struct buildInfoItem *pitem;
+	int found = 0;
+
+	if (!autosaveBuildInitialized) {
+		dbLoadRecordsHookRegister(dbLoadRecordsHook);
+	}
+	if (!filename || filename[0]==0) {
+		if (save_restoreDebug) printf("autosaveBuild: bad filename\n");
+		return(-1);
+	}
+
+	pitem = (struct buildInfoItem *)ellFirst(&buildInfoList);
+	for (; pitem; pitem = (struct buildInfoItem *)ellNext(&(pitem->node)) ) {
+		if ((pitem->filename && strcmp(pitem->filename, filename)==0) &&
+			 (pitem->suffix && (reqFileSuffix==NULL || reqFileSuffix[0]=='*' ||
+			 	strcmp(pitem->suffix, reqFileSuffix)==0))) {
+			 /* item exists */
+			 if (save_restoreDebug)
+			 	printf("autosaveBuild: %s filename '%s' and suffix '%s'.\n",
+				on ? "enabled" : "disabled", filename, pitem->suffix);
+			 pitem->enabled = on;
+			 found = 1;
+		}
+		if (found) return(0);
+	}
+
+	if (!reqFileSuffix || reqFileSuffix[0]==0) {
+		if (save_restoreDebug) printf("autosaveBuild: bad suffix\n");
+		return(-1);
+	}
+
+	pitem = (struct buildInfoItem *)calloc(1, sizeof(struct buildInfoItem));
+	ellAdd(&buildInfoList, &(pitem->node));
+	pitem->filename = epicsStrDup(filename);
+	pitem->suffix = epicsStrDup(reqFileSuffix);
+	pitem->enabled = on;
+	if (save_restoreDebug)
+	 	printf("autosaveBuild: initialized and %s filename '%s' and suffix '%s'.\n",
+		pitem->enabled ? "enabled" : "disabled", pitem->filename, pitem->suffix);
+	return(0);
+}
+
+/**************************************************************************/
+
 void makeAutosaveFiles() {
     makeAutosaveFileFromDbInfo("info_settings.req", "autosaveFields");
     makeAutosaveFileFromDbInfo("info_positions.req", "autosaveFields_pass0");
@@ -1570,6 +1710,37 @@ STATIC void makeAutosaveFiles_CallFunc(const iocshArgBuf *args)
     makeAutosaveFiles();
 }
 
+/* int eraseFile(char *filename) */
+STATIC const iocshArg eraseFile_Arg0 = {"filename",iocshArgString};
+STATIC const iocshArg * const eraseFile_Args[1] = {&eraseFile_Arg0};
+STATIC const iocshFuncDef eraseFile_FuncDef = {"eraseFile",1,eraseFile_Args};
+STATIC void eraseFile_CallFunc(const iocshArgBuf *args)
+{
+    eraseFile(args[0].sval);
+}
+
+/* int appendToFile(char *filename, char *line) */
+STATIC const iocshArg appendToFile_Arg0 = {"filename",iocshArgString};
+STATIC const iocshArg appendToFile_Arg1 = {"line",iocshArgString};
+STATIC const iocshArg * const appendToFile_Args[2] = {&appendToFile_Arg0, &appendToFile_Arg1};
+STATIC const iocshFuncDef appendToFile_FuncDef = {"appendToFile",2,appendToFile_Args};
+STATIC void appendToFile_CallFunc(const iocshArgBuf *args)
+{
+    appendToFile(args[0].sval, args[1].sval);
+}
+
+/* int autosaveBuild(char *filename, char *reqFileSuffix, int on) */
+STATIC const iocshArg autosaveBuild_Arg0 = {"filename",iocshArgString};
+STATIC const iocshArg autosaveBuild_Arg1 = {"reqFileSuffix",iocshArgString};
+STATIC const iocshArg autosaveBuild_Arg2 = {"on",iocshArgInt};
+STATIC const iocshArg * const autosaveBuild_Args[3] = {&autosaveBuild_Arg0, &autosaveBuild_Arg1, &autosaveBuild_Arg2};
+STATIC const iocshFuncDef autosaveBuild_FuncDef = {"autosaveBuild",3,autosaveBuild_Args};
+STATIC void autosaveBuild_CallFunc(const iocshArgBuf *args)
+{
+    autosaveBuild(args[0].sval, args[1].sval, args[2].ival);
+}
+
+
 void dbrestoreRegister(void)
 {
     iocshRegister(&set_pass0_FuncDef, set_pass0_CallFunc);
@@ -1577,6 +1748,9 @@ void dbrestoreRegister(void)
 	iocshRegister(&dbrestoreShow_FuncDef, dbrestoreShow_CallFunc);
 	iocshRegister(&makeAutosaveFileFromDbInfo_FuncDef, makeAutosaveFileFromDbInfo_CallFunc);
 	iocshRegister(&makeAutosaveFiles_FuncDef, makeAutosaveFiles_CallFunc);
+	iocshRegister(&eraseFile_FuncDef, eraseFile_CallFunc);
+	iocshRegister(&appendToFile_FuncDef, appendToFile_CallFunc);
+	iocshRegister(&autosaveBuild_FuncDef, autosaveBuild_CallFunc);
 }
 
 epicsExportRegistrar(dbrestoreRegister);
