@@ -8,13 +8,14 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.4</h1>
+<h1 align="center">autosave v5.5</h1>
 
 <h2>Table of Contents</h2>
 <ul>
   <li><a href="#Overview">Overview</a></li>
   <li><a href="#Important nuances">Important nuances</a></li>
   <li><a href="#How to use autosave">How to use autosave</a></li>
+  <li><a href="#autosaveBuild">autosaveBuild (automatic request-file generation)</a></li>
   <li><a href="#asVerify">asVerify</a></li>
   <li><a href="#configMenu">configMenu</a></li>
   <li><a href="#About save files">About save files</a></li>
@@ -64,6 +65,11 @@ saving, finding, restoring, and verifying IOC configurations (that is, sets of
 PV values).  configMenu is roughly comparable to the EPICS Backup and Restore
 Tool, BURT, but it uses autosave files, and is driven by EPICS PVs, so it can be
 used manually, by software clients, and by other IOC code.
+
+<P>Autosave also contains a facility, called <i>autosaveBuild</i>, to generate
+autosave-request files as part of the operation of the EPICS functions
+dbLoadRecords() and dbLoadTemplate().  This facility requires EPICS 3.15, or
+3.14 with a patch. 
 
 <a name="Important nuances"></a>
 <hr>
@@ -140,8 +146,7 @@ files in that module are the following:
 <dt>xxx/iocBoot/iocvxWorks/auto_settings.req
 <dd>the whole file
 <dt>xxx/iocBoot/iocvxWorks/st.cmd
-<dd>look for "save_restore.cmd" before the call to iocInit, and
-"create_monitor_set" after the call to iocInit.
+<dd>look for <code>save_restore.cmd</code> and <code>create_monitor_set</code>.
 <dt>xxx/iocBoot/iocvxWorks/autosave
 <dd>a directory to hold autosave .sav files
 </dl>
@@ -225,6 +230,10 @@ in turn, is included in xxx/iocBoot/iocvxWorks/auto_settings.req.
 <P> <i>Note: Beginning with synApps version 5.2.1, synApps contains software to
 generate autosave-request files from information contained in command and
 database files. See synApps/support/utils/makeAutosaveFiles.py.</i>
+
+<P> Beginning with synApps version 5.5, autosave contains software to
+generate autosave-request files from dbLoadRecords() and dbLoadTemplate()
+calls.  See <a href="#autosaveBuild">autosaveBuild</a>.
 
 <h4>3. Set request-file path (optional, recommended)</h4>
 Specify one or more directories to be searched for
@@ -463,6 +472,103 @@ Under vxWorks, you can avoid this by putting a
 	taskDelay(&lt;number_of_60_Hz_clock_ticks&gt;)
 </pre>
 before <code>create_monitor_set()</code>.
+
+<a name="autosaveBuild"></a>
+<hr>
+<h2>autosaveBuild (automatic request-file generation)</h2>
+<hr>
+
+Many of the databases in synApps have associated autosave-request files.  For
+example, the calc module contains <code>editSseq.db</code> and
+<code>editSseq_settings.req</code>.  When adding a new database to an IOC, it's
+common practice to add the associated request file to
+<code>auto_settings.req</code> and/or <code>auto_positions.req</code>.  For
+clarity, <code>st.cmd</code> contains this:
+
+<blockquote><pre>
+dbLoadRecords("$(CALC)/calcApp/Db/editSseq.db", "P=xxxL:,Q=ES:")
+</pre></blockquote>
+
+and <code>auto_settings.req</code> contains this:
+
+<blockquote><pre>
+file editSseq_settings.req P=xxxL:,Q=ES:
+</pre></blockquote>
+
+<P>It's tedious and error prone to have these entries separately maintained, so
+autosave can do the request-file part for you.  To do this, you tell autosave
+to arrange to be called whenever <code>dbLoadRecords()</code> is called (note
+that <code>dbLoadTemplate()</code> calls <code>dbLoadRecords()</code>), you
+tell it how to make a request-file name from a database-file name, and you give
+it the name of the request file you want it to build.  You can do this with
+the following command:
+
+<blockquote><pre>
+autosaveBuild("built_settings.req", "_settings.req", 1)
+</pre></blockquote>
+
+This tells autosave to do the following:
+
+<ol> <li>Begin building the file <code>built_settings.req</code>.  If this is
+the first call that mentions <code>built_settings.req</code>, erase the file.
+
+<li>Generate request-file names by stripping ".db", or ".vdb", or ".template"
+from database-file names, and adding the suffix "_settings.req".
+
+<li>Enable (disable) automated building if the third argument is 1 (0).
+
+</ol>
+
+While automated building is enabled, autosave will generate request-file names
+and search for those files in its request-file path.  If it finds a request
+file, it will add the appropriate line to <code>built_settings.req</code>.
+
+<P>All this does is get the file <code>built_settings.req</code> built.  If you
+want it to be used, you must add the following line to
+<code>auto_settings.req</code>:
+
+<blockquote><pre>
+file built_settings.req P=$(P)
+</pre></blockquote>
+
+<h3>Options</h3>
+
+<ul>
+<li>You can specify more than one request-file suffix by making multiple
+calls to <code>autosaveBuild()</code>:
+
+<pre>
+autosaveBuild("built_settings.req", "_settings.req", 1)
+autosaveBuild("built_settings.req", ".req", 1)
+</pre>
+
+After these calls, the request-file name for <code>abc.db</code> can be
+either <code>abc_settings.req</code> or <code>abc.req</code>.  If both are
+found, lines for both will be added to <code>built_settings.req</code>.
+
+<li><P>You can disable file/suffix combinations separately:
+<dl>
+<dt><pre>
+autosaveBuild("built_settings.req", "_settings.req", 0)
+</pre>
+<dd>disables searching for request files ending in "_settings.req" for <code>built_settings.req</code>.
+
+<dt><pre>
+autosaveBuild("built_settings.req", "*", 0)
+</pre>
+<dd>disables searching for all request files for <code>built_settings.req</code>.
+</dl>
+
+<li><P>You can also add a line to <code>built_settings.req</code> yourself:
+<pre>
+appendToFile("built_settings.req", '$(P)userStringSeqEnable')
+</pre>
+
+Note the use of single quotes.  This is for iocsh, because it will not accept
+failure to expand the macro <code>$(P)</code>, and single quotes tells it to
+not do macro expansion.
+
+</ul>
 
 <a name="asVerify"></a>
 <hr>
