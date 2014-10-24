@@ -1575,8 +1575,9 @@ int appendToFile(const char *filename, const char *line) {
 }
 
 typedef void (*dbLoadRecordsHookFunction)(const char* file, const char* macroString);
+#ifdef DBLOADRECORDSHOOKREGISTER
 extern int dbLoadRecordsHookRegister(dbLoadRecordsHookFunction hook);
-
+#endif
 static ELLLIST buildInfoList = ELLLIST_INIT;
 
 struct buildInfoItem {
@@ -1653,7 +1654,11 @@ int autosaveBuild(char *filename, char *reqFileSuffix, int on) {
 	int fileFound = 0, itemFound = 0;
 
 	if (!autosaveBuildInitialized) {
+#ifdef DBLOADRECORDSHOOKREGISTER
 		dbLoadRecordsHookRegister(dbLoadRecordsHook);
+#else
+		printf("pretending to register a dbLoadRecords hook\n");
+#endif
 	}
 	if (!filename || filename[0]==0) {
 		printf("autosaveBuild: bad filename\n");
