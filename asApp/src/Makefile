@@ -16,6 +16,9 @@ asVerify_LIBS	+= Com
 
 #DBDINC += xxxRecord
 
+# Trial version that uses dbLoadRecordsHookRegister.
+#USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
+
 # <name>.dbd will be created from <name>Include.dbd
 DBD += as.dbd
 DBD += asSupport.dbd
