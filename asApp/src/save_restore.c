@@ -2621,7 +2621,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	char			restoreFile[NFS_PATH_LEN+1] = "";
 	char			bu_filename[NFS_PATH_LEN+1] = "";
 	char			buffer[BUF_SIZE], *bp, c;
-	char			ebuffer[BUF_SIZE];
+	char			ebuffer[EBUF_SIZE];
 	char			value_string[BUF_SIZE];
 	int				n;
 	long			status, num_errs=0;
@@ -2719,7 +2719,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	while ((bp=fgets(buffer, BUF_SIZE, inp_fd))) {
 		if (handle && pairs) {
 			ebuffer[0] = '\0';
-			macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
+			macExpandString(handle, buffer, ebuffer, EBUF_SIZE);
 			bp = ebuffer;
 		}
 
@@ -2876,7 +2876,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 {
 	struct channel	*pchannel = NULL;
 	FILE   			*inp_fd = NULL;
-	char			name[80] = "", *t=NULL, line[BUF_SIZE]="", eline[BUF_SIZE]="";
+	char			name[80] = "", *t=NULL, line[BUF_SIZE]="", eline[EBUF_SIZE]="";
 	char            templatefile[NFS_PATH_LEN+1] = "";
 	char            new_macro[80] = "";
 	int             i=0;
@@ -2926,7 +2926,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 		name[0] = '\0';
 		eline[0] = '\0';
 		if (handle && pairs) {
-			macExpandString(handle, line, eline, BUF_SIZE-1);
+			macExpandString(handle, line, eline, EBUF_SIZE);
 		} else {
 			strcpy(eline, line);
 		}
