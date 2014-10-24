@@ -429,6 +429,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			if (p_data) free(p_data);
 			p_data = (void *)calloc(max_elements, field_size);
 			p_data_size = p_data ? max_elements * field_size : 0;
+			errlogPrintf("dbrestore:SR_array_restore: allocated p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
 		} else {
 			memset(p_data, 0, p_data_size);
 		}
@@ -581,6 +582,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 					errlogPrintf("dbrestore:SR_array_restore: Found element-begin; buffer contains '%s'\n", bp);
 				}
 				for (bp++, j=0; (j < MAX_STRING_SIZE-1) && (*bp != ELEMENT_END); bp++) {
+					if (save_restoreDebug >= 11) errlogPrintf("dbrestore:SR_array_restore: *bp=%c (%d)\n", *bp, (int)*bp);
 					if (*bp == '\0') {
 						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
 							errlogPrintf("save_restore:array_restore: *** premature EOF.\n");
@@ -607,7 +609,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 				 * If there are more characters than we can handle, just pretend we read them.
 				 */
 				/* *bp == ELEMENT_END ,*/
-					for (found = 0; (found == 0) && !end_of_file; ) {
+				for (found = 0; (found == 0) && !end_of_file; ) {
 					while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
 					switch (*bp) {
 					case ELEMENT_END:
@@ -690,7 +692,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 					break;
 				}
 			}
-			errlogPrintf("save_restore: end of array values.\n\n");
+			errlogPrintf("save_restore: end of %ld array values.\n\n", num_read);
 			epicsThreadSleep(0.5);
 		}
 
@@ -713,11 +715,14 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 				if (in_element && (bp[1] == ELEMENT_END)) bp++; /* two chars treated as one */
 				break;
 			case ARRAY_END:
+				if (save_restoreDebug >= 10) {
+					errlogPrintf("dbrestore:SR_array_restore: found ARRAY_END.  in_element=%d\n", in_element);
+				}
 				if (!in_element) end_mark_found = 1;
 				break;
 			case '\0':
 				if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
-					errlogPrintf("save_restore: *** EOF during array-end search\n");
+					errlogPrintf("dbrestore:SR_array_restore: *** EOF during array-end search\n");
 					end_of_file = 1;
 				}
 				break;
@@ -733,7 +738,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			errlogPrintf("dbrestore:SR_array_restore: ARRAY_BEGIN wasn't found.\n");
 		}
 	}
-	if (!status && end_of_file) status = end_of_file;
+	if (!status && end_of_file) {
+		status = end_of_file;
+		errlogPrintf("dbrestore:SR_array_restore: status = end_of_file.\n");
+	}
 
 	if (gobble) {
 		if (save_restoreDebug >= 1) {
@@ -752,6 +760,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		} else {
 			if (save_restoreDebug >= 1) {
 				errlogPrintf("dbrestore:SR_array_restore: No array write to database attempted because of error condition\n");
+				errlogPrintf("dbrestore:SR_array_restore: status=%ld, p_data=%p\n", status, p_data);
 			}
 		}
 	}
@@ -786,7 +795,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		PVname[81]; /* Must be greater than max field width ("%80s") in the sscanf format below */
 	char		bu_filename[PATH_SIZE+1], fname[PATH_SIZE+1] = "";
 	char		buffer[BUF_SIZE], *bp;
-	char		ebuffer[BUF_SIZE];
+	char		ebuffer[EBUF_SIZE]; /* make room for macro expansion */
 	char		value_string[BUF_SIZE];
 	char		datetime[32];
 	char		c;
@@ -887,7 +896,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	while ((bp=fgets(buffer, BUF_SIZE, inp_fd))) {
 		if (handle && pairs) {
 			ebuffer[0] = '\0';
-			macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
+			macExpandString(handle, buffer, ebuffer, EBUF_SIZE);
 			bp = ebuffer;
 			if (save_restoreDebug >= 5) {
 				printf("dbrestore:reboot_restore: buffer='%s'\n", buffer);
@@ -965,7 +974,7 @@ int reboot_restore(char *filename, initHookState init_state)
 					bp = fgets(buffer, BUF_SIZE, inp_fd);
 					if (handle && pairs) {
 						ebuffer[0] = '\0';
-						macExpandString(handle, buffer, ebuffer, BUF_SIZE-1);
+						macExpandString(handle, buffer, ebuffer, EBUF_SIZE);
 						bp = ebuffer;
 						if (save_restoreDebug >= 1) {
 							printf("dbrestore:reboot_restore: buffer='%s'\n", buffer);
@@ -1579,15 +1588,20 @@ struct buildInfoItem {
 
 static int autosaveBuildInitialized=0;
 #define MAXSTRING 300
-static void dbLoadRecordsHook(const char* dbFileName, const char* macroString) {
+static char requestFileCmd[MAXSTRING];
+static char requestFileBase[MAXSTRING];
+static char requestFileName[MAXSTRING];
+static char macroString[MAXSTRING], emacroString[MAXSTRING];
+static void dbLoadRecordsHook(const char* dbFileName, const char* macro) {
 	struct buildInfoItem *pitem;
 	char *p;
 	int n;
-	char requestFileCmd[MAXSTRING];
-	char requestFileBase[MAXSTRING];
-	char requestFileName[MAXSTRING];
+	MAC_HANDLE      *handle = NULL;
+	char            **pairs = NULL;
 
-	printf("dbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
+	if (save_restoreDebug >= 5) {
+		printf("dbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
+	}
 
 	/* Should probably call basename(), but is it available on Windows? */
 	p = strrchr(dbFileName, (int)'/');
@@ -1610,7 +1624,22 @@ static void dbLoadRecordsHook(const char* dbFileName, const char* macroString) {
 		if (pitem->enabled) {
 			n = snprintf(requestFileName, MAXSTRING, "%s%s", requestFileBase, pitem->suffix);
 			if ((n < MAXSTRING) && (openReqFile(requestFileName, NULL))) {
-				printf("dbLoadRecordsHook: found '%s'\n", requestFileName);
+				if (save_restoreDebug >= 5) {
+					printf("dbLoadRecordsHook: found '%s'\n", requestFileName);
+				}
+				/* Expand any internal macros in macroString e.g., "N=1,M=m$(N)" */
+				macCreateHandle(&handle, NULL);
+				macSuppressWarning(handle, 1);
+				strcpy(macroString, macro);
+				if (handle) {
+					macParseDefns(handle, macroString, &pairs);
+					if (pairs) {
+						macInstallMacros(handle, pairs);
+						emacroString[0] = '\0';
+						macExpandString(handle, macroString, emacroString, MAXSTRING-1);
+						strcpy(macroString, emacroString);
+					}
+				}
 				n = snprintf(requestFileCmd, MAXSTRING, "file %s %s", requestFileName, macroString);
 				if (n < MAXSTRING) appendToFile(pitem->filename, requestFileCmd);
 			}
@@ -1621,44 +1650,50 @@ static void dbLoadRecordsHook(const char* dbFileName, const char* macroString) {
 int autosaveBuild(char *filename, char *reqFileSuffix, int on) {
 
 	struct buildInfoItem *pitem;
-	int found = 0;
+	int fileFound = 0, itemFound = 0;
 
 	if (!autosaveBuildInitialized) {
 		dbLoadRecordsHookRegister(dbLoadRecordsHook);
 	}
 	if (!filename || filename[0]==0) {
-		if (save_restoreDebug) printf("autosaveBuild: bad filename\n");
+		printf("autosaveBuild: bad filename\n");
 		return(-1);
 	}
 
 	pitem = (struct buildInfoItem *)ellFirst(&buildInfoList);
 	for (; pitem; pitem = (struct buildInfoItem *)ellNext(&(pitem->node)) ) {
-		if ((pitem->filename && strcmp(pitem->filename, filename)==0) &&
-			 (pitem->suffix && (reqFileSuffix==NULL || reqFileSuffix[0]=='*' ||
-			 	strcmp(pitem->suffix, reqFileSuffix)==0))) {
-			 /* item exists */
-			 if (save_restoreDebug)
-			 	printf("autosaveBuild: %s filename '%s' and suffix '%s'.\n",
-				on ? "enabled" : "disabled", filename, pitem->suffix);
-			 pitem->enabled = on;
-			 found = 1;
+		if ((pitem->filename && strcmp(pitem->filename, filename)==0)) {
+			fileFound = 1;
+			if ((pitem->suffix && (reqFileSuffix==NULL || reqFileSuffix[0]=='*' ||
+					strcmp(pitem->suffix, reqFileSuffix)==0))) {
+				/* item exists */
+				if (save_restoreDebug) {
+					printf("autosaveBuild: %s filename '%s' and suffix '%s'.\n",
+					on ? "enabled" : "disabled", filename, pitem->suffix);
+				}
+				pitem->enabled = on;
+				itemFound = 1;
+			}
 		}
-		if (found) return(0);
+		if (itemFound) return(0);
 	}
 
 	if (!reqFileSuffix || reqFileSuffix[0]==0) {
-		if (save_restoreDebug) printf("autosaveBuild: bad suffix\n");
+		printf("autosaveBuild: bad suffix\n");
 		return(-1);
 	}
 
+	/* If this is the first mention of filename, erase the file */
+	if (!fileFound) eraseFile(filename);
 	pitem = (struct buildInfoItem *)calloc(1, sizeof(struct buildInfoItem));
 	ellAdd(&buildInfoList, &(pitem->node));
 	pitem->filename = epicsStrDup(filename);
 	pitem->suffix = epicsStrDup(reqFileSuffix);
 	pitem->enabled = on;
-	if (save_restoreDebug)
+	if (save_restoreDebug) {
 	 	printf("autosaveBuild: initialized and %s filename '%s' and suffix '%s'.\n",
 		pitem->enabled ? "enabled" : "disabled", pitem->filename, pitem->suffix);
+	}
 	return(0);
 }
 
