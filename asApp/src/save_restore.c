@@ -160,6 +160,8 @@
 #include	<epicsEvent.h>
 #include	<epicsTime.h>
 #include	<epicsMessageQueue.h>
+#include	<epicsExit.h>
+
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
 #include 	"osdNfs.h"              /* qiao: routine of os dependent code, for NFS */
@@ -301,6 +303,8 @@ typedef struct op_msg {
 STATIC epicsMessageQueueId opMsgQueue = NULL;	/* message queue for manual/programmed save/restore operations */
 
 STATIC short	save_restore_init = 0;
+STATIC short	save_restore_shutdown = 0;
+STATIC epicsEventId shutdownEvent;
 STATIC char 	*SRversion = SRVERSION;
 STATIC struct pathListElement
 				*reqFilePathList = NULL;
@@ -760,6 +764,10 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
 	do_mount();
 }
 
+static void save_restoreShutdown(void *arg) {
+	save_restore_shutdown = 1;
+	epicsEventWait(shutdownEvent);
+}
 
 /*** save_restore task ***/
 
@@ -846,6 +854,8 @@ STATIC int save_restore(void)
 	}
 
 	while(1) {
+
+		if (save_restore_shutdown) goto shutdown;
 
 		SR_status = SR_STATUS_OK;
 		strcpy(SR_statusStr, "Ok");
@@ -1191,9 +1201,13 @@ STATIC int save_restore(void)
 		if (timeDiff < MIN_DELAY) ca_pend_event(timeDiff - MIN_DELAY);
     }
 	/* before exit, clear all CA channels */
+shutdown:
 	ca_disconnect();
-
-	/* We're never going to exit */
+	if (save_restoreDebug) {
+		save_restoreShow(1);
+		printf("save_restore: exiting\n");
+	}
+	epicsEventSignal(shutdownEvent);
 	return(OK);
 }
 
@@ -2074,8 +2088,10 @@ STATIC int create_data_set(
 			errlogPrintf("save_restore:create_data_set: could not create save_restore task");
 			return(ERROR);
 		}
-
 		save_restore_init = 1;
+
+    	shutdownEvent = epicsEventMustCreate(epicsEventEmpty);
+		epicsAtExit(save_restoreShutdown, NULL);
 	}
 
 	if (filename==NULL || filename[0] == '\0') {
