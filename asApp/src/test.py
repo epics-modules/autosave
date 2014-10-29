@@ -6,10 +6,11 @@ This software tests autosave by writing random values to a list of PVs, and
 comparing values retrieved from those PVs with the values written.  To use,
 load the SR_test database dbLoadRecords("$(AUTOSAVE)/asApp/Db/SR_test.db",
 "P=xxx:,N=100"), and add the line "file SR_test_settings.req P=xxxL:" to
-auto_settings.req. The python distribution you use must have pyEpics.
+auto_settings.req. The python distribution you use must have PyEpics and numpy.
 
 % python
 >>> import test
+>>> test.prefix = "xxx:" # or whatever your ioc prefix is
 >>> test.doPuts()
 >>> test.compare()
  You should see "0  differences found"
@@ -22,7 +23,7 @@ auto_settings.req. The python distribution you use must have pyEpics.
 import epics
 import numpy
 
-prefix = "xxxL:"
+prefix = "xxx:"
 
 import epics
 import random
