@@ -1,5 +1,5 @@
 # uchar
-$(P)SR_ao.DISP
+$(P)SR_aoDISP.DISP
 # short
 $(P)SR_ao.PREC
 # ushort
@@ -15,7 +15,7 @@ $(P)SR_ao.DESC
 # link
 $(P)SR_ao.OUT
 # long
-$(P)SR_ao.RVAL
+$(P)SR_longout
 # ulong
 $(P)SR_bi.SVAL
 # no such PV
