@@ -1,6 +1,12 @@
 record(ao, "$(P)SR_ao") {
 	field(DTYP,"Soft Channel")
 }
+record(ao, "$(P)SR_aoDISP") {
+	field(DTYP,"Soft Channel")
+}
+record(ao, "$(P)SR_longout") {
+	field(DTYP,"Soft Channel")
+}
 record(bo, "$(P)SR_bo") {
 	field(DTYP,"Soft Channel")
 }
