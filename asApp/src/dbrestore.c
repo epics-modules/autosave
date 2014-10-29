@@ -429,7 +429,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			if (p_data) free(p_data);
 			p_data = (void *)calloc(max_elements, field_size);
 			p_data_size = p_data ? max_elements * field_size : 0;
-			errlogPrintf("dbrestore:SR_array_restore: allocated p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
+			if (save_restoreDebug >= 10) errlogPrintf("dbrestore:SR_array_restore: allocated p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
 		} else {
 			memset(p_data, 0, p_data_size);
 		}
