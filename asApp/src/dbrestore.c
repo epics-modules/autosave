@@ -1606,7 +1606,9 @@ static void myDbLoadRecordsHook(const char* dbFileName, const char* macro) {
 		printf("myDbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
 	}
 
+#ifdef DBLOADRECORDSHOOKREGISTER
 	if (previousHook) previousHook(dbFileName, macro);
+#endif
 
 	/* Should probably call basename(), but is it available on Windows? */
 	p = strrchr(dbFileName, (int)'/');
