@@ -102,6 +102,7 @@ extern int reboot_restore(char *filename, initHookState init_state);
 extern int set_pass0_restoreFile(char *filename, char *macrostring);
 extern int set_pass1_restoreFile(char *filename, char *macrostring);
 extern struct restoreList restoreFileList;
+extern int isAbsolute(const char* filename);
 
 extern int openReqFile(const char *reqFile, FILE **fpp);
 extern int eraseFile(const char *filename);
