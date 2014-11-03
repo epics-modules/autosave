@@ -851,7 +851,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* open file */
-	if (filename[0] == '/') {
+	if (isAbsolute(filename)) {
 		strncpy(fname, filename, PATH_SIZE);
 	} else {
 		makeNfsPath(fname, saveRestoreFilePath, filename);
@@ -1059,7 +1059,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* For now, don't write boot-time backups for files specified with full path. */
-	if (filename[0] == '/') write_backup = 0;
+	if (isAbsolute(filename)) { write_backup = 0;
 
 	if (write_backup) {
 		/* write  backup file*/
