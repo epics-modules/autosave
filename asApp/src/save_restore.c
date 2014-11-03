@@ -381,7 +381,7 @@ STATIC int connect_list(struct chlist *plist, int verbose);
 STATIC int enable_list(struct chlist *plist);
 STATIC int get_channel_values(struct chlist *plist);
 STATIC int write_it(char *filename, struct chlist *plist);
-STATIC int write_save_file(struct chlist *plist, char *configName);
+STATIC int write_save_file(struct chlist *plist, const char *configName, char *retSaveFile);
 STATIC void do_seq(struct chlist *plist);
 STATIC int create_data_set(char *filename, int save_method, int period,
 		char *trigger_channel, int mon_period, char *macrostring);
@@ -450,6 +450,25 @@ void save_restoreSet_CallbackTimeout(int t) {
 
 /********************************* code *********************************/
 
+int isAbsolute(const char* filename)
+{
+	if ( '/' == filename[0] )
+	{
+		return 1;
+	}
+#ifdef _WIN32
+	/* windows x:/ absolute style path - for completeness also check for x:\ */
+	if ( (strlen(filename) > 2) && (':' == filename[1]) && (('/' == filename[2]) || ('\\' == filename[2])) )
+	{
+		return 1;
+	}
+	if ( '\\' == filename[0] )
+	{
+		return 1;
+	}
+#endif /* _WIN32 */
+	return 0;
+}
 
 /*** access to list *lptr ***/
 
@@ -978,7 +997,7 @@ STATIC int save_restore(void)
 
 				/* write the data to disk */
 				if ((plist->not_connected == 0) || (save_restoreIncompleteSetsOk))
-					write_save_file(plist, NULL);
+					write_save_file(plist, NULL, NULL);
 			}
 
 			/*** Periodically make sequenced backup of most recent saved file ***/
@@ -1110,7 +1129,11 @@ STATIC int save_restore(void)
 				if (save_restoreDebug>1) printf("save_restore: manual restore status=%d (0==success)\n", status);
 				sprintf(SR_recentlyStr, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				if (status == 0) {
-					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+				    if (!isAbsolute(msg.filename)) {
+					    makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+					} else {
+						strncpy(fullPath, msg.filename, NFS_PATH_LEN);
+					}
 					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
@@ -1161,6 +1184,7 @@ STATIC int save_restore(void)
 					if (save_restoreDebug > 1) errlogPrintf("save_restore: waiting for listLock()\n");
 				}
 				status = -1;
+				fullPath[0] = '\0';
 				plist = lptr;
 				while (plist != 0) {
 					if (strcmp(plist->reqFile, msg.requestfilename) == 0) break;
@@ -1173,17 +1197,16 @@ STATIC int save_restore(void)
 
 					/* write the data to disk */
 					if ((plist->not_connected == 0) || (save_restoreIncompleteSetsOk))
-						status = write_save_file(plist, msg.filename);
+						status = write_save_file(plist, msg.filename, fullPath);
 					if (save_restoreDebug>1) printf("save_restore: op_SaveFile: write_save_file() returned %d\n", status);
 				}
 				unlockList();
 				if (status == 0) {
-					makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
 					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
-				sprintf(SR_recentlyStr, "Save of '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				sprintf(SR_recentlyStr, "Save of '%s' %s", (status ? msg.filename : plist->save_file), status?"Failed":"Succeeded");
 				if (!status && num_errs) status = num_errs;
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
@@ -1792,7 +1815,7 @@ trouble:
  * NOTE: Assumes sr_mutex is locked
  *
  */
-STATIC int write_save_file(struct chlist *plist, char *configName)
+STATIC int write_save_file(struct chlist *plist, const char *configName, char *retSaveFile)
 {
 	char	save_file[NFS_PATH_LEN+3] = "", backup_file[NFS_PATH_LEN+3] = "";
 	char	tmpstr[NFS_PATH_LEN+50];
@@ -1803,6 +1826,9 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 	plist->status = SR_STATUS_OK;
 	strcpy(plist->statusStr, "Ok");
 	epicsTimeGetCurrent(&plist->save_attempt_time);
+	if (NULL != retSaveFile) {
+		retSaveFile[0] = '\0';
+	}
 
 	/* Make full file names */
 	if (plist->savePathPV_chid) {
@@ -1811,7 +1837,7 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 		ca_pend_io(1.0);
 		if (tmpstr[0] == '\0') return(OK);
 		strncpy(save_file, tmpstr, sizeof(save_file) - 1);
-		if (save_file[0] != '/') {
+		if (!isAbsolute(save_file)) {
 			makeNfsPath(save_file, saveRestoreFilePath, save_file);
 		}
 	} else {
@@ -1921,6 +1947,10 @@ STATIC int write_save_file(struct chlist *plist, char *configName)
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 	}
 	sprintf(SR_recentlyStr, "Wrote '%s'", plist->save_file);
+	if (NULL != retSaveFile)
+	{
+		strncpy(retSaveFile, save_file, NFS_PATH_LEN);
+	}
 	return(OK);
 }
 
@@ -1969,7 +1999,7 @@ STATIC void do_seq(struct chlist *plist)
 	if (check_file(save_file) == BS_NONE) {
 		errlogPrintf("save_restore:do_seq - '%s' not found.  Writing a new one. [%s]\n",
 			save_file, datetime);
-		(void) write_save_file(plist, NULL);
+		(void) write_save_file(plist, NULL, NULL);
 	}
 	sprintf(p, "%1d", plist->backup_sequence_num);
 	if (myFileCopy(save_file, backup_file) != OK) {
@@ -2700,7 +2730,11 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	}
 
 	/* open file */
-	makeNfsPath(restoreFile, saveRestoreFilePath, filename);
+	if (isAbsolute(filename)) {
+		strncpy(restoreFile, filename, NFS_PATH_LEN);
+	} else {
+		makeNfsPath(restoreFile, saveRestoreFilePath, filename);
+	}
 
 	if (file_type == FROM_SAVE_FILE) {
 		inp_fd = fopen_and_check(restoreFile, &status);
