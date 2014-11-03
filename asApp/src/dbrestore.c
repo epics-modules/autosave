@@ -1576,9 +1576,7 @@ int appendToFile(const char *filename, const char *line) {
 }
 
 #ifdef DBLOADRECORDSHOOKREGISTER
-typedef void (*DB_LOAD_RECORDS_HOOK_ROUTINE)(const char* filename, const char* substitutions);
-epicsShareExtern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
-static DB_LOAD_RECORDS_HOOK_ROUTINE previousHook;
+static DB_LOAD_RECORDS_HOOK_ROUTINE previousHook=NULL;
 #endif
 static ELLLIST buildInfoList = ELLLIST_INIT;
 
