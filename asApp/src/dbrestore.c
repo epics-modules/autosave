@@ -88,6 +88,7 @@
 #include	<special.h>
 #include	<macLib.h>
 #include	<epicsString.h>
+#include	<dbAccessDefs.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -851,7 +852,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* open file */
-	if (filename[0] == '/') {
+	if (isAbsolute(filename)) {
 		strncpy(fname, filename, PATH_SIZE);
 	} else {
 		makeNfsPath(fname, saveRestoreFilePath, filename);
@@ -1059,7 +1060,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	}
 
 	/* For now, don't write boot-time backups for files specified with full path. */
-	if (filename[0] == '/') write_backup = 0;
+	if (isAbsolute(filename)) write_backup = 0;
 
 	if (write_backup) {
 		/* write  backup file*/
@@ -1574,9 +1575,8 @@ int appendToFile(const char *filename, const char *line) {
 	return(status);
 }
 
-typedef void (*dbLoadRecordsHookFunction)(const char* file, const char* macroString);
 #ifdef DBLOADRECORDSHOOKREGISTER
-extern int dbLoadRecordsHookRegister(dbLoadRecordsHookFunction hook);
+static DB_LOAD_RECORDS_HOOK_ROUTINE previousHook=NULL;
 #endif
 static ELLLIST buildInfoList = ELLLIST_INIT;
 
@@ -1593,7 +1593,7 @@ static char requestFileCmd[MAXSTRING];
 static char requestFileBase[MAXSTRING];
 static char requestFileName[MAXSTRING];
 static char macroString[MAXSTRING], emacroString[MAXSTRING];
-static void dbLoadRecordsHook(const char* dbFileName, const char* macro) {
+static void myDbLoadRecordsHook(const char* dbFileName, const char* macro) {
 	struct buildInfoItem *pitem;
 	char *p;
 	int n;
@@ -1601,11 +1601,16 @@ static void dbLoadRecordsHook(const char* dbFileName, const char* macro) {
 	char            **pairs = NULL;
 
 	if (save_restoreDebug >= 5) {
-		printf("dbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
+		printf("myDbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
 	}
+
+#ifdef DBLOADRECORDSHOOKREGISTER
+	if (previousHook) previousHook(dbFileName, macro);
+#endif
 
 	/* Should probably call basename(), but is it available on Windows? */
 	p = strrchr(dbFileName, (int)'/');
+	if (p==NULL) p = strrchr(dbFileName, (int)'\\');
 	if (p) {
 		strncpy(requestFileBase, p+1, MAXSTRING-strlen(requestFileBase)-1);
 	} else {
@@ -1615,7 +1620,7 @@ static void dbLoadRecordsHook(const char* dbFileName, const char* macro) {
 	if (p == NULL) p = strstr(requestFileBase, ".vdb");
 	if (p == NULL) p = strstr(requestFileBase, ".template");
 	if (p == NULL) {
-		printf("dbLoadRecordsHook: Can't make request-file name from '%s'\n", dbFileName);
+		printf("myDbLoadRecordsHook: Can't make request-file name from '%s'\n", dbFileName);
 		return;
 	}
 	*p = '\0';
@@ -1626,7 +1631,7 @@ static void dbLoadRecordsHook(const char* dbFileName, const char* macro) {
 			n = snprintf(requestFileName, MAXSTRING, "%s%s", requestFileBase, pitem->suffix);
 			if ((n < MAXSTRING) && (openReqFile(requestFileName, NULL))) {
 				if (save_restoreDebug >= 5) {
-					printf("dbLoadRecordsHook: found '%s'\n", requestFileName);
+					printf("myDbLoadRecordsHook: found '%s'\n", requestFileName);
 				}
 				/* Expand any internal macros in macroString e.g., "N=1,M=m$(N)" */
 				macCreateHandle(&handle, NULL);
@@ -1654,8 +1659,10 @@ int autosaveBuild(char *filename, char *reqFileSuffix, int on) {
 	int fileFound = 0, itemFound = 0;
 
 	if (!autosaveBuildInitialized) {
+		autosaveBuildInitialized = 1;
 #ifdef DBLOADRECORDSHOOKREGISTER
-		dbLoadRecordsHookRegister(dbLoadRecordsHook);
+        previousHook = dbLoadRecordsHook;
+        dbLoadRecordsHook = myDbLoadRecordsHook;
 #else
 		printf("pretending to register a dbLoadRecords hook\n");
 #endif
