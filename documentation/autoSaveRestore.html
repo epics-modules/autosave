@@ -69,7 +69,7 @@ used manually, by software clients, and by other IOC code.
 <P>Autosave also contains a facility, called <i>autosaveBuild</i>, to generate
 autosave-request files as part of the operation of the EPICS functions
 dbLoadRecords() and dbLoadTemplate().  This facility requires EPICS 3.15, or
-3.14 with a patch. 
+3.14 with a patch.
 
 <a name="Important nuances"></a>
 <hr>
@@ -478,7 +478,10 @@ before <code>create_monitor_set()</code>.
 <h2>autosaveBuild (automatic request-file generation)</h2>
 <hr>
 
-Many of the databases in synApps have associated autosave-request files.  For
+<P> Note: this facility requires an EPICS base version higher than 3.15.0.2, or a
+patch to EPICS base 3.14.
+
+<P>Many of the databases in synApps have associated autosave-request files.  For
 example, the calc module contains <code>editSseq.db</code> and
 <code>editSseq_settings.req</code>.  When adding a new database to an IOC, it's
 common practice to add the associated request file to
@@ -569,6 +572,46 @@ failure to expand the macro <code>$(P)</code>, and single quotes tells it to
 not do macro expansion.
 
 </ul>
+
+<h3>Patch for EPICS 3.14.12.4</h3>
+
+<blockquote><pre>
+--- src/db/dbAccess.c.ORIG	2014-10-16 16:51:21.778507000 -0500
++++ src/db/dbAccess.c	2014-11-03 12:16:51.394148000 -0600
+@@ -815,9 +815,16 @@
+     return dbReadDatabase(&pdbbase, file, path, subs);
+ }
+ 
++/* dbLoadRecordsHook from base-3.15 */
++epicsShareDef DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook = NULL;
++
+ int epicsShareAPI dbLoadRecords(const char* file, const char* subs)
+ {
+-    return dbReadDatabase(&pdbbase, file, 0, subs);
++    int status = dbReadDatabase(&pdbbase, file, 0, subs);
++
++    if (!status && dbLoadRecordsHook)
++        dbLoadRecordsHook(file, subs);
++    return status;
+ }
+ 
+
+
+--- src/db/dbAccessDefs.h.ORIG	2014-11-03 12:06:29.118353000 -0600
++++ src/db/dbAccessDefs.h	2014-11-03 12:08:27.229610000 -0600
+@@ -276,6 +276,12 @@
+     short dbrType,long options,long nRequest);
+ epicsShareFunc long epicsShareAPI dbValueSize(short dbrType);
+ 
++/* Hook Routine */
++
++typedef void (*DB_LOAD_RECORDS_HOOK_ROUTINE)(const char* filename,
++    const char* substitutions);
++epicsShareExtern DB_LOAD_RECORDS_HOOK_ROUTINE dbLoadRecordsHook;
++
+ epicsShareFunc int epicsShareAPI  dbLoadDatabase(
+     const char *filename, const char *path, const char *substitutions);
+</pre></blockquote>
 
 <a name="asVerify"></a>
 <hr>
