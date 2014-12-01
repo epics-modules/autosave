@@ -5,7 +5,7 @@
 This software tests autosave by writing random values to a list of PVs, and
 comparing values retrieved from those PVs with the values written.  To use,
 load the SR_test database dbLoadRecords("$(AUTOSAVE)/asApp/Db/SR_test.db",
-"P=xxx:,N=100"), and add the line "file SR_test_settings.req P=xxxL:" to
+"P=xxx:,N=100"), and add the line "file SR_test_settings.req P=xxx:" to
 auto_settings.req. The python distribution you use must have PyEpics and numpy.
 
 % python
