@@ -2932,6 +2932,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	int             i=0;
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
+	char			*c;
 
 	if (save_restoreDebug > 1) {
 		errlogPrintf("save_restore:readReqFile: entry: reqFile='%s', plist=%p, macrostring='%s'\n",
@@ -2970,6 +2971,11 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 				if (fgets(eline, BUF_SIZE, inp_fd) == NULL) break;
 				if (save_restoreDebug) printf("save_restore:readReqFile: discard:\n\t'%s'\n", eline);
 			}
+			/* Also, we should make sure the line does not end in the middle of a macro definition */
+			c = line + strlen(line) - 1;
+			while (c>line && *c != ',' && !isspace((int)*c)) c--;
+			*c = '\0';
+			if (save_restoreDebug) printf("save_restore:readReqFile: line='%s'\n", line);
 		}
 
 		/* Expand input line. */

@@ -1593,12 +1593,15 @@ static char requestFileCmd[MAXSTRING];
 static char requestFileBase[MAXSTRING];
 static char requestFileName[MAXSTRING];
 static char macroString[MAXSTRING], emacroString[MAXSTRING];
-static void myDbLoadRecordsHook(const char* dbFileName, const char* macro) {
+
+static void myDbLoadRecordsHook(const char* fname, const char* macro) {
 	struct buildInfoItem *pitem;
-	char *p;
+	char *p, *dbFileName;
 	int n;
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
+
+	dbFileName = macEnvExpand(fname);
 
 	if (save_restoreDebug >= 5) {
 		printf("myDbLoadRecordsHook: dbFileName='%s'; subs='%s'\n", dbFileName, macroString);
@@ -1621,6 +1624,7 @@ static void myDbLoadRecordsHook(const char* dbFileName, const char* macro) {
 	if (p == NULL) p = strstr(requestFileBase, ".template");
 	if (p == NULL) {
 		printf("myDbLoadRecordsHook: Can't make request-file name from '%s'\n", dbFileName);
+		free(dbFileName);
 		return;
 	}
 	*p = '\0';
@@ -1651,6 +1655,7 @@ static void myDbLoadRecordsHook(const char* dbFileName, const char* macro) {
 			}
 		}
 	}
+	free(dbFileName);
 }
 
 int autosaveBuild(char *filename, char *reqFileSuffix, int on) {
