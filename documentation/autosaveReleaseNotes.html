@@ -10,6 +10,16 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.5.1</h3>
+<ul>
+
+<li>myDbLoadRecordsHook() now calls macEnvExpand() for the filename
+
+<li>Defend against long lines in readReqFile: don't truncate string in the
+middle of a macro definition.
+
+</ul>
+
 <h3>5.5</h3>
 <ul>
 
