@@ -2928,7 +2928,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	FILE   			*inp_fd = NULL;
 	char			name[80] = "", *t=NULL, line[BUF_SIZE]="", eline[EBUF_SIZE]="";
 	char            templatefile[NFS_PATH_LEN+1] = "";
-	char            new_macro[80] = "";
+	char            new_macro[BUF_SIZE] = "";
 	int             i=0;
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
@@ -2982,6 +2982,11 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 		name[0] = '\0';
 		eline[0] = '\0';
 		if (handle && pairs) {
+			if (save_restoreDebug > 5) {
+				printf("save_restore:readReqFile:handle=%p\n", handle);
+				printf("save_restore:readReqFile:pairs[0]='%s'\n", pairs[0]);
+				if (pairs[1]) printf("save_restore:readReqFile:pairs[1]='%s'\n", pairs[1]);
+			}
 			macExpandString(handle, line, eline, EBUF_SIZE);
 		} else {
 			strcpy(eline, line);
@@ -3010,12 +3015,19 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 
 			/* parse new macro string and fix obvious problems */
 			/* for (i=0; *t && *t != '#'; t++) { */
-			for (i=0; *t; t++) {
+			for (i=0; *t && i<BUF_SIZE-3; t++) {
 				if (isspace((int)(*t)) || *t == ',') {
 					if (i>=3 && (new_macro[i-1] != ','))
 						new_macro[i++] = ',';
 				} else if (*t != '"') {
 					new_macro[i++] = *t;
+				}
+
+				if (i>=BUF_SIZE-3) {
+					/* Make sure the macro does not end in the middle of a macro definition */
+					c = line + strlen(line) - 1;
+					while (i>0 && new_macro[i] != ',' && !isspace((int)new_macro[i])) i--;
+					new_macro[i] = '\0';
 				}
 			}
 			new_macro[i] = 0;
