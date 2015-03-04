@@ -10,6 +10,16 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.6</h3>
+<ul>
+
+<li>Manual restore of array PV now uses channel access, rather than database
+access, so it behaves like manual restore of a scalar.  (Previously, when
+configMenu restored an array to a VAL field, the field value didn't get posted,
+because database access doesn't cause record processing.)
+
+</ul>
+
 <h3>5.5.1</h3>
 <ul>
 
