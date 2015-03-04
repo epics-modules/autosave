@@ -108,7 +108,7 @@ void myPrintErrno(char *s, char *file, int line) {
 	errlogPrintf("%s(%d): [0x%x]=%s:%s\n", file, line, errno, s, strerror(errno));
 }
 
-STATIC float mySafeDoubleToFloat(double d)
+float mySafeDoubleToFloat(double d)
 {
 	float f;
     double abs = fabs(d);
@@ -316,8 +316,8 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	return(status);
 }
 
-STATIC void *p_data = NULL;
-STATIC long p_data_size = 0;
+static void *p_data = NULL;
+static long p_data_size = 0;
 
 long SR_put_array_values(char *PVname, void *p_data, long num_values)
 {
