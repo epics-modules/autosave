@@ -107,6 +107,7 @@ extern int isAbsolute(const char* filename);
 extern int openReqFile(const char *reqFile, FILE **fpp);
 extern int eraseFile(const char *filename);
 extern int appendToFile(const char *filename, const char *line);
+extern float mySafeDoubleToFloat(double d);
 
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
 #define strNcpy(dest, src, N) {			\
@@ -116,3 +117,4 @@ extern int appendToFile(const char *filename, const char *line);
 		*dd++ = *ss++;					\
 	*dd = '\0';							\
 }
+
