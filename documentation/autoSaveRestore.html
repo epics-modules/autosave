@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.5</h1>
+<h1 align="center">autosave v5.6</h1>
 
 <h2>Table of Contents</h2>
 <ul>
@@ -78,17 +78,19 @@ dbLoadRecords() and dbLoadTemplate().  This facility requires EPICS 3.15, or
 
 <ul>
 
-<P><li>Autosave uses dbStaticLib to write PVs at boot time, just like
+<P><li>At boot time, autosave uses dbStaticLib to write PVs, just like
 dbLoadRecords().  Thus, boot-time restore does not cause record processing to
 occur, and it does not make a record's value defined (doesn't set UDF to 0).
 <em>Exception: arrays cannot be written by dbStaticLib, so autosave writes
-arrays using database access.  This still doesn't cause processing to occur,
-though it should cause the record's UDF field to be set to 0.</em>
+arrays at boot time using database access.  This still doesn't cause processing
+to occur, though it should cause the record's UDF field to be set to 0.</em>
 
-<P><li>At run time (after boot-time restore), autosave reads and writes using
-channel-access.  Restoring at run time can produce a different result than
-restoring at boot time, because record execution may occur. <em>Exception:
-arrays are read and written using database access.</em>
+<P><li>At run time (after iocInit has completed), autosave reads and writes
+using channel-access.  Restoring at run time can produce a different result than
+restoring at boot time, because record processing may occur. Prior to
+autosave 5.6, arrays were always read and written using database access, which
+doesn't cause records to process.  Beginning with autosave 5.6, run time restore
+of arrays is done with channel access.
 
 <P><li>Boot-time restore can occur at either or both of two times: before record
 initialization ("pass 0"); and after record initialization ("pass 1").  (Record
@@ -857,10 +859,12 @@ Autosave cannot write enums as strings, because enum strings may not have been
 defined at the time they must be restored.
 
 <dt>arrays of any kind
-<dd>Arrays are read and written using database access.  Channel access cannot
-read only the defined portion of an array, dbStaticLib cannot write an array.
-(However, asVerify uses channel access to read arrays.)
-</dl>
+
+<dd>Arrays are read using database access.  Channel access cannot read only the
+defined portion of an array, dbStaticLib cannot write an array. (However,
+asVerify uses channel access to read arrays.)  At boot time, autosave uses
+database access to write arrays, but at runtime, it uses channel access
+(beginning with autosave 5.6). </dl>
 
 <P>Here is a sample save file.  Characters in <font color=blue>blue</font> are
 documentation comments, and are not part of the file:

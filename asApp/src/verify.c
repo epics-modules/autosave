@@ -393,7 +393,7 @@ long asVerify(char *fileName, int verbose, int debug, int write_restore_file, ch
 	return(numDifferences + numPVsNotConnected);
 }
 
-static float mySafeDoubleToFloat(double d)
+static float safeDoubleToFloat(double d)
 {
 	float f;
     double abs = fabs(d);
@@ -509,7 +509,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 						p_short[num_read++] = (short)atol(string);
 						break;
 					case DBF_FLOAT:
-						p_float[num_read++] = mySafeDoubleToFloat(atof(string));
+						p_float[num_read++] = safeDoubleToFloat(atof(string));
 						break;
 					case DBF_DOUBLE:
 						p_double[num_read++] = atof(string);

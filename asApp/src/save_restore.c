@@ -2658,6 +2658,338 @@ char *getMacroString(char *request_file)
  * and update database vaules.
  *
  */
+static void *p_data = NULL;
+static long p_data_size = 0;
+
+STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *value_string, int gobble) {
+
+	int				j, end_mark_found=0, begin_mark_found=0, end_of_file=0, found=0, in_element=0;
+	long			status=0, max_elements=0, num_read=0;
+	char			buffer[BUF_SIZE], *bp = NULL;
+	char			string[MAX_STRING_SIZE];
+	short			field_type;
+	int				field_size;
+	char			*p_char = NULL;
+	short			*p_short = NULL;
+	unsigned short	*p_ushort = NULL;
+	epicsInt32		*p_long = NULL;
+	float			*p_float = NULL;
+	double			*p_double = NULL;
+
+
+	if (save_restoreDebug >= 1) {
+		errlogPrintf("save_restore:manual_array_restore:entry: PV = '%s'\n", PVname);
+	}
+
+	if (!gobble) {
+		/*** set up infrastructure for collecting array elements from file into local array ***/
+		max_elements = ca_element_count(chanid);
+		field_type = ca_field_type(chanid);
+		field_size = dbr_size[field_type];
+		/* if we've already allocated a big enough memory block, use it */
+		if ((p_data == NULL) || ((max_elements * field_size) > p_data_size)) {
+			if (save_restoreDebug >= 1) {
+				errlogPrintf("save_restore:manual_array_restore: p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
+			}
+			if (p_data) free(p_data);
+			p_data = (void *)calloc(max_elements, field_size);
+			p_data_size = p_data ? max_elements * field_size : 0;
+			if (save_restoreDebug >= 10) errlogPrintf("save_restore:manual_array_restore: allocated p_data = %p, p_data_size = %ld\n", p_data, p_data_size);
+		} else {
+			memset(p_data, 0, p_data_size);
+		}
+		if (save_restoreDebug >= 10) {
+			errlogPrintf("save_restore:manual_array_restore: Looking for up to %ld elements of field-size %d\n", max_elements, field_size);
+			errlogPrintf("save_restore:manual_array_restore: ...field_type is (%d)\n", field_type);
+		}
+
+		switch (field_type) {
+		case DBF_STRING:
+		case DBF_CHAR:		p_char = (char *)p_data;             break;
+		case DBF_ENUM:		p_ushort = (unsigned short *)p_data; break;
+		case DBF_SHORT:		p_short = (short *)p_data;           break;
+		case DBF_LONG:		p_long = (epicsInt32 *)p_data;       break;
+		case DBF_FLOAT:		p_float = (float *)p_data;           break;
+		case DBF_DOUBLE:	p_double = (double *)p_data;         break;
+		default:
+			errlogPrintf("save_restore:manual_array_restore: field_type '%d' not handled\n", field_type);
+			status = -1;
+			break;
+		}
+	}
+
+
+	/** read array values **/
+	if (save_restoreDebug >= 11) {
+		errlogPrintf("save_restore:manual_array_restore: parsing buffer '%s'\n", value_string);
+	}
+
+	if (value_string==NULL || *value_string=='\0') {
+		if (save_restoreDebug >= 11) {
+			errlogPrintf("save_restore:manual_array_restore: value_string is null or empty\n");
+		}
+		/* nothing to write; write zero or "" */
+		if (p_data) {
+			switch (field_type) {
+			case DBF_STRING:	strcpy(p_char, "");							break;
+			case DBF_ENUM:		p_ushort[num_read++] = (unsigned short)0;	break;
+			case DBF_CHAR:		p_char[num_read++] = (char)0;				break;
+			case DBF_SHORT:		p_short[num_read++] = (short)0;				break;
+			case DBF_LONG:		p_long[num_read++] = (epicsInt32) 0;		break;
+			case DBF_FLOAT:		p_float[num_read++] = 0;					break;
+			case DBF_DOUBLE:	p_double[num_read++] = 0;					break;
+			default:
+				break;
+			}
+		}
+	} else if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) == NULL) {
+		if (save_restoreDebug >= 11) {
+			errlogPrintf("save_restore:manual_array_restore: ARRAY_BEGIN not found\n");
+		}
+		/* doesn't look like array data.  just restore what we have */
+		if (p_data) {
+			switch (field_type) {
+			case DBF_STRING:
+				/* future: translate escape sequence */
+				strncpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), value_string, MAX_STRING_SIZE);
+				break;
+			case DBF_ENUM:
+				p_ushort[num_read++] = (unsigned short)atol(value_string);
+				break;
+			case DBF_CHAR:
+				p_char[num_read++] = (char)atol(value_string);
+				break;
+			case DBF_SHORT:
+				p_short[num_read++] = (short)atol(value_string);
+				break;
+			case DBF_LONG:
+				p_long[num_read++] = (epicsInt32) atol(value_string);
+				break;
+			case DBF_FLOAT:
+				p_float[num_read++] = mySafeDoubleToFloat(atof(value_string));
+				break;
+			case DBF_DOUBLE:
+				p_double[num_read++] = atof(value_string);
+				break;
+			default:
+				break;
+			}
+		}
+	} else if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) {
+		begin_mark_found = 1;
+		if (save_restoreDebug >= 10) {
+			errlogPrintf("save_restore:manual_array_restore: parsing array buffer '%s'\n", bp);
+		}
+		for (num_read=0; bp && !end_mark_found; ) {
+			/* Find beginning of array element */
+			if (save_restoreDebug >= 10) {
+				errlogPrintf("save_restore:manual_array_restore: looking for element[%ld] \n", num_read);
+			}
+			/* If truncated-file detector (checkFile) fails, test for end of file before
+			 * using *bp */
+			while (!end_mark_found && !end_of_file && (*bp != ELEMENT_BEGIN)) {
+				if (save_restoreDebug >= 12) {
+					errlogPrintf("save_restore:manual_array_restore: ...buffer contains '%s'\n", bp);
+				}
+				switch (*bp) {
+				case '\0':
+					if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+						errlogPrintf("save_restore: *** EOF during array-parse\n");
+						end_of_file = 1;
+					}
+					break;
+				case ARRAY_END:
+					end_mark_found = 1;
+					break;
+				default:
+					++bp;
+					break;
+				}
+			}
+			/*
+			 * Read one element: Accumulate characters of element value into string[],
+			 * ignoring any nonzero control characters, and append the value to the local array.
+			 */
+			if (bp && !end_mark_found && !end_of_file) {
+				/* *bp == ELEMENT_BEGIN */
+				if (save_restoreDebug >= 11) {
+					errlogPrintf("save_restore:manual_array_restore: Found element-begin; buffer contains '%s'\n", bp);
+				}
+				for (bp++, j=0; (j < MAX_STRING_SIZE-1) && (*bp != ELEMENT_END); bp++) {
+					if (save_restoreDebug >= 11) errlogPrintf("save_restore:manual_array_restore: *bp=%c (%d)\n", *bp, (int)*bp);
+					if (*bp == '\0') {
+						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+							errlogPrintf("save_restore:array_restore: *** premature EOF.\n");
+							end_of_file = 1;
+							break;
+						}
+						if (save_restoreDebug >= 11) {
+							errlogPrintf("save_restore:manual_array_restore: new buffer: '%s'\n", bp);
+						}
+						if (*bp == ELEMENT_END) break;
+					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
+						/* escaped character */
+						bp++;
+					}
+					if (isprint((int)(*bp))) string[j++] = *bp; /* Ignore, e.g., embedded newline */
+				}
+				string[j] = '\0';
+				if (save_restoreDebug >= 10) {
+					errlogPrintf("save_restore:manual_array_restore: element[%ld] value = '%s'\n", num_read, string);
+					if (bp) errlogPrintf("save_restore:manual_array_restore: look for element-end: buffer contains '%s'\n", bp);
+				}
+				/*
+				 * We've accumulated all the characters, or all we can handle in string[].
+				 * If there are more characters than we can handle, just pretend we read them.
+				 */
+				/* *bp == ELEMENT_END ,*/
+				for (found = 0; (found == 0) && !end_of_file; ) {
+					while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
+					switch (*bp) {
+					case ELEMENT_END:
+						found = 1; bp++; break;
+					case ESCAPE:
+						if (*(++bp) == ELEMENT_END) bp++; break;
+					default:
+						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+							end_of_file = 1;
+							found = 1;
+						}
+					}
+				}
+				if ((num_read<max_elements) && !gobble) {
+					/* Append value to local array. */
+					if (p_data) {
+						switch (field_type) {
+						case DBF_STRING:
+							/* future: translate escape sequence */
+							strncpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), string, MAX_STRING_SIZE);
+							break;
+						case DBF_ENUM:
+							p_ushort[num_read++] = (unsigned short)atol(string);
+							break;
+						case DBF_CHAR:
+							p_char[num_read++] = (char)atol(string);
+							break;
+						case DBF_SHORT:
+							p_short[num_read++] = (short)atol(string);
+							break;
+						case DBF_LONG:
+							p_long[num_read++] = (epicsInt32) atol(string);
+							break;
+						case DBF_FLOAT:
+							p_float[num_read++] = mySafeDoubleToFloat(atof(string));
+							break;
+						case DBF_DOUBLE:
+							p_double[num_read++] = atof(string);
+							break;
+						default:
+							break;
+						}
+					}
+				}
+			}
+		} /* for (num_read=0; bp && !end_mark_found; ) */
+
+		if ((save_restoreDebug >= 10) && p_data && !gobble) {
+			errlogPrintf("\nsave_restore: %ld array values:\n", num_read);
+			for (j=0; j<num_read; j++) {
+				switch (field_type) {
+				case DBF_STRING:
+					errlogPrintf("	'%s'\n", &(p_char[j*MAX_STRING_SIZE])); break;
+				case DBF_ENUM:
+					errlogPrintf("	%u\n", p_ushort[j]); break;
+				case DBF_SHORT:
+					errlogPrintf("	%d\n", p_short[j]); break;
+				case DBF_CHAR:
+					errlogPrintf("	'%c' (%d)\n", p_char[j], p_char[j]); break;
+				case DBF_LONG:
+					errlogPrintf("	%d\n", p_long[j]); break;
+				case DBF_FLOAT:
+					errlogPrintf("	%f\n", p_float[j]); break;
+				case DBF_DOUBLE:
+					errlogPrintf("	%g\n", p_double[j]); break;
+				default:
+					break;
+				}
+			}
+			errlogPrintf("save_restore: end of %ld array values.\n\n", num_read);
+			epicsThreadSleep(0.5);
+		}
+
+	} /* if ((bp = strchr(value_string, (int)ARRAY_BEGIN)) != NULL) */
+
+
+	/* leave the file pointer ready for next PV (next fgets() should yield next PV) */
+	if (begin_mark_found) {
+		/* find ARRAY_END (but ARRAY_END inside an element is just another character) */
+		if (save_restoreDebug >= 10) {
+			errlogPrintf("save_restore:manual_array_restore: looking for ARRAY_END\n");
+		}
+		in_element = 0;
+		while (!end_mark_found && !end_of_file) {
+			if (save_restoreDebug >= 11) {
+				errlogPrintf("save_restore:manual_array_restore: ...buffer contains '%s'\n", bp);
+			}
+			switch (*bp) {
+			case ESCAPE:
+				if (in_element && (bp[1] == ELEMENT_END)) bp++; /* two chars treated as one */
+				break;
+			case ARRAY_END:
+				if (save_restoreDebug >= 10) {
+					errlogPrintf("save_restore:manual_array_restore: found ARRAY_END.  in_element=%d\n", in_element);
+				}
+				if (!in_element) end_mark_found = 1;
+				break;
+			case '\0':
+				if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
+					errlogPrintf("save_restore:manual_array_restore: *** EOF during array-end search\n");
+					end_of_file = 1;
+				}
+				break;
+			default:
+				/* Can't use ELEMENT_BEGIN, ELEMENT_END as cases; they might be the same. */
+				if ((*bp == ELEMENT_BEGIN) || (*bp == ELEMENT_END)) in_element = !in_element;
+				break;
+			}
+			if (bp) ++bp;
+		}
+	} else {
+		if (save_restoreDebug >= 10) {
+			errlogPrintf("save_restore:manual_array_restore: ARRAY_BEGIN wasn't found.\n");
+		}
+	}
+	if (!status && end_of_file) {
+		status = end_of_file;
+		errlogPrintf("save_restore:manual_array_restore: status = end_of_file.\n");
+	}
+
+	if (gobble) {
+		if (save_restoreDebug >= 1) {
+			errlogPrintf("save_restore:manual_array_restore: Gobbled unused array data.\n");
+		}
+	} else {
+		if (!status && p_data) {
+			if (save_restoreDebug >= 1) {
+				errlogPrintf("save_restore:manual_array_restore: Writing array to database\n");
+			}
+			if (ca_array_put(field_type, num_read, chanid, p_data) != ECA_NORMAL) {
+				errlogPrintf("save_restore:manual_array_restore: ca_array_put to '%s' failed\n",PVname);
+				return (-1);
+			}
+		} else {
+			if (save_restoreDebug >= 1) {
+				errlogPrintf("save_restore:manual_array_restore: No array write to database attempted because of error condition\n");
+				errlogPrintf("save_restore:manual_array_restore: status=%ld, p_data=%p\n", status, p_data);
+			}
+		}
+	}
+	if ((p_data == NULL) && !gobble) status = -1;
+	return(status);
+}
+
+
+
 STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 {
 	struct channel	*pchannel;
@@ -2844,7 +3176,19 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 					}
 				}
 			} else {
-				status = SR_array_restore(1, inp_fd, PVname, value_string, 0);
+				/* array restore */
+				int gobble = 0;
+
+				if (ca_search(PVname, &chanid) != ECA_NORMAL) {
+					errlogPrintf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
+					num_errs++;
+					gobble = 1;
+				} else if (ca_pend_io(0.5) != ECA_NORMAL) {
+					num_errs++;
+					gobble = 1;
+				}
+				status = manual_array_restore(inp_fd, PVname, chanid, value_string, gobble);
+
 				if (status) num_errs++;
 			}
 			if (chanid) {
@@ -2862,6 +3206,11 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 				if (handle) macDeleteHandle(handle);
 				if (pairs) free(pairs);
 				strncpy(SR_recentlyStr, "Manual restore failed",(STRING_LEN-1));
+				if (p_data) {
+					free(p_data);
+					p_data = NULL;
+					p_data_size = 0;
+				}
 				return(ERROR);
 			}
 		} else if (PVname[0] == '#') {
@@ -2884,6 +3233,13 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 		(void)myFileCopy(restoreFile,bu_filename);
 	}
 	strncpy(SR_recentlyStr, "Manual restore succeeded",(STRING_LEN-1));
+
+	if (p_data) {
+		free(p_data);
+		p_data = NULL;
+		p_data_size = 0;
+	}
+
 	return(num_errs);
 }
 
