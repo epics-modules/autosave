@@ -287,7 +287,8 @@ typedef enum {
 	op_ReloadTriggeredSet,
 	op_ReloadMonitorSet,
 	op_ReloadManualSet,
-	op_SaveFile
+	op_SaveFile,
+	op_asVerify
 } op_type;
 typedef struct op_msg {
 	op_type operation;
@@ -298,6 +299,9 @@ typedef struct op_msg {
 	int period;
 	callbackFunc callbackFunction;
 	void *puserPvt;
+	/* for asVerify from ioc console */
+	int verbose;
+	char restoreFileName[OP_MSG_FILENAME_SIZE];
 } op_msg;
 #define OP_MSG_SIZE sizeof(op_msg)
 STATIC epicsMessageQueueId opMsgQueue = NULL;	/* message queue for manual/programmed save/restore operations */
@@ -1134,7 +1138,7 @@ STATIC int save_restore(void)
 					} else {
 						strncpy(fullPath, msg.filename, NFS_PATH_LEN);
 					}
-					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
+					status = do_asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
@@ -1202,7 +1206,7 @@ STATIC int save_restore(void)
 				}
 				unlockList();
 				if (status == 0) {
-					status = asVerify(fullPath, -1, save_restoreDebug, 0, "");
+					status = do_asVerify(fullPath, -1, save_restoreDebug, 0, "");
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
@@ -1211,6 +1215,16 @@ STATIC int save_restore(void)
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
 
+			case op_asVerify:
+				if (save_restoreDebug) printf("save_restore task: calling do_asVerify('%s')\n", msg.filename);
+				if (!isAbsolute(msg.filename)) {
+				    makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+				} else {
+					strncpy(fullPath, msg.filename, NFS_PATH_LEN);
+				}
+				status = do_asVerify(fullPath, msg.verbose, save_restoreDebug,
+					(int)(msg.restoreFileName[0]!='\0'), msg.restoreFileName);
+				break;
 
 			default:
 				break;
@@ -2632,6 +2646,37 @@ STATIC int request_manual_restore(char *filename, int file_type, char *macrostri
 	return(0);
 }
 
+STATIC int request_asVerify(char *filename, int verbose, char *restoreFileName)
+{
+	op_msg msg;
+
+	if (save_restoreDebug >= 5) {
+		errlogPrintf("save_restore:request_asVerify: entry\n");
+	}
+	msg.operation = op_asVerify;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("request_asVerify: bad filename\n");
+		return(-1);
+	}
+	strncpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
+	msg.macrostring[0] = '\0';
+	msg.puserPvt = 0;
+	msg.callbackFunction = NULL;
+	msg.verbose = verbose;
+	if (restoreFileName && restoreFileName[0]) {
+		strncpy(msg.restoreFileName, restoreFileName, OP_MSG_FILENAME_SIZE);
+	} else {
+		msg.restoreFileName[0] = '\0';
+	}
+
+	epicsMessageQueueSend(opMsgQueue, (void *)&msg, OP_MSG_SIZE);
+	return(0);
+}
+int asVerify(char *filename, int verbose, char *restoreFileName) {
+	request_asVerify(filename, verbose, restoreFileName);
+	return(0);
+}
+
 char *getMacroString(char *request_file)
 {
 	struct chlist	*plist;
@@ -3674,6 +3719,14 @@ IOCSH_ARG_ARRAY save_restoreSet_CallbackTimeout_Args[1] = {&save_restoreSet_Call
 IOCSH_FUNCDEF   save_restoreSet_CallbackTimeout_FuncDef = {"save_restoreSet_CallbackTimeout",1,save_restoreSet_CallbackTimeout_Args};
 static void     save_restoreSet_CallbackTimeout_CallFunc(const iocshArgBuf *args) {save_restoreSet_CallbackTimeout(args[0].ival);}
 
+/* int asVerify(char *fileName, int verbose, char *restoreFileName) */
+IOCSH_ARG       asVerify_Arg0    = {"filename",iocshArgString};
+IOCSH_ARG       asVerify_Arg1    = {"verbose",iocshArgInt};
+IOCSH_ARG       asVerify_Arg2    = {"restoreFileName",iocshArgString};
+IOCSH_ARG_ARRAY asVerify_Args[3] = {&asVerify_Arg0, &asVerify_Arg1, &asVerify_Arg2};
+IOCSH_FUNCDEF   asVerify_FuncDef = {"asVerify",3,asVerify_Args};
+static void     asVerify_CallFunc(const iocshArgBuf *args) {asVerify(args[0].sval,args[1].ival,args[2].sval);}
+
 void save_restoreRegister(void)
 {
     iocshRegister(&fdbrestore_FuncDef, fdbrestore_CallFunc);
@@ -3707,6 +3760,7 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_UseStatusPVs_FuncDef, save_restoreSet_UseStatusPVs_CallFunc);
     iocshRegister(&save_restoreSet_CAReconnect_FuncDef, save_restoreSet_CAReconnect_CallFunc);
     iocshRegister(&save_restoreSet_CallbackTimeout_FuncDef, save_restoreSet_CallbackTimeout_CallFunc);
+    iocshRegister(&asVerify_FuncDef, asVerify_CallFunc);
 }
 
 epicsExportRegistrar(save_restoreRegister);
