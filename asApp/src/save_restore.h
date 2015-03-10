@@ -92,7 +92,7 @@ extern struct restoreList restoreFileList;
 extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
 extern void makeNfsPath(char *dest, const char *s1, const char *s2);
-extern long asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName);
+extern int asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
 extern int	save_restoreNFSOK;
 extern int	save_restoreIoErrors;
