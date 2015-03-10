@@ -31,41 +31,8 @@ printf("    =============================\n"); wrote_head=1;}
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count,
 	char *read_buffer, int debug);
 
-int asVerify_call(char *filename, int verbose, int debug, int write_restore_file, char *restoreFileName) {
-	FILE	*fp=NULL, *ftmp=NULL;
-	char	s[BUF_SIZE];
-	char	*tempname;
-	int		status, n;
-	int		numDifferences;
-
-	status = ca_context_create(ca_enable_preemptive_callback);
-	if (!(status & CA_M_SUCCESS)) {
-		printf("Can't create CA context.  I quit.\n");
-		return(-1);
-	}
-
-	/*
-	 * Copy to temporary file.
-	 * The .sav file is likely to be overwritten while we're using it.
-	 */
-	fp = fopen(filename,"r");
-	if (fp == NULL) {printf("Can't open %s\n", filename); return(-1);}
-	tempname = tmpnam(NULL);
-	ftmp = fopen(tempname,"w");
-	if (ftmp == NULL) {printf("Can't open temp file.\n"); return(-1);}
-	while (!feof(fp) && (n=fread(s,1,BUF_SIZE,fp))) {
-		fwrite(s,1,n,ftmp);
-	}
-	fclose(fp); fp = NULL;
-	fclose(ftmp); ftmp = NULL;
-	numDifferences = asVerify(tempname, verbose, debug, write_restore_file, restoreFileName);
-	remove(tempname);
-	ca_context_destroy();
-	return(numDifferences);
-}
-
 /* verbose==-1 means don't say anything unless there's a problem. */
-int asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
+int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
 	float	*pfvalue, *pf_read;
 	double	*pdvalue, *pd_read, diff, max_diff=0.;
 	short	*penum_value, *penum_value_read;
@@ -606,25 +573,3 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 
 	return(status);
 }
-
-/*-------------------------------------------------------------------------------*/
-/*** ioc-shell command registration ***/
-
-#define IOCSH_ARG		static const iocshArg
-#define IOCSH_ARG_ARRAY	static const iocshArg * const
-#define IOCSH_FUNCDEF	static const iocshFuncDef
-
-/* int asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) */
-IOCSH_ARG       asVerify_Arg0    = {"filename",iocshArgString};
-IOCSH_ARG       asVerify_Arg1    = {"verbose",iocshArgInt};
-IOCSH_ARG       asVerify_Arg2    = {"debug",iocshArgInt};
-IOCSH_ARG       asVerify_Arg3    = {"write_restore_file",iocshArgInt};
-IOCSH_ARG       asVerify_Arg4    = {"restoreFileName",iocshArgString};
-IOCSH_ARG_ARRAY asVerify_Args[5] = {&asVerify_Arg0, &asVerify_Arg1, &asVerify_Arg2, &asVerify_Arg3, &asVerify_Arg4};
-IOCSH_FUNCDEF   asVerify_FuncDef = {"asVerify",5,asVerify_Args};
-static void     asVerify_CallFunc(const iocshArgBuf *args) {asVerify_call(args[0].sval,args[1].ival,args[2].ival,args[3].ival,args[4].sval);}
-
-void asVerifyRegister(void) {
-    iocshRegister(&asVerify_FuncDef, asVerify_CallFunc);
-}
-epicsExportRegistrar(asVerifyRegister);
