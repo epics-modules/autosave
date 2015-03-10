@@ -23,4 +23,3 @@ variable(save_restoreRemountThreshold)
 
 registrar(configMenuRegistrar)
 variable("configMenuDebug", int)
-registrar(asVerifyRegister)
