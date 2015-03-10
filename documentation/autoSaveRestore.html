@@ -664,12 +664,25 @@ perform macro substitutions, or include other request files.
 
 <P>Beginning with autosave R5.6.1, asVerify can be called from the IOC console:
 <pre>
-asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName)
+asVerify(char *fileName, int verbose, char *restoreFileName)
 </pre>
-example:
+Examples:
+
+<dl>
+<dt>
 <pre>
-asVerify("autosave/auto_settings.sav")
+asVerify("auto_settings.sav")
 </pre>
+
+<dd><P>This will print out differences.
+
+<dt>
+<pre>
+asVerify("auto_settings.sav",0,"junk.sav")
+</pre>
+
+<dd><P>This will print out differences and write "junk.sav" in the IOC's current directory.
+</dl>
 
 <a name="configMenu"></a>
 <hr>
@@ -1002,9 +1015,10 @@ SR_X_Status.adl
 <P>
 
 <!-------------------------------------------------------------------------------------->
-<P><dt><code>int asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName)</code>
+<P><dt><code>int asVerify(char *fileName, int verbose, char *restoreFileName)</code>
 <dd>Compare PV values in the IOC with values written in <code>filename</code> (which should
-	be an autosave restore file, or at least look like one).  Optionally, write a new restore file.
+	be an autosave restore file, or at least look like one).  If restoreFileName is not empty,
+	write a new restore file.
 	<P>This function can be called at any time after iocInit.
 
 <!-------------------------------------------------------------------------------------->
