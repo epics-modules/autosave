@@ -2712,7 +2712,7 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 	long			status=0, max_elements=0, num_read=0;
 	char			buffer[BUF_SIZE], *bp = NULL;
 	char			string[MAX_STRING_SIZE];
-	short			field_type;
+	short			field_type = 0;
 	int				field_size;
 	char			*p_char = NULL;
 	short			*p_short = NULL;
@@ -2774,7 +2774,7 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 			errlogPrintf("save_restore:manual_array_restore: value_string is null or empty\n");
 		}
 		/* nothing to write; write zero or "" */
-		if (p_data) {
+		if (p_data && !gobble) {
 			switch (field_type) {
 			case DBF_STRING:	strcpy(p_char, "");							break;
 			case DBF_ENUM:		p_ushort[num_read++] = (unsigned short)0;	break;
@@ -2792,7 +2792,7 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 			errlogPrintf("save_restore:manual_array_restore: ARRAY_BEGIN not found\n");
 		}
 		/* doesn't look like array data.  just restore what we have */
-		if (p_data) {
+		if (p_data && !gobble) {
 			switch (field_type) {
 			case DBF_STRING:
 				/* future: translate escape sequence */
@@ -2902,7 +2902,7 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 						}
 					}
 				}
-				if ((num_read<max_elements) && !gobble) {
+				if (!gobble && (num_read<max_elements)) {
 					/* Append value to local array. */
 					if (p_data) {
 						switch (field_type) {
