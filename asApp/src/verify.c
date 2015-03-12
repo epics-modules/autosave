@@ -11,6 +11,8 @@
 #include <math.h> /* fabs */
 #include <float.h>	/* for safeDoubleToFloat() */
 #include "cadef.h"
+#include <iocsh.h>
+#include <epicsExport.h>
 
 #include "save_restore.h"
 
@@ -30,7 +32,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 	char *read_buffer, int debug);
 
 /* verbose==-1 means don't say anything unless there's a problem. */
-long asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
+int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName) {
 	float	*pfvalue, *pf_read;
 	double	*pdvalue, *pd_read, diff, max_diff=0.;
 	short	*penum_value, *penum_value_read;

@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.6</h1>
+<h1 align="center">autosave v5.6.1</h1>
 
 <h2>Table of Contents</h2>
 <ul>
@@ -662,6 +662,28 @@ examples:
 any PV names contained in the file, but it cannot parse the "file" command,
 perform macro substitutions, or include other request files.
 
+<P>Beginning with autosave R5.6.1, asVerify can be called from the IOC console:
+<pre>
+asVerify(char *fileName, int verbose, char *restoreFileName)
+</pre>
+Examples:
+
+<dl>
+<dt>
+<pre>
+asVerify("auto_settings.sav")
+</pre>
+
+<dd><P>This will print out differences.
+
+<dt>
+<pre>
+asVerify("auto_settings.sav",0,"junk.sav")
+</pre>
+
+<dd><P>This will print out differences and write "junk.sav" in the IOC's current directory.
+</dl>
+
 <a name="configMenu"></a>
 <hr>
 <h2>configMenu</h2>
@@ -991,6 +1013,13 @@ SR_X_Status.adl
 <dl>
 
 <P>
+
+<!-------------------------------------------------------------------------------------->
+<P><dt><code>int asVerify(char *fileName, int verbose, char *restoreFileName)</code>
+<dd>Compare PV values in the IOC with values written in <code>filename</code> (which should
+	be an autosave restore file, or at least look like one).  If restoreFileName is not empty,
+	write a new restore file.
+	<P>This function can be called at any time after iocInit.
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>int create_manual_set(char *request_file, char *macrostring)</code>
