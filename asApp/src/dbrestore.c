@@ -1137,7 +1137,7 @@ static int set_restoreFile(int pass, char *filename, char *macrostring)
 	strcpy(pLI->restoreStatusStr, "Unknown, probably failed");
 
 	if (macrostring && macrostring[0]) {
-		pLI->macrostring = (char *)calloc(strlen(macrostring),sizeof(char));
+		pLI->macrostring = (char *)calloc(strlen(macrostring)+1,sizeof(char));
 		strcpy(pLI->macrostring, macrostring);
 	}
 
