@@ -628,7 +628,10 @@ int findConfigFiles(char *config, char names[][100], char descriptions[][100], i
 								if (( pchar = strchr(descriptions[i], '\r') )) *pchar = '\0';
 							}
 						}
-						if (fd) fclose(fd);
+						if (fd) {
+							fclose(fd);
+							fd = NULL;
+						}
 						i++;
 					} else {
 						if (save_restoreDebug) printf("findConfigFiles: can't open '%s'\n", filename);
@@ -1767,18 +1770,13 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	/* close the file */
 	errno = 0;
 	n = fclose(out_fd);
+	out_fd = NULL;
 	if (n) {
 		errlogPrintf("save_restore:write_it: fclose returned %d [%s]\n", n, datetime);
 		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
 		problem |= CLOSE_FAILED;
 		goto trouble;
 	}
-#if 0 /* SET_FILE_PERMISSIONS */
-	if (filedes >= 0) {
-		close(filedes);
-		filedes = -1;
-	}
-#endif
 
 	/* qiao: check the file state: the file contents, file size and the save time of the file */
 	stat(filename, &fileStat);
@@ -1800,24 +1798,22 @@ STATIC int write_it(char *filename, struct chlist *plist)
 trouble:
 	/* close the file */
 	errno = 0;
-	n = fclose(out_fd);
-	if (n) {
-		errlogPrintf("save_restore:write_it: fclose('%s') returned %d\n", plist->save_file, n);
-		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
-	} else {
-		problem &= ~CLOSE_FAILED;
+	if (out_fd) {
+		n = fclose(out_fd);
+		out_fd = NULL;
+		if (n) {
+			errlogPrintf("save_restore:write_it: fclose('%s') returned %d\n", plist->save_file, n);
+			if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
+		} else {
+			problem &= ~CLOSE_FAILED;
+		}
 	}
 	if (problem) {
 		fGetDateStr(datetime);
 		errlogPrintf("save_restore:write_it: Giving up on this attempt to write '%s'. [%s]\n",
 			plist->save_file, datetime);
 	}
-#if 0 /* SET_FILE_PERMISSIONS */
-	if (filedes >= 0) {
-		close(filedes);
-		filedes = -1;
-	}
-#endif
+
 	return(problem ? ERROR : OK);
 }
 
