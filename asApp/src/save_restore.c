@@ -328,8 +328,7 @@ STATIC char	status_prefix[30] = "";
 
 STATIC long	SR_status = SR_STATUS_INIT;
 STATIC unsigned short SR_heartbeat = 0;
-/* Make SR_recentlyStr huge because sprintf may overrun (vxWorks has no snprintf) */
-STATIC char	SR_statusStr[STRING_LEN] = "", SR_recentlyStr[300] = "";
+STATIC char	SR_statusStr[STRING_LEN] = "", SR_recentlyStr[STRING_LEN] = "";
 STATIC char	SR_status_PV[PV_NAME_LEN] = "", SR_heartbeat_PV[PV_NAME_LEN] = "";
 STATIC char	SR_statusStr_PV[PV_NAME_LEN] = "", SR_recentlyStr_PV[PV_NAME_LEN] = "";
 STATIC chid	SR_status_chid, SR_heartbeat_chid,
@@ -435,7 +434,7 @@ void save_restoreSet_DatedBackupFiles(int ok) {save_restoreDatedBackupFiles = ok
 void save_restoreSet_status_prefix(char *prefix) {strncpy(status_prefix, prefix, 29);}
 #if SET_FILE_PERMISSIONS
 void save_restoreSet_FilePermissions(int permissions) {
-	file_permissions = permissions;
+	file_permissions = (mode_t)permissions;
 	printf("save_restore: File permissions set to 0%o\n", (unsigned int)file_permissions);
 }
 #endif
@@ -826,25 +825,25 @@ STATIC int save_restore(void)
 
 	/* Build names for save_restore general status PV's with status_prefix */
 	if (save_restoreUseStatusPVs && *status_prefix && (*SR_status_PV == '\0')) {
-		strcpy(SR_status_PV, status_prefix);
-		strcat(SR_status_PV, "SR_status");
-		strcpy(SR_heartbeat_PV, status_prefix);
-		strcat(SR_heartbeat_PV, "SR_heartbeat");
-		strcpy(SR_statusStr_PV, status_prefix);
-		strcat(SR_statusStr_PV, "SR_statusStr");
-		strcpy(SR_recentlyStr_PV, status_prefix);
-		strcat(SR_recentlyStr_PV, "SR_recentlyStr");
+		strncpy(SR_status_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_status_PV, "SR_status", PV_NAME_LEN-1-strlen(SR_status_PV));
+		strncpy(SR_heartbeat_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_heartbeat_PV, "SR_heartbeat", PV_NAME_LEN-1-strlen(SR_heartbeat_PV));
+		strncpy(SR_statusStr_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_statusStr_PV, "SR_statusStr", PV_NAME_LEN-1-strlen(SR_statusStr_PV));
+		strncpy(SR_recentlyStr_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_recentlyStr_PV, "SR_recentlyStr", PV_NAME_LEN-1-strlen(SR_recentlyStr_PV));
 		TATTLE(ca_search(SR_status_PV, &SR_status_chid), "save_restore: ca_search(%s) returned %s", SR_status_PV);
 		TATTLE(ca_search(SR_heartbeat_PV, &SR_heartbeat_chid), "save_restore: ca_search(%s) returned %s", SR_heartbeat_PV);
 		TATTLE(ca_search(SR_statusStr_PV, &SR_statusStr_chid), "save_restore: ca_search(%s) returned %s", SR_statusStr_PV);
 		TATTLE(ca_search(SR_recentlyStr_PV, &SR_recentlyStr_chid), "save_restore: ca_search(%s) returned %s", SR_recentlyStr_PV);
 
-		strcpy(SR_rebootStatus_PV, status_prefix);
-		strcat(SR_rebootStatus_PV, "SR_rebootStatus");
-		strcpy(SR_rebootStatusStr_PV, status_prefix);
-		strcat(SR_rebootStatusStr_PV, "SR_rebootStatusStr");
-		strcpy(SR_rebootTime_PV, status_prefix);
-		strcat(SR_rebootTime_PV, "SR_rebootTime");
+		strncpy(SR_rebootStatus_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_rebootStatus_PV, "SR_rebootStatus", PV_NAME_LEN-1-strlen(SR_rebootStatus_PV));
+		strncpy(SR_rebootStatusStr_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_rebootStatusStr_PV, "SR_rebootStatusStr", PV_NAME_LEN-1-strlen(SR_rebootStatusStr_PV));
+		strncpy(SR_rebootTime_PV, status_prefix, PV_NAME_LEN-1);
+		strncat(SR_rebootTime_PV, "SR_rebootTime", PV_NAME_LEN-1-strlen(SR_rebootTime_PV));
 		TATTLE(ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatus_PV);
 		TATTLE(ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatusStr_PV);
 		TATTLE(ca_search(SR_rebootTime_PV, &SR_rebootTime_chid), "save_restore: ca_search(%s) returned %s", SR_rebootTime_PV);
@@ -899,7 +898,7 @@ STATIC int save_restore(void)
 		if ((save_restoreNFSOK == 0)  && NFS_managed) {
 			/* NFS problem, and we're managing the mount: Try every 60 seconds to remount. */
 			timeDiff = epicsTimeDiffInSeconds(&currTime, &remount_check_time);
-			errlogPrintf("save_restore: save_restoreNFSOK==0 for %f seconds\n", timeDiff);
+			/* errlogPrintf("save_restore: save_restoreNFSOK==0 for %f seconds\n", timeDiff); */
 			if (timeDiff > REMOUNT_CHECK_INTERVAL_SECONDS) {
 				remount_check_time = currTime;                           	/* struct copy */
 				errlogPrintf("save_restore: attempting to remount filesystem\n");
@@ -944,7 +943,7 @@ STATIC int save_restore(void)
 						errlogPrintf("save_restore: Can't connect to list-specific path/name PV(s)\n");
 
 						plist->status = SR_STATUS_WARN;
-						strcpy(plist->statusStr, "List path/name PVs connection failed");
+						strncpy(plist->statusStr, "List path/name PVs connection failed", STRING_LEN-1);
 					}
 				}
 
@@ -1036,11 +1035,11 @@ STATIC int save_restore(void)
 			/* find and record worst status */
 			if (plist->status <= SR_status ) {
 				SR_status = plist->status;
-				strcpy(SR_statusStr, plist->statusStr);
+				strncpy(SR_statusStr, plist->statusStr, STRING_LEN-1);
 			}
 			/*if (SR_rebootStatus < SR_status) {
 				SR_status = SR_rebootStatus;
-				strcpy(SR_statusStr, SR_rebootStatusStr);
+				strncpy(SR_statusStr, SR_rebootStatusStr, STRING_LEN-1);
 			}*/           /* qiao: disable this part, because sometimes the system recovers during runtime though some errors during reboot */
 
 			/* next list */
@@ -1072,10 +1071,10 @@ STATIC int save_restore(void)
 					/*** Build PV names ***/
 					/* make common portion of PVname strings */
 					n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->statusPvIndex);
-					strcpy(plist->name_PV, plist->status_PV);
-					strcpy(plist->save_state_PV, plist->status_PV);
-					strcpy(plist->statusStr_PV, plist->status_PV);
-					strcpy(plist->time_PV, plist->status_PV);
+					strncpy(plist->name_PV, plist->status_PV, PV_NAME_LEN-1);
+					strncpy(plist->save_state_PV, plist->status_PV, PV_NAME_LEN-1);
+					strncpy(plist->statusStr_PV, plist->status_PV, PV_NAME_LEN-1);
+					strncpy(plist->time_PV, plist->status_PV, PV_NAME_LEN-1);
 					/* make all PVname strings */
 					strncat(plist->status_PV, "Status", n);
 					strncat(plist->name_PV, "Name", n);
@@ -1263,7 +1262,7 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 	int				n, m;
 	long			status, field_size;
 
-	strcpy(plist->statusStr,"Connecting PVs...");
+	strncpy(plist->statusStr,"Connecting PVs...", STRING_LEN-1);
 
 	/* connect all channels in the list */
 	for (pchannel = plist->pchan_list, n=0; pchannel != 0; pchannel = pchannel->pnext) {
@@ -1275,11 +1274,11 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 			if (pchannel->chid) ca_clear_channel(pchannel->chid);         /* qiao: release the channel, avoid duplicate resource allocation */
 			if (ca_create_channel(pchannel->name, ca_connection_callback, (void *)pchannel,
 					CA_PRIORITY_DEFAULT, &pchannel->chid) == ECA_NORMAL) {
-				strcpy(pchannel->value,"Search Issued");
+				strncpy(pchannel->value,"Search Issued", STRING_LEN-1);
 				pchannel->just_created = 1;
 				n++;
 			} else {
-				strcpy(pchannel->value,"Search Failed");
+				strncpy(pchannel->value,"Search Failed", STRING_LEN-1);
 			}
 		}
 	}
@@ -1297,7 +1296,7 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 
 		if (pchannel->chid) {
 			if (ca_state(pchannel->chid) == cs_conn) {
-				strcpy(pchannel->value,"Connected");
+				strncpy(pchannel->value,"Connected", STRING_LEN-1);
 				n++;
 			} else {
 				if (verbose) {
@@ -1392,7 +1391,7 @@ STATIC int enable_list(struct chlist *plist)
 	chid 			chid;			/* channel access id */
 
 	if (save_restoreDebug >= 4) errlogPrintf("save_restore:enable_list: entry\n");
-	strcpy(plist->statusStr,"Enabling list...");
+	strncpy(plist->statusStr,"Enabling list...", STRING_LEN-1);
 
 	/* enable a periodic set */
 	if ((plist->save_method & PERIODIC) && !(plist->enabled_method & PERIODIC)) {
@@ -1503,7 +1502,7 @@ STATIC int get_channel_values(struct chlist *plist)
 
 		if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (pchannel->max_elements >= 1)) {
 			field_type = ca_field_type(pchannel->chid);
-			strcpy(pchannel->value, INIT_STRING);
+			strncpy(pchannel->value, INIT_STRING, STRING_LEN-1);
 			if (field_type == DBF_FLOAT) {
 				ca_array_get(DBR_FLOAT,1,pchannel->chid,(float *)pchannel->value);
 			} else if (field_type == DBF_DOUBLE) {
@@ -1615,7 +1614,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
     int             file_check;
     double          delta_time;
 	struct stat		fileStat;		/* qiao: file state */
-	char			realName[64];	/* name without trailing '$' */
+	char			realName[PV_NAME_LEN];	/* name without trailing '$' */
 	int				is_long_string;
 	char			value_string[BUF_SIZE];
 
@@ -1636,6 +1635,10 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		}
 		return(ERROR);
 	} else {
+		int status;
+		/* open() doesn't seem to set file permissions anymore */
+		status = fchmod (filedes, (mode_t) file_permissions);
+		if (status) printf("write_it: fchmod returned %d\n", status);
 		out_fd = fdopen(filedes, "w");
 	}
 #else
@@ -1679,7 +1682,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 		errno = 0;
 		is_long_string = 0;
-		strcpy(realName, pchannel->name);
+		strncpy(realName, pchannel->name, PV_NAME_LEN-1);
 		if (realName[strlen(realName)-1] == '$') {
 			realName[strlen(realName)-1] = '\0';
 			is_long_string = 1;
@@ -1825,10 +1828,11 @@ trouble:
  * NOTE: Assumes sr_mutex is locked
  *
  */
+#define TMPSTRLEN NFS_PATH_LEN+50
 STATIC int write_save_file(struct chlist *plist, const char *configName, char *retSaveFile)
 {
 	char	save_file[NFS_PATH_LEN+3] = "", backup_file[NFS_PATH_LEN+3] = "";
-	char	tmpstr[NFS_PATH_LEN+50];
+	char	tmpstr[TMPSTRLEN];
 	int		backup_state = BS_OK;
 	char	datetime[32];
 
@@ -1869,7 +1873,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 
 	/* Currently, all lists do backups, unless their file path or file name comes from a PV, or the configName argument. */
 	if (plist->do_backups && (configName==NULL)) {
-		strcpy(backup_file, save_file);
+		strncpy(backup_file, save_file, NFS_PATH_LEN);
 		strncat(backup_file, "B", 1);
 
 		/* Ensure that backup is ok before we overwrite .sav file. */
@@ -1879,10 +1883,10 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 				backup_file, datetime);
 			if (backup_state == BS_BAD) {
 				/* make a backup copy of the corrupted file */
-				strcpy(tmpstr, backup_file);
-				strcat(tmpstr, "_SBAD_");
+				strncpy(tmpstr, backup_file, TMPSTRLEN-1);
+				strncat(tmpstr, "_SBAD_", TMPSTRLEN-1-strlen(tmpstr));
 				if (save_restoreDatedBackupFiles) {
-					strcat(tmpstr, datetime);
+					strncat(tmpstr, datetime, TMPSTRLEN-1-strlen(tmpstr));
 					sprintf(SR_recentlyStr, "Bad file: '%sB'", plist->save_file);
 				}
 				(void)myFileCopy(backup_file, tmpstr);
@@ -1892,12 +1896,12 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 				printf("save_restore:write_save_file: Can't write new backup file. [%s]\n", datetime);
 				printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 				plist->status = SR_STATUS_FAIL;
-				strcpy(plist->statusStr, "Can't write .savB file");
+				strncpy(plist->statusStr, "Can't write .savB file", STRING_LEN-1);
 				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				return(ERROR);
 			}
 			plist->status = SR_STATUS_WARN;
-			strcpy(plist->statusStr, ".savB file was bad");
+			strncpy(plist->statusStr, ".savB file was bad", STRING_LEN-1);
 			TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 			backup_state = BS_NEW;
 		}
@@ -1909,9 +1913,9 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 
 		if ((test_fd = fopen(save_file,"rb")) != NULL) {
 			fGetDateStr(datetime);
-			strcpy(backup_file, save_file);
-			strcat(backup_file, "_");
-			strcat(backup_file, datetime);
+			strncpy(backup_file, save_file, NFS_PATH_LEN);
+			strncat(backup_file, "_", NFS_PATH_LEN-strlen(backup_file));
+			strncat(backup_file, datetime, NFS_PATH_LEN-strlen(backup_file));
 			myFileCopy(save_file,backup_file);
 		}
 	}
@@ -1923,15 +1927,15 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 		errlogPrintf("save_restore:write_save_file: Can't write save file. [%s]\n", datetime);
 		printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
 		plist->status = SR_STATUS_FAIL;
-		strcpy(plist->statusStr, "Can't write .sav file");
+		strncpy(plist->statusStr, "Can't write .sav file", STRING_LEN-1);
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-		sprintf(SR_recentlyStr, "Can't write '%s'", plist->save_file);
+		snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s'", plist->save_file);
 		return(ERROR);
 	}
 
 	/* keep the name and time of the last saved file */
 	epicsTimeGetCurrent(&plist->save_time);
-	strcpy(plist->last_save_file, plist->save_file);
+	strncpy(plist->last_save_file, plist->save_file, FN_LEN-1);
 
 	if (plist->do_backups) {
 		/*** Write a backup copy of the save file ***/
@@ -1941,9 +1945,9 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 				errlogPrintf("save_restore:write_save_file - Couldn't make backup '%s' [%s]\n",
 					backup_file, datetime);
 				plist->status = SR_STATUS_WARN;
-				strcpy(plist->statusStr, "Can't copy .sav to .savB file");
+				strncpy(plist->statusStr, "Can't copy .sav to .savB file", STRING_LEN-1);
 				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-				sprintf(SR_recentlyStr, "Can't write '%sB'", plist->save_file);
+				snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%sB'", plist->save_file);
 				return(ERROR);
 			}
 		}
@@ -1952,7 +1956,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 	/* Update status PV */
 	if (plist->not_connected) {
 		plist->status = SR_STATUS_WARN;
-		sprintf(plist->statusStr,"%d %s not saved", plist->not_connected,
+		snprintf(plist->statusStr, STRING_LEN-1,"%d %s not saved", plist->not_connected,
 			plist->not_connected==1?"value":"values");
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 	}
@@ -1983,7 +1987,7 @@ STATIC void do_seq(struct chlist *plist)
 
 	/* Make full file names */
 	makeNfsPath(save_file, saveRestoreFilePath, plist->save_file);
-	strcpy(backup_file, save_file);
+	strncpy(backup_file, save_file, NFS_PATH_LEN);
 	p = &backup_file[strlen(backup_file)];
 
 	/* If first time for this list, determine which existing file is oldest. */
@@ -1992,7 +1996,7 @@ STATIC void do_seq(struct chlist *plist)
 
 		plist->backup_sequence_num = 0;
 		for (i=0; i<save_restoreNumSeqFiles; i++) {
-			sprintf(p, "%1d", i);	/* (over)write sequence number */
+			snprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", i);	/* (over)write sequence number */
 			if (stat(backup_file, &fileStat)) {
 				/* can't check date; just assume this file is oldest */
 				plist->backup_sequence_num = i;
@@ -2011,7 +2015,7 @@ STATIC void do_seq(struct chlist *plist)
 			save_file, datetime);
 		(void) write_save_file(plist, NULL, NULL);
 	}
-	sprintf(p, "%1d", plist->backup_sequence_num);
+	snprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", plist->backup_sequence_num);
 	if (myFileCopy(save_file, backup_file) != OK) {
 		errlogPrintf("save_restore:do_seq - Can't copy save file to '%s' [%s]\n",
 			backup_file, datetime);
@@ -2019,18 +2023,18 @@ STATIC void do_seq(struct chlist *plist)
 			errlogPrintf("save_restore:do_seq - Can't write seq. file from PV list. [%s]\n", datetime);
 			if (plist->status >= SR_STATUS_WARN) {
 				plist->status = SR_STATUS_SEQ_WARN;
-				strcpy(plist->statusStr, "Can't write sequence file");
+				strncpy(plist->statusStr, "Can't write sequence file", STRING_LEN-1);
 			}
-			sprintf(SR_recentlyStr, "Can't write '%s%1d'",
+			snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 			return;
 		} else {
 			errlogPrintf("save_restore:do_seq: Wrote seq. file from PV list. [%s]\n", datetime);
-			sprintf(SR_recentlyStr, "Wrote '%s%1d'",
+			snprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 		}
 	} else {
-		sprintf(SR_recentlyStr, "Wrote '%s%1d'",
+		snprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
 			plist->save_file, plist->backup_sequence_num);
 	}
 
@@ -2051,9 +2055,9 @@ int set_savefile_name(char *filename, char *save_filename)
 	plist = lptr;
 	while (plist != 0) {
 		if (!strcmp(plist->reqFile,filename)) {
-			strcpy(plist->save_file,save_filename);
+			strncpy(plist->save_file,save_filename, FN_LEN-1);
 			unlockList();
-			sprintf(SR_recentlyStr, "New save file: '%s'", save_filename);
+			snprintf(SR_recentlyStr, STRING_LEN-1, "New save file: '%s'", save_filename);
 			return(OK);
 		}
 		plist = plist->pnext;
@@ -2156,7 +2160,7 @@ STATIC int create_data_set(
 				/* Add a new method to an existing list */
 				if (save_method == TRIGGERED) {
 					if (trigger_channel) {
-						strcpy(plist->trigger_channel,trigger_channel);
+						strncpy(plist->trigger_channel,trigger_channel, PV_NAME_LEN-1);
 					} else {
 						errlogPrintf("save_restore:create_data_set: no trigger channel");
 						unlockList();
@@ -2219,10 +2223,10 @@ STATIC int create_data_set(
 	plist->save_ok = 0;
 	plist->not_connected = -1;
 	plist->status = SR_STATUS_INIT;
-	strcpy(plist->statusStr,"Initializing list");
+	strncpy(plist->statusStr,"Initializing list", STRING_LEN-1);
 
 	/** construct the save_file name **/
-	strcpy(plist->save_file, plist->reqFile);
+	strncpy(plist->save_file, plist->reqFile, FN_LEN-1);
 #if 0
 	inx = 0;
 	while ((plist->save_file[inx] != 0) && (plist->save_file[inx] != '.') && (inx < (FN_LEN-6))) inx++;
@@ -2258,7 +2262,7 @@ STATIC int create_data_set(
 	}
 	plist->pnext = lptr;
 	lptr = plist;
-	strcpy(plist->statusStr,"Ready to connect...");
+	strncpy(plist->statusStr,"Ready to connect...", STRING_LEN-1);
 	unlockList();
 
 	return(OK);
@@ -2394,9 +2398,9 @@ int set_requestfile_path(char *path, char *pathsub)
 			return(ERROR);
 		}
 
-		strcpy(pnew->path, fullpath);
+		strncpy(pnew->path, fullpath, NFS_PATH_LEN);
 		if (pnew->path[strlen(pnew->path)-1] != '/') {
-			strcat(pnew->path, "/");
+			strncat(pnew->path, "/", NFS_PATH_LEN-strlen(pnew->path));
 		}
 
 		if (reqFilePathList == NULL) {
@@ -2423,8 +2427,8 @@ int set_savefile_path(char *path, char *pathsub)
 
 	if (*fullpath) {
 		if (saveRestoreFilePathIsMountPoint) {
-			strcpy(saveRestoreFilePath, fullpath);
-			strcpy(save_restoreNFSMntPoint, fullpath);
+			strncpy(saveRestoreFilePath, fullpath, NFS_PATH_LEN-1);
+			strncpy(save_restoreNFSMntPoint, fullpath, NFS_PATH_LEN-1);
 		} else {
 			makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
 		}
@@ -3046,7 +3050,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 	long			status, num_errs=0;
 	FILE			*inp_fd;
 	chid			chanid = 0;
-	char			realName[64];	/* name without trailing '$' */
+	char			realName[PV_NAME_LEN];	/* name without trailing '$' */
 	int				is_long_string;
 	MAC_HANDLE      *handle = NULL;
 	char            **pairs = NULL;
@@ -3157,7 +3161,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 		}
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			/* handle long string name */
-			strcpy(realName, PVname);
+			strncpy(realName, PVname, PV_NAME_LEN-1);
 			is_long_string = 0;
 			if (realName[strlen(realName)-1] == '$') {
 				realName[strlen(realName)-1] = '\0';
@@ -3269,8 +3273,8 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 
 	if (file_type == FROM_SAVE_FILE) {
 		/* make  backup */
-		strcpy(bu_filename,restoreFile);
-		strcat(bu_filename,".bu");
+		strncpy(bu_filename,restoreFile, NFS_PATH_LEN-1);
+		strncat(bu_filename,".bu", NFS_PATH_LEN-1-strlen(bu_filename));
 		(void)myFileCopy(restoreFile,bu_filename);
 	}
 	strncpy(SR_recentlyStr, "Manual restore succeeded",(STRING_LEN-1));
@@ -3339,7 +3343,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	(void)openReqFile(reqFile, &inp_fd);
 	if (!inp_fd) {
 		plist->status = SR_STATUS_FAIL;
-		strcpy(plist->statusStr, "Can't open .req file");
+		strncpy(plist->statusStr, "Can't open .req file", STRING_LEN-1);
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 		errlogPrintf("save_restore:readReqFile: unable to open file %s. Exiting.\n", reqFile);
 		return(ERROR);
@@ -3362,7 +3366,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	while (fgets(line, BUF_SIZE, inp_fd)) {
 		/* If we didn't read the whole line, read/discard until we find newline or EOF */
 		if ((strlen(line)>0) && (line[strlen(line)-1] != '\n')) {
-			strcpy(eline, line);
+			strncpy(eline, line, EBUF_SIZE-1);
 			while ((strlen(eline)>0) && (eline[strlen(eline)-1] != '\n')) {
 				if (save_restoreDebug) printf("save_restore:readReqFile: didn't reach newline:\n\t'%s'\n", eline);
 				if (fgets(eline, BUF_SIZE, inp_fd) == NULL) break;
@@ -3386,7 +3390,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			}
 			macExpandString(handle, line, eline, EBUF_SIZE);
 		} else {
-			strcpy(eline, line);
+			strncpy(eline, line, EBUF_SIZE-1);
 		}
 		sscanf(eline, "%s", name);
 		if (save_restoreDebug >= 2) errlogPrintf("save_restore:readReqFile: line='%s', eline='%s', name='%s'\n", line, eline, name);
@@ -3437,7 +3441,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			pchannel = (struct channel *)calloc(1,sizeof (struct channel));
 			if (pchannel == (struct channel *)0) {
 				plist->status = SR_STATUS_WARN;
-				strcpy(plist->statusStr, "Can't alloc channel memory");
+				strncpy(plist->statusStr, "Can't alloc channel memory", EBUF_SIZE-1);
 				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 				errlogPrintf("save_restore:readReqFile: channel calloc failed");
 			} else {
@@ -3454,8 +3458,8 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 				}
 				plist->plast_chan = pchannel;
 #endif
-				strcpy(pchannel->name, name);
-				strcpy(pchannel->value,"Not Connected");
+				strncpy(pchannel->name, name, 63);
+				strncpy(pchannel->value,"Not Connected", 63);
 				pchannel->enum_val = -1;
 				pchannel->max_elements = 0;
 				pchannel->curr_elements = 0;
