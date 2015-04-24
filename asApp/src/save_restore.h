@@ -45,7 +45,7 @@ static char SR_STATUS_STR[5][10] =
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"
 
-#define BUF_SIZE 120
+#define BUF_SIZE 200
 #define EBUF_SIZE BUF_SIZE*2
 #define ARRAY_BEGIN '{'
 #define ARRAY_END '}'
