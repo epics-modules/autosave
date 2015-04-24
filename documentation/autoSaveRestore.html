@@ -1309,21 +1309,28 @@ void *puser);</code>
 	you've asked for it explicitly.
 
 <!-------------------------------------------------------------------------------------->
-<P><dt><code>int set_pass0_restoreFile(char *save_file)</code>
+<P><dt><code>int set_pass0_restoreFile(char *save_file, char *macroSubstitutions)</code>
 
 <dd>This function specifies a save file to be restored during iocInit, before record
 	initialization. An unlimited number of files can be specified using calls to this
 	function.  If the file name begins with "/", autosave will use it as specified;
 	otherwise, autosave will prepend the file path specified to
-	<code>set_savefile_path()</code>.
+	<code>set_savefile_path()</code>. The second argument is optional.
+	
+	<P>Example:
+	<code>set_pass0_restoreFile("auto_settings.sav", "P=xxx:")</code>
 
 <!-------------------------------------------------------------------------------------->
-<P><dt><code>int set_pass1_restoreFile(char *save_file)</code>
+<P><dt><code>int set_pass1_restoreFile(char *save_file, char *macroSubstitutions)</code>
 
 <dd>This function specifies a save file to be restored during iocInit, after record
 	initialization. An unlimited number of files can be specified using calls to this
 	function. If the file name begins with "/", autosave will use it as specified; otherwise,
 	autosave will prepend the file path specified to <code>set_savefile_path()</code>.
+	The second argument is optional.
+
+	<P>Example:
+	<code>set_pass1_restoreFile("auto_settings.sav", "P=xxx:")</code>
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>int set_savefile_name(char *request_file, char *save_file)</code>
