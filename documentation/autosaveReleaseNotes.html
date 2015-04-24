@@ -10,6 +10,19 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.6.2</h3>
+<ul>
+
+<li>save_restoreSet_FilePermissions() wasn't working.  open() wasn't setting file permissions, but
+fchmod() does.
+
+<li>autosaveBuild was failing to correctly handle lines > 119 significant characters.  Increased max line
+length to 199.
+
+<li>More string-length checking.
+
+</ul>
+
 <h3>5.6.1</h3>
 <ul>
 <li>asVerify can now be called from the IOC console
