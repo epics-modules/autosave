@@ -1632,7 +1632,7 @@ static void myDbLoadRecordsHook(const char* fname, const char* macro) {
 	pitem = (struct buildInfoItem *)ellFirst(&buildInfoList);
 	for (; pitem; pitem = (struct buildInfoItem *)ellNext(&(pitem->node)) ) {
 		if (pitem->enabled) {
-			n = snprintf(requestFileName, MAXSTRING, "%s%s", requestFileBase, pitem->suffix);
+			n = epicsSnprintf(requestFileName, MAXSTRING, "%s%s", requestFileBase, pitem->suffix);
 			if ((n < MAXSTRING) && (openReqFile(requestFileName, NULL))) {
 				if (save_restoreDebug >= 5) {
 					printf("myDbLoadRecordsHook: found '%s'\n", requestFileName);
@@ -1650,7 +1650,7 @@ static void myDbLoadRecordsHook(const char* fname, const char* macro) {
 						strcpy(macroString, emacroString);
 					}
 				}
-				n = snprintf(requestFileCmd, MAXSTRING, "file %s %s", requestFileName, macroString);
+				n = epicsSnprintf(requestFileCmd, MAXSTRING, "file %s %s", requestFileName, macroString);
 				if (n < MAXSTRING) appendToFile(pitem->filename, requestFileCmd);
 			}
 		}
