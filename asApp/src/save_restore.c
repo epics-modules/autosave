@@ -1929,7 +1929,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 		plist->status = SR_STATUS_FAIL;
 		strncpy(plist->statusStr, "Can't write .sav file", STRING_LEN-1);
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-		snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s'", plist->save_file);
+		epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s'", plist->save_file);
 		return(ERROR);
 	}
 
@@ -1947,7 +1947,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 				plist->status = SR_STATUS_WARN;
 				strncpy(plist->statusStr, "Can't copy .sav to .savB file", STRING_LEN-1);
 				TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-				snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%sB'", plist->save_file);
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%sB'", plist->save_file);
 				return(ERROR);
 			}
 		}
@@ -1956,7 +1956,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 	/* Update status PV */
 	if (plist->not_connected) {
 		plist->status = SR_STATUS_WARN;
-		snprintf(plist->statusStr, STRING_LEN-1,"%d %s not saved", plist->not_connected,
+		epicsSnprintf(plist->statusStr, STRING_LEN-1,"%d %s not saved", plist->not_connected,
 			plist->not_connected==1?"value":"values");
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 	}
@@ -1996,7 +1996,7 @@ STATIC void do_seq(struct chlist *plist)
 
 		plist->backup_sequence_num = 0;
 		for (i=0; i<save_restoreNumSeqFiles; i++) {
-			snprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", i);	/* (over)write sequence number */
+			epicsSnprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", i);	/* (over)write sequence number */
 			if (stat(backup_file, &fileStat)) {
 				/* can't check date; just assume this file is oldest */
 				plist->backup_sequence_num = i;
@@ -2015,7 +2015,7 @@ STATIC void do_seq(struct chlist *plist)
 			save_file, datetime);
 		(void) write_save_file(plist, NULL, NULL);
 	}
-	snprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", plist->backup_sequence_num);
+	epicsSnprintf(p, NFS_PATH_LEN-1-strlen(backup_file), "%1d", plist->backup_sequence_num);
 	if (myFileCopy(save_file, backup_file) != OK) {
 		errlogPrintf("save_restore:do_seq - Can't copy save file to '%s' [%s]\n",
 			backup_file, datetime);
@@ -2025,16 +2025,16 @@ STATIC void do_seq(struct chlist *plist)
 				plist->status = SR_STATUS_SEQ_WARN;
 				strncpy(plist->statusStr, "Can't write sequence file", STRING_LEN-1);
 			}
-			snprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s%1d'",
+			epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Can't write '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 			return;
 		} else {
 			errlogPrintf("save_restore:do_seq: Wrote seq. file from PV list. [%s]\n", datetime);
-			snprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
+			epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
 				plist->save_file, plist->backup_sequence_num);
 		}
 	} else {
-		snprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
+		epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s%1d'",
 			plist->save_file, plist->backup_sequence_num);
 	}
 
@@ -2057,7 +2057,7 @@ int set_savefile_name(char *filename, char *save_filename)
 		if (!strcmp(plist->reqFile,filename)) {
 			strncpy(plist->save_file,save_filename, FN_LEN-1);
 			unlockList();
-			snprintf(SR_recentlyStr, STRING_LEN-1, "New save file: '%s'", save_filename);
+			epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "New save file: '%s'", save_filename);
 			return(OK);
 		}
 		plist = plist->pnext;
