@@ -9,6 +9,9 @@
 
 #include "configMenuClient.h"
 
+#define	MAX(a,b)	((a)>(b)?(a):(b))
+#define	MIN(a,b)	((a)<(b)?(a):(b))
+
 volatile int configMenuDebug=0;
 void makeLegal(char *name);
 
@@ -126,15 +129,27 @@ static long configMenuList_init(aSubRecord *pasub) {
 	return(0);
 }
 #define NUM_ITEMS 10
-static long configMenuList_do(aSubRecord *pasub) {
-	char names[NUM_ITEMS][100], descriptions[NUM_ITEMS][100];
-	char *a = (char *)pasub->a;
-	char *f[NUM_ITEMS*2] = {0};
-	int i, status;
+#define NUM_LIST_ITEMS 100
 
-	status = findConfigFiles(a, names, descriptions, 10, 100);
-	/* printf("configMenuList_init(%s): findConfigFiles returned %d; names='%s'\n",
-		a, status, names); */
+static long configMenuList_do(aSubRecord *pasub) {
+	char names[NUM_LIST_ITEMS][CONFIGMENU_ITEM_CHARS], descriptions[NUM_LIST_ITEMS][CONFIGMENU_ITEM_CHARS];
+	/*char *nameSpace, *names[CONFIGMENU_ITEM_CHARS], *descriptions[CONFIGMENU_ITEM_CHARS];*/
+	char *a = (char *)pasub->a;
+	short *page = (short *)pasub->b;
+	short jStart;
+	char *f[NUM_ITEMS*2] = {0};
+	int i, j, status;
+
+/*
+	nameSpace = calloc(2*NUM_LIST_ITEMS, CONFIGMENU_ITEM_CHARS);
+	for (i=0; i<NUM_LIST_ITEMS; i++) {
+		names[i] = nameSpace+i*CONFIGMENU_ITEM_CHARS;
+		descriptions[i] = nameSpace+(NUM_LIST_ITEMS+i)*CONFIGMENU_ITEM_CHARS;
+	}
+*/
+	status = findConfigFiles(a, names, descriptions, NUM_LIST_ITEMS, CONFIGMENU_ITEM_CHARS);
+	if (configMenuDebug) printf("configMenuList_do(%s): findConfigFiles returned %d; names[0]='%s'\n",
+		a, status, names[0]);
 	if (status == 0) {
 		/* names */
 		f[0] = (char *)pasub->vala;
@@ -165,9 +180,11 @@ static long configMenuList_do(aSubRecord *pasub) {
 			f[i+NUM_ITEMS][0] = '\0';
 		}
 
-		for (i=0; i<NUM_ITEMS; i++) {
-			strncpy(f[i], names[i], 39);
-			strncpy(f[i+NUM_ITEMS], descriptions[i], 39);
+		if (configMenuDebug) printf("configMenuList_do(%s): page %d\n", a, *page);
+		jStart = MAX(0, MIN(NUM_LIST_ITEMS-NUM_ITEMS, *page*NUM_ITEMS));
+		for (i=0, j=jStart; i<NUM_ITEMS; i++, j++) {
+			strncpy(f[i], names[j], 39);
+			strncpy(f[i+NUM_ITEMS], descriptions[j], 39);
 		}
 	}
 	return(0);
