@@ -151,7 +151,6 @@
 #include	<cadef.h>		/* includes dbAddr.h */
 #include	<epicsPrint.h>
 #include	<epicsThread.h>
-#include	<epicsExport.h>
 #include	<iocsh.h>
 /* not in 3.15.0.1 #include <tsDefs.h> */
 #include    <macLib.h>
@@ -161,6 +160,8 @@
 #include	<epicsTime.h>
 #include	<epicsMessageQueue.h>
 #include	<epicsExit.h>
+#include	<epicsStdio.h>
+#include	<epicsExport.h>
 
 #include	"save_restore.h"
 #include 	"fGetDateStr.h"
@@ -416,7 +417,7 @@ int reload_monitor_set(char * filename, int period, char *macrostring);
 int reload_manual_set(char * filename, char *macrostring);
 
 /* callable from a client */
-int findConfigFiles(char *config, char names[][100], char descriptions[][100], int num, int len);
+int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char descriptions[][CONFIGMENU_ITEM_CHARS], int num, int len);
 
 /* The following user-callable functions have an abridged argument list for iocsh use,
  * and a full argument list for calls from local client code.
@@ -579,7 +580,7 @@ STATIC void on_change_save(struct event_handler_args event)
 }
 
 
-int findConfigFiles(char *config, char names[][100], char descriptions[][100], int num, int len) {
+int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char descriptions[][CONFIGMENU_ITEM_CHARS], int num, int len) {
 	int i, found;
 	DIR *pdir=0;
 	FILE *fd;
@@ -1070,7 +1071,7 @@ STATIC int save_restore(void)
 				if (*status_prefix && (plist->status_PV[0] == '\0') && (plist->statusPvIndex < NUM_STATUS_PV_SETS)) {
 					/*** Build PV names ***/
 					/* make common portion of PVname strings */
-					n = (PV_NAME_LEN-1) - sprintf(plist->status_PV, "%sSR_%1d_", status_prefix, plist->statusPvIndex);
+					n = (PV_NAME_LEN-1) - epicsSnprintf(plist->status_PV, PV_NAME_LEN-1, "%sSR_%1d_", status_prefix, plist->statusPvIndex);
 					strncpy(plist->name_PV, plist->status_PV, PV_NAME_LEN-1);
 					strncpy(plist->save_state_PV, plist->status_PV, PV_NAME_LEN-1);
 					strncpy(plist->statusStr_PV, plist->status_PV, PV_NAME_LEN-1);
@@ -1126,14 +1127,14 @@ STATIC int save_restore(void)
 				if (save_restoreDebug) printf("save_restore task: calling do_manual_restore('%s')\n", msg.filename);
 				status = do_manual_restore(msg.filename, FROM_SAVE_FILE, NULL);
 				if (save_restoreDebug>1) printf("save_restore: manual restore status=%d (0==success)\n", status);
-				sprintf(SR_recentlyStr, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				break;
 
 			case op_RestoreFromAsciiFile:
 				if (save_restoreDebug) printf("save_restore task: calling do_manual_restore('%s')\n", msg.filename);
 				status = do_manual_restore(msg.filename, FROM_ASCII_FILE, msg.macrostring);
 				if (save_restoreDebug>1) printf("save_restore: manual restore status=%d (0==success)\n", status);
-				sprintf(SR_recentlyStr, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Restore of '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				if (status == 0) {
 				    if (!isAbsolute(msg.filename)) {
 					    makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
@@ -1149,7 +1150,7 @@ STATIC int save_restore(void)
 				if (save_restoreDebug) printf("save_restore task: calling do_remove_data_set('%s')\n", msg.filename);
 				status = do_remove_data_set(msg.filename);
 				if (save_restoreDebug>1) printf("save_restore: remove status=%d (0==success)\n", status);
-				sprintf(SR_recentlyStr, "Remove '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Remove '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				break;
 
 			case op_ReloadPeriodicSet:
@@ -1179,7 +1180,7 @@ STATIC int save_restore(void)
 						break;
 					}
 				}
-				sprintf(SR_recentlyStr, "Reload '%s' %s", msg.filename, status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Reload '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				break;
 
 
@@ -1212,7 +1213,7 @@ STATIC int save_restore(void)
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
-				sprintf(SR_recentlyStr, "Save of '%s' %s", (status ? msg.filename : plist->save_file), status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Save of '%s' %s", (status ? msg.filename : plist->save_file), status?"Failed":"Succeeded");
 				if (!status && num_errs) status = num_errs;
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
@@ -1330,7 +1331,7 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 			}
 		}
 	}
-	sprintf(SR_recentlyStr, "%s: %d of %d PV's connected", plist->save_file, n, m);
+	epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "%s: %d of %d PV's connected", plist->save_file, n, m);
 	if (verbose) {
 		errlogPrintf(SR_recentlyStr);
 		errlogPrintf("\n");
@@ -1450,7 +1451,7 @@ STATIC int enable_list(struct chlist *plist)
 		plist->enabled_method |= MANUAL;
 	}
 
-	sprintf(SR_recentlyStr, "list '%s' enabled", plist->save_file);
+	epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "list '%s' enabled", plist->save_file);
 	return(OK);
 }
 
@@ -1550,10 +1551,10 @@ STATIC int get_channel_values(struct chlist *plist)
 		if (pchannel->valid) {
 			if (ca_field_type(pchannel->chid) == DBF_FLOAT) {
 				pf = (float *)pchannel->value;
-				sprintf(pchannel->value, FLOAT_FMT, *pf);
+				epicsSnprintf(pchannel->value, 63, FLOAT_FMT, *pf);
 			} else if (ca_field_type(pchannel->chid) == DBF_DOUBLE) {
 				pd = (double *)pchannel->value;
-				sprintf(pchannel->value, DOUBLE_FMT, *pd);
+				epicsSnprintf(pchannel->value, 63, DOUBLE_FMT, *pd);
 			}
 			/* then we at least had a CA connection.  Did it produce? */
 			pchannel->valid = strcmp(pchannel->value, INIT_STRING);
@@ -1887,7 +1888,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 				strncat(tmpstr, "_SBAD_", TMPSTRLEN-1-strlen(tmpstr));
 				if (save_restoreDatedBackupFiles) {
 					strncat(tmpstr, datetime, TMPSTRLEN-1-strlen(tmpstr));
-					sprintf(SR_recentlyStr, "Bad file: '%sB'", plist->save_file);
+					epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Bad file: '%sB'", plist->save_file);
 				}
 				(void)myFileCopy(backup_file, tmpstr);
 			}
@@ -1960,7 +1961,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 			plist->not_connected==1?"value":"values");
 		TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
 	}
-	sprintf(SR_recentlyStr, "Wrote '%s'", plist->save_file);
+	epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Wrote '%s'", plist->save_file);
 	if (NULL != retSaveFile)
 	{
 		strncpy(retSaveFile, save_file, NFS_PATH_LEN);
@@ -2532,10 +2533,10 @@ STATIC int do_remove_data_set(char *filename)
 
 	} else {
 		errlogPrintf("save_restore:do_remove_data_set: Couldn't find '%s'\n", filename);
-		sprintf(SR_recentlyStr, "Can't remove data set '%s'", filename);
+		epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Can't remove data set '%s'", filename);
 		return(ERROR);
 	}
-	sprintf(SR_recentlyStr, "Removed data set '%s'", filename);
+	epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "Removed data set '%s'", filename);
 	return(OK);
 }
 
@@ -3099,7 +3100,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 			if (num_errs == 0) {
 				strncpy(SR_recentlyStr, "Manual restore succeeded",(STRING_LEN-1));
 			} else {
-				sprintf(SR_recentlyStr, "%ld errors during manual restore", num_errs);
+				epicsSnprintf(SR_recentlyStr, STRING_LEN-1, "%ld errors during manual restore", num_errs);
 			}
 			return(num_errs);
 		}
