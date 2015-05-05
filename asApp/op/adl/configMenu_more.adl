@@ -104,7 +104,7 @@ composite {
 	object {
 		x=0
 		y=290
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -114,7 +114,7 @@ composite {
 	object {
 		x=0
 		y=110
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -124,7 +124,7 @@ composite {
 	object {
 		x=0
 		y=155
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -134,7 +134,7 @@ composite {
 	object {
 		x=0
 		y=200
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -144,7 +144,7 @@ composite {
 	object {
 		x=0
 		y=245
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -154,7 +154,7 @@ composite {
 	object {
 		x=0
 		y=515
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -164,7 +164,7 @@ composite {
 	object {
 		x=0
 		y=335
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -174,7 +174,7 @@ composite {
 	object {
 		x=0
 		y=380
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -184,7 +184,7 @@ composite {
 	object {
 		x=0
 		y=425
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -194,7 +194,7 @@ composite {
 	object {
 		x=0
 		y=470
-		width=239
+		width=238
 		height=43
 	}
 	"composite name"=""
@@ -271,7 +271,7 @@ composite {
 	object {
 		x=5
 		y=580
-		width=230
+		width=130
 		height=20
 	}
 	control {
@@ -279,6 +279,75 @@ composite {
 		clr=14
 		bclr=51
 	}
-	label="Find config files; load menu"
+	label="Find config files"
 	press_msg="1"
+}
+composite {
+	object {
+		x=150
+		y=580
+		width=85
+		height=20
+	}
+	"composite name"=""
+	children {
+		text {
+			object {
+				x=150
+				y=585
+				width=35
+				height=14
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="Page:"
+			align="horiz. right"
+		}
+		"message button" {
+			object {
+				x=185
+				y=580
+				width=15
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:PageDn.PROC"
+				clr=14
+				bclr=51
+			}
+			label="-"
+			release_msg="1"
+		}
+		"text entry" {
+			object {
+				x=200
+				y=580
+				width=20
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:Page"
+				clr=14
+				bclr=51
+			}
+			limits {
+			}
+		}
+		"message button" {
+			object {
+				x=220
+				y=580
+				width=15
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:PageUp.PROC"
+				clr=14
+				bclr=51
+			}
+			label="+"
+			release_msg="1"
+		}
+	}
 }

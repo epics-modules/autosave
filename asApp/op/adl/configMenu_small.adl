@@ -5,10 +5,10 @@ file {
 }
 display {
 	object {
-		x=518
-		y=25
+		x=1133
+		y=390
 		width=240
-		height=160
+		height=180
 	}
 	clr=14
 	bclr=3
@@ -90,7 +90,7 @@ display {
 menu {
 	object {
 		x=5
-		y=120
+		y=115
 		width=230
 		height=20
 	}
@@ -103,7 +103,7 @@ menu {
 "related display" {
 	object {
 		x=185
-		y=140
+		y=160
 		width=50
 		height=20
 	}
@@ -120,7 +120,7 @@ menu {
 "related display" {
 	object {
 		x=25
-		y=140
+		y=160
 		width=150
 		height=20
 	}
@@ -147,7 +147,7 @@ composite {
 text {
 	object {
 		x=5
-		y=100
+		y=95
 		width=230
 		height=20
 	}
@@ -156,4 +156,73 @@ text {
 	}
 	textix="Load config by name:"
 	align="horiz. centered"
+}
+composite {
+	object {
+		x=75
+		y=140
+		width=85
+		height=20
+	}
+	"composite name"=""
+	children {
+		text {
+			object {
+				x=75
+				y=145
+				width=35
+				height=14
+			}
+			"basic attribute" {
+				clr=14
+			}
+			textix="Page:"
+			align="horiz. right"
+		}
+		"message button" {
+			object {
+				x=110
+				y=140
+				width=15
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:PageDn.PROC"
+				clr=14
+				bclr=51
+			}
+			label="-"
+			release_msg="1"
+		}
+		"text entry" {
+			object {
+				x=125
+				y=140
+				width=20
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:Page"
+				clr=14
+				bclr=51
+			}
+			limits {
+			}
+		}
+		"message button" {
+			object {
+				x=145
+				y=140
+				width=15
+				height=20
+			}
+			control {
+				chan="$(P)$(CONFIG)Menu:PageUp.PROC"
+				clr=14
+				bclr=51
+			}
+			label="+"
+			release_msg="1"
+		}
+	}
 }
