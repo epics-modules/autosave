@@ -34,11 +34,27 @@ record(busy, "$(P)$(CONFIG)Menu:busy") {
 record(stringout, "$(P)$(CONFIG)Menu:reqFile") {
 	field(VAL, "$(CONFIG)Menu.req")
 }
+record(longout, "$(P)$(CONFIG)Menu:Page") {
+	field(FLNK, "$(P)$(CONFIG)Menu:menuName")
+}
+# Note: the max number of menu entries is determined by NUM_ITEMS in configMenu.c
+record(calcout, "$(P)$(CONFIG)Menu:PageUp") {
+	field(INPA, "$(P)$(CONFIG)Menu:Page")
+	field(CALC, "max(0,min(9,a+1))")
+	field(OUT, "$(P)$(CONFIG)Menu:Page PP")
+}
+record(calcout, "$(P)$(CONFIG)Menu:PageDn") {
+	field(INPA, "$(P)$(CONFIG)Menu:Page")
+	field(CALC, "max(0,min(9,a-1))")
+	field(OUT, "$(P)$(CONFIG)Menu:Page PP")
+}
 record(aSub,"$(P)$(CONFIG)MenuList:do") {
 	field(INAM, "configMenuList_init")
 	field(SNAM, "configMenuList_do")
 	field(EFLG, "ALWAYS")
 	field(FTA, "STRING")
+	field(FTB, "SHORT")
+	field(INPB, "$(P)$(CONFIG)Menu:Page")
 	field(FTVA, "STRING")
 	field(FTVB, "STRING")
 	field(FTVC, "STRING")
