@@ -59,6 +59,7 @@ static char SR_STATUS_STR[5][10] =
 #define STRING_LEN MAX_STRING_SIZE	/* EPICS max length for string PV */
 #define STATUS_STR_LEN 300
 #define PV_NAME_LEN 80 /* string containing a PV name */
+#define MAXSTRING 300
 
 struct restoreFileListItem {
     ELLNODE node;
