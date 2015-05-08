@@ -1590,7 +1590,6 @@ struct buildInfoItem {
 };
 
 static int autosaveBuildInitialized=0;
-#define MAXSTRING 300
 static char requestFileCmd[MAXSTRING];
 static char requestFileBase[MAXSTRING];
 static char requestFileName[MAXSTRING];
