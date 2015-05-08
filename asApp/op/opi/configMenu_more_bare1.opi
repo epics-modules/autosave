@@ -3,7 +3,7 @@
   <macros>
     <include_parent_macros>true</include_parent_macros>
   </macros>
-  <wuid>af7b67:146ed714cc9:-7fbb</wuid>
+  <wuid>-da22b37:14d34e442b1:-7f2d</wuid>
   <boy_version>3.2.10.20140131</boy_version>
   <scripts />
   <show_ruler>true</show_ruler>
@@ -36,7 +36,7 @@
       <include_parent_macros>true</include_parent_macros>
     </macros>
     <visible>true</visible>
-    <wuid>af7b67:146ed714cc9:-7fb7</wuid>
+    <wuid>-da22b37:14d34e442b1:-7f29</wuid>
     <scripts />
     <height>20</height>
     <name>Grouping Container</name>
@@ -84,7 +84,7 @@
     <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
       <border_alarm_sensitive>false</border_alarm_sensitive>
       <visible>true</visible>
-      <wuid>af7b67:146ed714cc9:-7fb6</wuid>
+      <wuid>-da22b37:14d34e442b1:-7f28</wuid>
       <scripts />
       <height>20</height>
       <style>1</style>
@@ -166,7 +166,7 @@ $(pv_value)</tooltip>
     <minimum>-Infinity</minimum>
     <next_focus>0</next_focus>
     <show_units>false</show_units>
-    <wuid>af7b67:146ed714cc9:-7fba</wuid>
+    <wuid>-da22b37:14d34e442b1:-7f2c</wuid>
     <rotation_angle>0.0</rotation_angle>
     <style>0</style>
     <name>Text Input</name>
@@ -200,7 +200,7 @@ $(pv_value)</tooltip>
   <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="2.0.0">
     <border_alarm_sensitive>false</border_alarm_sensitive>
     <visible>true</visible>
-    <wuid>af7b67:146ed714cc9:-7fb9</wuid>
+    <wuid>-da22b37:14d34e442b1:-7f2b</wuid>
     <scripts />
     <height>20</height>
     <style>1</style>
@@ -281,7 +281,7 @@ $(pv_value)</tooltip>
     <minimum>-Infinity</minimum>
     <next_focus>0</next_focus>
     <show_units>false</show_units>
-    <wuid>af7b67:146ed714cc9:-7fb8</wuid>
+    <wuid>-da22b37:14d34e442b1:-7f2a</wuid>
     <rotation_angle>0.0</rotation_angle>
     <style>0</style>
     <name>Text Input</name>
@@ -318,7 +318,7 @@ $(pv_value)</tooltip>
     <arrow_length>20</arrow_length>
     <visible>true</visible>
     <fill_level>100.0</fill_level>
-    <wuid>af7b67:146ed714cc9:-7fb5</wuid>
+    <wuid>-da22b37:14d34e442b1:-7f27</wuid>
     <rotation_angle>0.0</rotation_angle>
     <scripts />
     <arrows>0</arrows>
