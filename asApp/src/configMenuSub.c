@@ -126,30 +126,31 @@ void makeLegal(char *name) {
 }
 
 static long configMenuList_init(aSubRecord *pasub) {
+	ELLLIST *configMenuList;
+	configMenuList = calloc(1, sizeof(ELLLIST));
+	pasub->dpvt = configMenuList;
+	ellInit(configMenuList);
 	return(0);
 }
 #define NUM_ITEMS 10
-#define NUM_LIST_ITEMS 100
 
 static long configMenuList_do(aSubRecord *pasub) {
-	char names[NUM_LIST_ITEMS][CONFIGMENU_ITEM_CHARS], descriptions[NUM_LIST_ITEMS][CONFIGMENU_ITEM_CHARS];
-	/*char *nameSpace, *names[CONFIGMENU_ITEM_CHARS], *descriptions[CONFIGMENU_ITEM_CHARS];*/
-	char *a = (char *)pasub->a;
+	ELLLIST *configMenuList = (ELLLIST *)pasub->dpvt;
+	struct configFileListItem *pLI;
+	char *configName = (char *)pasub->a;
 	short *page = (short *)pasub->b;
+	short *findFiles = (short *)pasub->c;
 	short jStart;
 	char *f[NUM_ITEMS*2] = {0};
-	int i, j, status;
+	int i, status=0;
 
-/*
-	nameSpace = calloc(2*NUM_LIST_ITEMS, CONFIGMENU_ITEM_CHARS);
-	for (i=0; i<NUM_LIST_ITEMS; i++) {
-		names[i] = nameSpace+i*CONFIGMENU_ITEM_CHARS;
-		descriptions[i] = nameSpace+(NUM_LIST_ITEMS+i)*CONFIGMENU_ITEM_CHARS;
+	pLI = (struct configFileListItem *) ellFirst(configMenuList);
+	if (*findFiles || (pLI->name==NULL) || (pLI->name[0]=='\0')) {
+		status = findConfigFiles(configName, configMenuList);
+		if (configMenuDebug || status) printf("configMenuList_do(%s): findConfigFiles returned %d\n",
+			configName, status);
+		*findFiles = 0;
 	}
-*/
-	status = findConfigFiles(a, names, descriptions, NUM_LIST_ITEMS, CONFIGMENU_ITEM_CHARS);
-	if (configMenuDebug) printf("configMenuList_do(%s): findConfigFiles returned %d; names[0]='%s'\n",
-		a, status, names[0]);
 	if (status == 0) {
 		/* names */
 		f[0] = (char *)pasub->vala;
@@ -180,11 +181,24 @@ static long configMenuList_do(aSubRecord *pasub) {
 			f[i+NUM_ITEMS][0] = '\0';
 		}
 
-		if (configMenuDebug) printf("configMenuList_do(%s): page %d\n", a, *page);
-		jStart = MAX(0, MIN(NUM_LIST_ITEMS-NUM_ITEMS, *page*NUM_ITEMS));
-		for (i=0, j=jStart; i<NUM_ITEMS; i++, j++) {
-			strncpy(f[i], names[j], 39);
-			strncpy(f[i+NUM_ITEMS], descriptions[j], 39);
+		if (configMenuDebug) printf("configMenuList_do(%s): page %d\n", configName, *page);
+		jStart = MAX(0, *page*NUM_ITEMS);
+
+		pLI = (struct configFileListItem *) ellFirst(configMenuList);
+		for (i=0; i<jStart && pLI; i++) {
+			if (configMenuDebug) printf("configMenuList_do(%s): skipping name '%s'\n", configName, pLI->name);
+			pLI = (struct configFileListItem *) ellNext(&(pLI->node));
+		}
+
+		for (i=0; i<NUM_ITEMS; i++) {
+			if (pLI) {
+				strncpy(f[i], pLI->name, 39);
+				strncpy(f[i+NUM_ITEMS], pLI->description, 39);
+				pLI = (struct configFileListItem *) ellNext(&(pLI->node));
+			} else {
+				f[i][0] = '\0';
+				f[i+NUM_ITEMS][0] = '\0';
+			}
 		}
 	}
 	return(0);
