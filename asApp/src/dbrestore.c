@@ -84,11 +84,12 @@
 #include	<iocsh.h>
 #include 	"fGetDateStr.h"
 #include	"save_restore.h"
-#include	<epicsExport.h>
 #include	<special.h>
 #include	<macLib.h>
 #include	<epicsString.h>
 #include	<dbAccessDefs.h>
+#include	<epicsStdio.h>
+#include	<epicsExport.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -511,7 +512,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			switch (field_type) {
 			case DBF_STRING:
 				/* future: translate escape sequence */
-				strncpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), value_string, MAX_STRING_SIZE);
+				strNcpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), value_string, MAX_STRING_SIZE);
 				break;
 			case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
 				p_ushort[num_read++] = (unsigned short)atol(value_string);
@@ -630,7 +631,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 						switch (field_type) {
 						case DBF_STRING:
 							/* future: translate escape sequence */
-							strncpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), string, MAX_STRING_SIZE);
+							strNcpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), string, MAX_STRING_SIZE);
 							break;
 						case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
 							p_ushort[num_read++] = (unsigned short)atol(string);
@@ -853,7 +854,7 @@ int reboot_restore(char *filename, initHookState init_state)
 
 	/* open file */
 	if (isAbsolute(filename)) {
-		strncpy(fname, filename, PATH_SIZE);
+		strNcpy(fname, filename, PATH_SIZE);
 	} else {
 		makeNfsPath(fname, saveRestoreFilePath, filename);
 	}
@@ -862,13 +863,13 @@ int reboot_restore(char *filename, initHookState init_state)
 	if ((inp_fd = fopen_and_check(fname, &status)) == NULL) {
 		errlogPrintf("save_restore: Can't open save file.");
 		if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
-		if (statusStr) strcpy(statusStr, "Can't open save file.");
+		if (statusStr) strNcpy(statusStr, "Can't open save file.", STATUS_STR_LEN-1);
 		dbFinishEntry(pdbentry);
 		return(ERROR);
 	}
 	if (status) {
 		if (pStatusVal) *pStatusVal = SR_STATUS_WARN;
-		if (statusStr) strcpy(statusStr, "Bad .sav(B) files; used seq. backup");
+		if (statusStr) strNcpy(statusStr, "Bad .sav(B) files; used seq. backup", STATUS_STR_LEN-1);
 	}
 
 	/* Prepare to use macro substitution */
@@ -964,7 +965,7 @@ int reboot_restore(char *filename, initHookState init_state)
 
 			/* dbStatic doesn't know about long-string fields (PV name with appended '$'). */
 			is_long_string = 0;
-			strcpy(realName, PVname);
+			strNcpy(realName, PVname, 63);
 			if (realName[strlen(realName)-1] == '$') {
 				realName[strlen(realName)-1] = '\0';
 				is_long_string = 1;
@@ -1025,7 +1026,7 @@ int reboot_restore(char *filename, initHookState init_state)
 			n = (int)atol(&bp[1]);
 			errlogPrintf("%d %s had no saved value.\n", n, n==1?"PV":"PVs");
 			if (pStatusVal) *pStatusVal = SR_STATUS_WARN;
-			if (statusStr) strcpy(statusStr, ".sav file contained an error message");
+			if (statusStr) strNcpy(statusStr, ".sav file contained an error message", STATUS_STR_LEN-1);
 			if (!save_restoreIncompleteSetsOk) {
 				errlogPrintf("aborting restore\n");
 				fclose(inp_fd);
@@ -1033,7 +1034,7 @@ int reboot_restore(char *filename, initHookState init_state)
 				if (pairs) free(pairs);
 				dbFinishEntry(pdbentry);
 				if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
-				if (statusStr) strcpy(statusStr, "restore aborted");
+				if (statusStr) strNcpy(statusStr, "restore aborted", STATUS_STR_LEN-1);
 				return(ERROR);
 			}
 		} else if (PVname[0] == '<') {
@@ -1079,7 +1080,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		if (status) {
 			errlogPrintf("save_restore: Can't write backup file.\n");
 			if (pStatusVal) *pStatusVal = SR_STATUS_WARN;
-			if (statusStr) strcpy(statusStr, "Can't write backup file");
+			if (statusStr) strNcpy(statusStr, "Can't write backup file", STATUS_STR_LEN-1);
 			return(OK);
 		}
 	}
@@ -1090,10 +1091,10 @@ int reboot_restore(char *filename, initHookState init_state)
 			/* Status and message have already been recorded */
 			;
 		} else if (num_errors != 0) {
-			sprintf(statusStr, "%d %s", num_errors, num_errors==1?"PV error":"PV errors");
+			epicsSnprintf(statusStr, STATUS_STR_LEN-1, "%d %s", num_errors, num_errors==1?"PV error":"PV errors");
 			*pStatusVal = SR_STATUS_WARN;
 		} else {
-			strcpy(statusStr, "No errors");
+			strNcpy(statusStr, "No errors", STATUS_STR_LEN-1);
 			*pStatusVal = SR_STATUS_OK;
 		}
 	}
@@ -1127,14 +1128,14 @@ static int set_restoreFile(int pass, char *filename, char *macrostring)
 	}
 	strcpy(pLI->filename, filename);
 
-	pLI->restoreStatusStr = (char *)calloc(STRING_LEN, 1);
+	pLI->restoreStatusStr = (char *)calloc(STATUS_STR_LEN, 1);
 	if (pLI->restoreStatusStr == NULL) {
 		errlogPrintf("set_pass%d_restoreFile: calloc failed\n", pass);
 		free(pLI->filename);
 		free(pLI);
 		return(ERROR);
 	}
-	strcpy(pLI->restoreStatusStr, "Unknown, probably failed");
+	strNcpy(pLI->restoreStatusStr, "Unknown, probably failed", STATUS_STR_LEN-1);
 
 	if (macrostring && macrostring[0]) {
 		pLI->macrostring = (char *)calloc(strlen(macrostring)+1,sizeof(char));
@@ -1228,11 +1229,11 @@ FILE *checkFile(const char *file)
 	/* file is bad */
 	fclose(inp_fd);
 	errlogPrintf("save_restore: File '%s' is not trusted.\n", file);
-	strcpy(tmpstr, file);
-	strcat(tmpstr, "_RBAD_");
+	strNcpy(tmpstr, file, PATH_SIZE+49);
+	strncat(tmpstr, "_RBAD_", PATH_SIZE+49-strlen(tmpstr));
 	if (save_restoreDatedBackupFiles) {
 		fGetDateStr(datetime);
-		strcat(tmpstr, datetime);
+		strncat(tmpstr, datetime, PATH_SIZE+49-strlen(tmpstr));
 	}
 	(void)myFileCopy(file, tmpstr);
 	return(0);
@@ -1250,7 +1251,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 	double dTime, min_dTime;
 	
 	*status = 0;	/* presume success */
-	strncpy(file, fname, PATH_SIZE);
+	strNcpy(file, fname, PATH_SIZE);
 	inp_fd = checkFile(file);
 	if (save_restoreDebug >=1) printf("fopen_and_check: checkFile returned %p\n", inp_fd);
 	if (inp_fd) return(inp_fd);
@@ -1264,13 +1265,14 @@ FILE *fopen_and_check(const char *fname, long *status)
 	/*** Still haven't found a good file?  Try the sequenced backups ***/
 	/* Find the most recent one. */
 	*status = 1;
-	strcpy(file, fname);
+	strNcpy(file, fname, PATH_SIZE);
 	backup_sequence_num = -1;
 	p = &file[strlen(file)];
 	currTime = time(NULL);
 	min_dTime = 1.e9;
 	for (i=0; i<save_restoreNumSeqFiles; i++) {
-		sprintf(p, "%1d", i);
+		epicsSnprintf(p, PATH_SIZE-strlen(file), "%1d", i);
+
 		if (stat(file, &fileStat) == 0) {
 			/*
 			 * Clocks might be unsynchronized, so it's possible
@@ -1294,14 +1296,14 @@ FILE *fopen_and_check(const char *fname, long *status)
 	if (backup_sequence_num == -1) {
 		/* Clock are way messed up.  Just try backup 0. */
 		backup_sequence_num = 0;
-		sprintf(p, "%1d", backup_sequence_num);
+		epicsSnprintf(p, PATH_SIZE-strlen(file), "%1d", backup_sequence_num);
 		errlogPrintf("save_restore: Can't figure out which seq file is most recent,\n");
 		errlogPrintf("save_restore: so I'm just going to start with '%s'.\n", file);
 	}
 
 	/* Try the sequenced backup files. */
 	for (i=0; i<save_restoreNumSeqFiles; i++) {
-		sprintf(p, "%1d", backup_sequence_num);
+		epicsSnprintf(p, PATH_SIZE-strlen(file), "%1d", backup_sequence_num);
 		errlogPrintf("save_restore: Trying backup file '%s'\n", file);
 		inp_fd = checkFile(file);
 		if (inp_fd) return(inp_fd);
@@ -1473,12 +1475,12 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 	if (strstr(fileBaseName, ".req")) {
 		fname=fileBaseName;
 	} else {
-		fname=falloc=malloc(strlen(fileBaseName)+sizeof(".req"));
+		fname=falloc=malloc(strlen(fileBaseName)+sizeof(".req")+1);
 		if (!fname) {
 			errlogPrintf("save_restore:makeAutosaveFileFromDbInfo - allocation failed\n");
 			return;
 		}
-		sprintf(fname, "%s.req", fileBaseName);
+		epicsSnprintf(fname, strlen(fileBaseName)+sizeof(".req"), "%s.req", fileBaseName);
 	}
 	if ((out_fd = fopen(fname,"w")) == NULL) {
 		errlogPrintf("save_restore:makeAutosaveFileFromDbInfo - unable to open file '%s'\n", fname);
@@ -1515,7 +1517,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 						if (flen >= sizeof(field)-1) flen = sizeof(field)-1;
 						memcpy(field, pbegin, flen);
 						field[flen]='\0';
-						strcpy(realfield, field);
+						strNcpy(realfield, field, MAX_FIELD_SIZE-1);
 						if (realfield[strlen(realfield)-1] == '$') realfield[strlen(realfield)-1] = '\0';
 
 						if (dbFindField(pdbentry, realfield) == 0) {
@@ -1615,9 +1617,9 @@ static void myDbLoadRecordsHook(const char* fname, const char* macro) {
 	p = strrchr(dbFileName, (int)'/');
 	if (p==NULL) p = strrchr(dbFileName, (int)'\\');
 	if (p) {
-		strncpy(requestFileBase, p+1, MAXSTRING-strlen(requestFileBase)-1);
+		strNcpy(requestFileBase, p+1, MAXSTRING-strlen(requestFileBase)-1);
 	} else {
-		strncpy(requestFileBase, dbFileName, MAXSTRING-strlen(requestFileBase)-1);
+		strNcpy(requestFileBase, dbFileName, MAXSTRING-strlen(requestFileBase)-1);
 	}
 	p = strstr(requestFileBase, ".db");
 	if (p == NULL) p = strstr(requestFileBase, ".vdb");
@@ -1640,14 +1642,14 @@ static void myDbLoadRecordsHook(const char* fname, const char* macro) {
 				/* Expand any internal macros in macroString e.g., "N=1,M=m$(N)" */
 				macCreateHandle(&handle, NULL);
 				macSuppressWarning(handle, 1);
-				strcpy(macroString, macro);
+				strNcpy(macroString, macro, MAXSTRING-1);
 				if (handle) {
 					macParseDefns(handle, macroString, &pairs);
 					if (pairs) {
 						macInstallMacros(handle, pairs);
 						emacroString[0] = '\0';
 						macExpandString(handle, macroString, emacroString, MAXSTRING-1);
-						strcpy(macroString, emacroString);
+						strNcpy(macroString, emacroString, MAXSTRING-1);
 					}
 				}
 				n = epicsSnprintf(requestFileCmd, MAXSTRING, "file %s %s", requestFileName, macroString);
