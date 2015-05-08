@@ -11,7 +11,12 @@ record(stringout, "$(P)$(CONFIG)Menu:currDesc") {
 record(stringout, "$(P)$(CONFIG)Menu:menuName") {
 	field(PINI, "YES")
 	field(VAL, "$(CONFIG)")
-	field(OUT, "$(P)$(CONFIG)MenuList:do.A PP")
+	field(OUT, "$(P)$(CONFIG)MenuList:do.A")
+	field(FLNK, "$(P)$(CONFIG)Menu:findFiles")
+}
+record(bo, "$(P)$(CONFIG)Menu:findFiles") {
+	field(DOL, "1")
+	field(OUT, "$(P)$(CONFIG)MenuList:do.C PP")
 }
 
 record(longout, "$(P)$(CONFIG)Menu:isSaveOp") {
@@ -31,21 +36,18 @@ record(busy, "$(P)$(CONFIG)Menu:busy") {
 	field(ONAM, "Loading")
 }
 
-record(stringout, "$(P)$(CONFIG)Menu:reqFile") {
-	field(VAL, "$(CONFIG)Menu.req")
-}
 record(longout, "$(P)$(CONFIG)Menu:Page") {
-	field(FLNK, "$(P)$(CONFIG)Menu:menuName")
+	field(FLNK, "$(P)$(CONFIG)MenuList:do.PROC")
 }
 # Note: the max number of menu entries is determined by NUM_ITEMS in configMenu.c
 record(calcout, "$(P)$(CONFIG)Menu:PageUp") {
 	field(INPA, "$(P)$(CONFIG)Menu:Page")
-	field(CALC, "max(0,min(9,a+1))")
+	field(CALC, "max(0,a+1)")
 	field(OUT, "$(P)$(CONFIG)Menu:Page PP")
 }
 record(calcout, "$(P)$(CONFIG)Menu:PageDn") {
 	field(INPA, "$(P)$(CONFIG)Menu:Page")
-	field(CALC, "max(0,min(9,a-1))")
+	field(CALC, "max(0,a-1)")
 	field(OUT, "$(P)$(CONFIG)Menu:Page PP")
 }
 record(aSub,"$(P)$(CONFIG)MenuList:do") {
@@ -54,6 +56,7 @@ record(aSub,"$(P)$(CONFIG)MenuList:do") {
 	field(EFLG, "ALWAYS")
 	field(FTA, "STRING")
 	field(FTB, "SHORT")
+	field(FTC, "SHORT")
 	field(INPB, "$(P)$(CONFIG)Menu:Page")
 	field(FTVA, "STRING")
 	field(FTVB, "STRING")
@@ -95,6 +98,10 @@ record(aSub,"$(P)$(CONFIG)MenuList:do") {
 	field(OUTR, "$(P)$(CONFIG)Menu:desc8 PP")
 	field(OUTS, "$(P)$(CONFIG)Menu:desc9 PP")
 	field(OUTT, "$(P)$(CONFIG)Menu:desc10 PP")
+}
+
+record(stringout, "$(P)$(CONFIG)Menu:reqFile") {
+	field(VAL, "$(CONFIG)Menu.req")
 }
 record(aSub,"$(P)$(CONFIG)Menu:do") {
 	field(INAM, "configMenu_init")
@@ -556,4 +563,31 @@ record(sseq, "$(P)$(CONFIG)Menu:mbboLoad") {
 	field(LNK8, "$(P)$(CONFIG)Menu:loadConfig8.PROC PP")
 	field(LNK9, "$(P)$(CONFIG)Menu:loadConfig9.PROC PP")
 	field(LNKA, "$(P)$(CONFIG)Menu:loadConfig10.PROC PP")
+}
+
+# For CA clients to directly write a configuration name and load it
+record(stringout, "$(P)$(CONFIG)Menu:name") {
+	field(FLNK, "$(P)$(CONFIG)Menu:loadConfig")
+}
+record(stringout, "$(P)$(CONFIG)Menu:desc") {
+}
+record(sseq, "$(P)$(CONFIG)Menu:loadConfig") {
+	field(SDIS, "$(P)$(CONFIG)Menu:busy")
+	field(DISV, "1")
+	field(STR1, "working...")
+	field(LNK1, "$(P)$(CONFIG)Menu:currName PP")
+	field(DOL2, "0")
+	field(LNK2, "$(P)$(CONFIG)Menu:isSaveOp NPP")
+	field(DOL3, "$(P)$(CONFIG)Menu:name")
+	field(LNK3, "$(P)$(CONFIG)Menu:do.A NPP")
+	field(LNK4, "$(P)$(CONFIG)Menu:do.PROC CA")
+	field(WAIT4, "Wait")
+	field(LNK5, "$(P)$(CONFIG)Menu:cpDesc.PROC PP")
+}
+record(stringout, "$(P)$(CONFIG)Menu:cpDesc") {
+	field(SDIS, "$(P)$(CONFIG)Menu:status")
+	field(DISV, "1")
+	field(OMSL, "closed_loop")
+	field(DOL, "$(P)$(CONFIG)Menu:currDesc")
+	field(OUT, "$(P)$(CONFIG)Menu:desc PP")
 }
