@@ -417,7 +417,7 @@ int reload_monitor_set(char * filename, int period, char *macrostring);
 int reload_manual_set(char * filename, char *macrostring);
 
 /* callable from a client */
-int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char descriptions[][CONFIGMENU_ITEM_CHARS], int num, int len);
+int findConfigFiles(char *config, ELLLIST *configMenuList);
 
 /* The following user-callable functions have an abridged argument list for iocsh use,
  * and a full argument list for calls from local client code.
@@ -580,28 +580,34 @@ STATIC void on_change_save(struct event_handler_args event)
 }
 
 
-int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char descriptions[][CONFIGMENU_ITEM_CHARS], int num, int len) {
-	int i, found;
+int findConfigFiles(char *config, ELLLIST *configMenuList) {
+	int found;
 	DIR *pdir=0;
 	FILE *fd;
 	struct dirent *pdirent=0;
 	char thisname[FN_LEN], filename[FN_LEN], *pchar, fullpath[NFS_PATH_LEN];
 	char buffer[BUF_SIZE], *bp, *bp1, config_underscore[FN_LEN];
+	struct configFileListItem *pLI, *pLInext;
 
-	if (names == NULL) return(-1);
+	/* clear old list */
+	pLI = (struct configFileListItem *) ellFirst(configMenuList);
+	while (pLI) {
+		free(pLI->name);
+		free(pLI->description);
+		pLInext = (struct configFileListItem *) ellNext(&(pLI->node));
+		ellDelete(configMenuList, &(pLI->node));
+		pLI = pLInext;
+	}
+
 	strncpy(config_underscore, config, FN_LEN-2);
 	strcat(config_underscore, "_");
 	if (save_restoreDebug) printf("findConfigFiles: config='%s', config_underscore=%s\n",
 		config, config_underscore);
-	for (i=0; i<num; i++) {
-		names[i][0] = '\0';
-		if (descriptions) descriptions[i][0] = '\0';
-	}
 
 	pdir = opendir(saveRestoreFilePath);
 	if (pdir) {
 		if (save_restoreDebug) printf("findConfigFiles: opendir('%s') succeeded.\n", saveRestoreFilePath);
-		for (i=0; i<num && (pdirent=readdir(pdir)); ) {
+		while ((pdirent=readdir(pdir))) {
 			if (save_restoreDebug>1) printf("findConfigFiles: checking '%s'.\n", pdirent->d_name);
 			if (strncmp(config_underscore, pdirent->d_name, strlen(config_underscore)) == 0) {
 				strncpy(filename, pdirent->d_name, FN_LEN-1);
@@ -612,8 +618,11 @@ int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char desc
 				pchar = strstr(&thisname[strlen(thisname)-strlen(".cfg")], ".cfg");
 				if (pchar) {
 					*pchar = '\0';
-					strncpy(names[i], thisname, len-1);
-					if (save_restoreDebug) printf("findConfigFiles: found config file '%s'\n", names[i]);
+					pLI = calloc(1, sizeof(struct configFileListItem));
+					ellAdd(configMenuList, &(pLI->node));
+					pLI->name = (char *)calloc(strlen(thisname)+1, sizeof(char));
+					strncpy(pLI->name, thisname, strlen(thisname));
+					if (save_restoreDebug) printf("findConfigFiles: found config file '%s'\n", pLI->name);
 					makeNfsPath(fullpath, saveRestoreFilePath, filename);
 					if ((fd = fopen(fullpath, "r"))) {
 						if (save_restoreDebug) printf("findConfigFiles: searching '%s' for description\n", fullpath);
@@ -623,16 +632,16 @@ int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char desc
 							if (bp1 != 0) {
 								found = 1;
 								bp1 += strlen("Menu:currDesc")+1;
-								strncpy(descriptions[i], bp1, len-1);
-								if (( pchar = strchr(descriptions[i], '\n') )) *pchar = '\0';
-								if (( pchar = strchr(descriptions[i], '\r') )) *pchar = '\0';
+								pLI->description = (char *)calloc(strlen(bp1)+1, sizeof(char));
+								strncpy(pLI->description, bp1, strlen(bp1));
+								if (( pchar = strchr(pLI->description, '\n') )) *pchar = '\0';
+								if (( pchar = strchr(pLI->description, '\r') )) *pchar = '\0';
 							}
 						}
 						if (fd) {
 							fclose(fd);
 							fd = NULL;
 						}
-						i++;
 					} else {
 						if (save_restoreDebug) printf("findConfigFiles: can't open '%s'\n", filename);
 					}
@@ -640,8 +649,11 @@ int findConfigFiles(char *config, char names[][CONFIGMENU_ITEM_CHARS], char desc
 			}
 		}
 		if (save_restoreDebug) {
-			for (i=0; i<num; i++) {
-				printf("findConfigFiles: name='%s'; desc='%s'\n", names[i], descriptions[i]);
+			pLI = (struct configFileListItem *) ellFirst(configMenuList);
+			printf("findConfigFiles: \n");
+			while (pLI) {
+				printf("	name='%s'; desc='%s'\n", pLI->name, pLI->description);
+				pLI = (struct configFileListItem *) ellNext(&(pLI->node));
 			}
 		}
 		closedir(pdir);
