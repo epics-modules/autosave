@@ -75,7 +75,7 @@ static long configMenu_do(aSubRecord *pasub) {
 				macrostring = getMacroString(f);
 			}
 			makeLegal(a);
-			sprintf(filename, "%s_%s.cfg", g, a);
+			epicsSnprintf(filename, 99, "%s_%s.cfg", g, a);
 			*b = fdbrestoreX(filename, macrostring, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:fdbrestore returned %ld\n", *b);
 			*vala = 1;
@@ -100,7 +100,7 @@ static long configMenu_do(aSubRecord *pasub) {
 				return(0);
 			}
 			makeLegal(a);
-			sprintf(filename, "%s_%s.cfg", g, a);
+			epicsSnprintf(filename, 99, "%s_%s.cfg", g, a);
 			*b = manual_save(f, filename, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:manual_save returned %ld\n", *b);
 			*vala = 1;
