@@ -3,10 +3,10 @@ beginScreenProperties
 major 4
 minor 0
 release 0
-x 518
-y 25
+x 1133
+y 390
 w 240
-h 160
+h 180
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-8.0"
 btnFont "helvetica-medium-r-18.0"
@@ -72,7 +72,7 @@ major 4
 minor 0
 release 0
 x 5
-y 100
+y 95
 w 230
 h 20
 font "helvetica-medium-r-8.0"
@@ -84,6 +84,70 @@ value {
 }
 endObjectProperties
 
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 75
+y 140
+w 85
+h 20
+
+beginGroup
+
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 75
+y 145
+w 35
+h 14
+font "helvetica-medium-r-8.0"
+fontAlign "right"
+fgColor index 14
+useDisplayBg
+value {
+ "Page:"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 125
+y 140
+w 20
+h 20
+controlPv "$(P)$(CONFIG)Menu:Page"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 51
+editable
+autoHeight
+format decimal
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
+
 # (Menu Button)
 object activeMenuButtonClass
 beginObjectProperties
@@ -91,7 +155,7 @@ major 4
 minor 0
 release 0
 x 5
-y 120
+y 115
 w 230
 h 20
 fgColor index 14
@@ -111,7 +175,7 @@ major 4
 minor 0
 release 0
 x 185
-y 140
+y 160
 w 50
 h 20
 fgColor index 0
@@ -146,7 +210,7 @@ major 4
 minor 0
 release 0
 x 25
-y 140
+y 160
 w 150
 h 20
 fgColor index 0
@@ -173,4 +237,72 @@ closeDisplay {
   0 1
 }
 endObjectProperties
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 75
+y 140
+w 85
+h 20
+
+beginGroup
+
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 110
+y 140
+w 15
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:PageDn.PROC"
+pressValue 
+releaseValue "1"
+onLabel "-"
+offLabel "-"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 145
+y 140
+w 15
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:PageUp.PROC"
+pressValue 
+releaseValue "1"
+onLabel "+"
+offLabel "+"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
 

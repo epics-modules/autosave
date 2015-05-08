@@ -51,7 +51,7 @@ minor 0
 release 0
 x 0
 y 290
-w 239
+w 238
 h 43
 
 beginGroup
@@ -64,7 +64,7 @@ minor 0
 release 0
 x 0
 y 290
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -92,7 +92,7 @@ minor 0
 release 0
 x 0
 y 110
-w 239
+w 238
 h 43
 
 beginGroup
@@ -105,7 +105,7 @@ minor 0
 release 0
 x 0
 y 110
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -133,7 +133,7 @@ minor 0
 release 0
 x 0
 y 155
-w 239
+w 238
 h 43
 
 beginGroup
@@ -146,7 +146,7 @@ minor 0
 release 0
 x 0
 y 155
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -174,7 +174,7 @@ minor 0
 release 0
 x 0
 y 200
-w 239
+w 238
 h 43
 
 beginGroup
@@ -187,7 +187,7 @@ minor 0
 release 0
 x 0
 y 200
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -215,7 +215,7 @@ minor 0
 release 0
 x 0
 y 245
-w 239
+w 238
 h 43
 
 beginGroup
@@ -228,7 +228,7 @@ minor 0
 release 0
 x 0
 y 245
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -256,7 +256,7 @@ minor 0
 release 0
 x 0
 y 515
-w 239
+w 238
 h 43
 
 beginGroup
@@ -269,7 +269,7 @@ minor 0
 release 0
 x 0
 y 515
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -297,7 +297,7 @@ minor 0
 release 0
 x 0
 y 335
-w 239
+w 238
 h 43
 
 beginGroup
@@ -310,7 +310,7 @@ minor 0
 release 0
 x 0
 y 335
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -338,7 +338,7 @@ minor 0
 release 0
 x 0
 y 380
-w 239
+w 238
 h 43
 
 beginGroup
@@ -351,7 +351,7 @@ minor 0
 release 0
 x 0
 y 380
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -379,7 +379,7 @@ minor 0
 release 0
 x 0
 y 425
-w 239
+w 238
 h 43
 
 beginGroup
@@ -392,7 +392,7 @@ minor 0
 release 0
 x 0
 y 425
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -420,7 +420,7 @@ minor 0
 release 0
 x 0
 y 470
-w 239
+w 238
 h 43
 
 beginGroup
@@ -433,7 +433,7 @@ minor 0
 release 0
 x 0
 y 470
-w 239
+w 238
 h 43
 fgColor index 14
 bgColor index 0
@@ -536,6 +536,70 @@ objType "controls"
 newPos
 endObjectProperties
 
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 150
+y 580
+w 85
+h 20
+
+beginGroup
+
+
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 150
+y 585
+w 35
+h 14
+font "helvetica-medium-r-8.0"
+fontAlign "right"
+fgColor index 14
+useDisplayBg
+value {
+ "Page:"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 200
+y 580
+w 20
+h 20
+controlPv "$(P)$(CONFIG)Menu:Page"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 51
+editable
+autoHeight
+format decimal
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
+
 # (Related Display)
 object relatedDisplayClass
 beginObjectProperties
@@ -599,7 +663,7 @@ minor 0
 release 0
 x 5
 y 580
-w 230
+w 130
 h 20
 fgColor index 14
 onColor index 51
@@ -609,10 +673,78 @@ botShadowColor index 14
 controlPv "$(P)$(CONFIG)Menu:menuName.PROC"
 pressValue "1"
 releaseValue 
-onLabel "Find config files; load menu"
-offLabel "Find config files; load menu"
+onLabel "Find config files"
+offLabel "Find config files"
 3d
 useEnumNumeric
 font "helvetica-medium-r-10.0"
 endObjectProperties
+# (Group)
+object activeGroupClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 150
+y 580
+w 85
+h 20
+
+beginGroup
+
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 185
+y 580
+w 15
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:PageDn.PROC"
+pressValue 
+releaseValue "1"
+onLabel "-"
+offLabel "-"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+
+# (Message Button)
+object activeMessageButtonClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 220
+y 580
+w 15
+h 20
+fgColor index 14
+onColor index 51
+offColor index 51
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)$(CONFIG)Menu:PageUp.PROC"
+pressValue 
+releaseValue "1"
+onLabel "+"
+offLabel "+"
+3d
+useEnumNumeric
+font "helvetica-medium-r-10.0"
+endObjectProperties
+
+endGroup
+
+endObjectProperties
+
 
