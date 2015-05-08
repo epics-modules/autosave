@@ -57,6 +57,7 @@ static char SR_STATUS_STR[5][10] =
 
 #define FN_LEN 80 /* filename length */
 #define STRING_LEN MAX_STRING_SIZE	/* EPICS max length for string PV */
+#define STATUS_STR_LEN 300
 #define PV_NAME_LEN 80 /* string containing a PV name */
 
 struct restoreFileListItem {
@@ -112,7 +113,8 @@ extern float mySafeDoubleToFloat(double d);
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
 #define strNcpy(dest, src, N) {			\
 	int ii;								\
-	char *dd=dest, *ss=src;				\
+	char *dd=dest;						\
+	const char *ss=src;					\
 	for (ii=0; *ss && ii < N-1; ii++)	\
 		*dd++ = *ss++;					\
 	*dd = '\0';							\
