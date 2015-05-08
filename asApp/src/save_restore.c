@@ -1795,12 +1795,24 @@ STATIC int write_it(char *filename, struct chlist *plist)
 	}
 
 	/* qiao: check the file state: the file contents, file size and the save time of the file */
-	stat(filename, &fileStat);
     file_check = check_file(filename);
+	if (file_check != BS_OK) {
+		errlogPrintf("save_restore:write_it: file-check failure [%s], check_file=%d\n",
+            datetime, file_check);
+		return(ERROR);
+	}
+
+	stat(filename, &fileStat);
+	if (fileStat.st_size <= 0) {
+		errlogPrintf("save_restore:write_it: unphysical file size [%s], size=%lld\n",
+            datetime, (long long)fileStat.st_size);
+		return(ERROR);
+	}
+
     delta_time = difftime(time(NULL), fileStat.st_mtime);
-	if ((file_check != BS_OK) || (fileStat.st_size <= 0) ||  (delta_time > 10.0)) {
-		errlogPrintf("save_restore:write_it: file written checking failure [%s], check_file=%d, size=%lld, delta_time=%f\n",
-            datetime, file_check, (long long)fileStat.st_size, delta_time);
+	if (delta_time > 10.0) {
+		errlogPrintf("save_restore:write_it: file time is different from IOC time [%s], difference=%fs\n",
+            datetime, delta_time);
 		return(ERROR);
 	}
 
@@ -3309,6 +3321,16 @@ int openReqFile(const char *reqFile, FILE **fpp)
 	struct pathListElement *p;
 	char tmpfile[NFS_PATH_LEN+1] = "";
 	FILE *trial_fd = NULL;
+	static char recentlyFound[MAXSTRING] = "";
+
+	/* if fpp==NULL, caller only wants to know if file exists.  In that case,
+	 * save time by checking to see if we just found the file on last call.
+	 */
+	if (fpp == NULL && recentlyFound[0]) {
+		if (strncmp(reqFile, recentlyFound, MAXSTRING-1)==0) {
+			return(1);
+		}
+	}
 
 	if (fpp) *fpp = NULL;
 	if (save_restoreDebug >= 1) {
@@ -3330,6 +3352,7 @@ int openReqFile(const char *reqFile, FILE **fpp)
 	if (fpp) *fpp = trial_fd;
 	if (trial_fd) {
 		if (fpp == NULL) fclose(trial_fd);
+		strncpy(recentlyFound, reqFile, MAXSTRING-1);
 		return(1);
 	} else {
 		return(0);
