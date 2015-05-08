@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave v5.6.1</h1>
+<h1 align="center">autosave R5-7</h1>
 
 <h2>Table of Contents</h2>
 <ul>
@@ -700,10 +700,14 @@ larger sequence of operations.  For example, any EPICS record that can do a
 ca_put_callback can load or save a configuration and wait for the operation to
 complete before perhaps triggering additional execution.
 
+<P><b>New in autosave R5-7:</b> The number of configurations that a configMenu instance
+can handle used to be 10, but is now unlimited.  If more than ten configurations
+are found, you can page through the list, ten configurations at a time.
+
 <h3>Example</h3>
 
-<P>Suppose we want to configure a set of three sscan records to perform any of
-10 different types of scans.  Here are the steps needed to implement a menu of
+<P>Suppose we want to configure a set of three sscan records to perform one of
+many different types of scans.  Here are the steps needed to implement a menu of
 scan types, and to give the user a GUI display for creating scan types and
 loading them.  (In the following, <font color="blue">scan1</font> is the name of
 this instance of configMenu.  The files it loads and saves will be named "<font
@@ -777,18 +781,23 @@ Here an example of what the user might see:
 
 <P>In <b>configMenu_small.adl</b>, the menu of configurations is displayed by
 and selected from the <i>enum</i> PV, <code>$(P)$(CONFIG)Menu</code>, (e.g.,
-<code>xxx:scan1Menu</code>).  This is the most convenient way for configMenu to
-be driven by CA-client software, because a single PV contains the menu choices
-and is also the PV to which choices are written to cause loading.  This display
-cannot cause a configuration to be written.  When the menu is repopulated, MEDM
-will not automatically retrieve the new names for display by
+<code>xxx:scan1Menu</code>).  This display cannot cause a configuration to be written. 
+When the menu is repopulated, or a new page is selected, MEDM will not
+automatically retrieve the new names for display by
 <code>$(P)$(CONFIG)Menu</code>.  This must be done manually, by closing and
 reopening the display, which is what the "Refresh menu choices" button does.
 
+<P>Previously, <code>$(P)$(CONFIG)Menu</code> was a convenient PV for driving
+configMenu from CA-client software, because it both selected a configuration and
+caused the configuration to load.  This no longer works if the configuration
+name is not on the displayed page.  Beginning with R5-7, in which the number of
+supported configurations is unlimited, CA clients can load a configuration by
+writing its name to <code>$(P)$(CONFIG)Menu:name</code>
 
 <P><b>configMenu.adl</b> and <b>configMenu_more.adl</b> show the menu choices as
 separate PVs, for which no manual refresh is needed, and provide buttons for
-loading and saving configurations.
+loading and saving configurations, and for paging through the list of available
+configuration files, if there are more than 10.
 
 <P><b>configMenu_more.adl</b> also shows description PVs. When the menu is
 populated by searching for config files, descriptions are extracted from those
@@ -1225,12 +1234,14 @@ void *puser);</code>
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>void save_restoreSet_FilePermissions(int permissions)</code>
-<dd>Specify the file permissions used to create new .sav files.  This
-	integer value will be supplied, exactly as given, to the system call,
-	<tt>open()</tt>.  Typically, file permissions are set with an octal
-	number, such as 0640, and <tt>save_restoreSet_FilePermissions()</tt>
-	will confirm any number given to it by echoing it to the console as
-	an octal number.
+
+<dd>Specify the file permissions used to create new .sav files.  This integer
+	value will be supplied, exactly as given, to the system call,
+	<tt>open()</tt>, and to the call fchmod().  Typically, file permissions are
+	set with an octal number, such as 0640, and
+	<tt>save_restoreSet_FilePermissions()</tt> will confirm any number given to
+	it by echoing it to the console as an octal number.
+
 	<P>This function can be called at any time after iocInit.
 
 <!-------------------------------------------------------------------------------------->
