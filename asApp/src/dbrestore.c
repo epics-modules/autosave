@@ -1332,6 +1332,9 @@ long SR_get_array_info(char *name, long *num_elements, long *field_size, long *f
 	DBADDR		*paddr = &dbaddr;
 	long		status;
 
+	*num_elements = 0;
+	*field_size = 0;
+	*field_type = 0;
 	status = dbNameToAddr(name, paddr);
 	if (status) return(status);
 	*num_elements = paddr->no_elements;
