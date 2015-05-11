@@ -10,6 +10,20 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.7</h3>
+<ul>
+
+<li>configMenu now supports an unlimited number of config files.  This made it
+necessary to provide a new PV by which CA clients can directly write the
+config-file name.
+
+<li>sprintf -> epicsSnprintf, strcat -> strncat, etc.
+
+<li>speed up autosaveBuild by caching names of five most recently
+found/not-found request files.
+
+</ul>
+
 <h3>5.6.2</h3>
 <ul>
 

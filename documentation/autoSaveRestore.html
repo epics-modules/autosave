@@ -781,7 +781,7 @@ Here an example of what the user might see:
 
 <P>In <b>configMenu_small.adl</b>, the menu of configurations is displayed by
 and selected from the <i>enum</i> PV, <code>$(P)$(CONFIG)Menu</code>, (e.g.,
-<code>xxx:scan1Menu</code>).  This display cannot cause a configuration to be written. 
+<code>xxx:<font color="blue">scan1</font>Menu</code>).  This display cannot cause a configuration to be written. 
 When the menu is repopulated, or a new page is selected, MEDM will not
 automatically retrieve the new names for display by
 <code>$(P)$(CONFIG)Menu</code>.  This must be done manually, by closing and
@@ -790,14 +790,13 @@ reopening the display, which is what the "Refresh menu choices" button does.
 <P>Previously, <code>$(P)$(CONFIG)Menu</code> was a convenient PV for driving
 configMenu from CA-client software, because it both selected a configuration and
 caused the configuration to load.  This no longer works if the configuration
-name is not on the displayed page.  Beginning with R5-7, in which the number of
-supported configurations is unlimited, CA clients can load a configuration by
-writing its name to <code>$(P)$(CONFIG)Menu:name</code>
+name is not on the displayed page.  Beginning with R5-7, CA clients can safely
+load a configuration by writing its name to <code>$(P)$(CONFIG)Menu:name</code>.
 
 <P><b>configMenu.adl</b> and <b>configMenu_more.adl</b> show the menu choices as
 separate PVs, for which no manual refresh is needed, and provide buttons for
 loading and saving configurations, and for paging through the list of available
-configuration files, if there are more than 10.
+configuration files.
 
 <P><b>configMenu_more.adl</b> also shows description PVs. When the menu is
 populated by searching for config files, descriptions are extracted from those
@@ -811,9 +810,9 @@ configuration files.
 
 <ol>
 
-<li>Configuration names in the display, configMenu.adl (e.g., "align entrance
-slit") will correspond with autosave ".cfg" files whose names are similar, but
-with non-alphanumeric characters replaced by '_' (e.g., "<font
+<li>Configuration names in the display, configMenu.adl, will correspond with
+autosave ".cfg" files whose names are similar, but with non-alphanumeric
+characters replaced by '_' (e.g., "<font
 color="blue">scan1</font>_align_entrance_slit.cfg").  A ".cfg" file is exactly
 like a ".sav" file; the ".cfg" extension is purely to make them easier to find
 and distinguish from ".sav" files.
@@ -829,10 +828,10 @@ for.  (Channel access clients that specify the event-type flag
 <code>DBE_PROPERTY</code> when they subscribe to an enum PV will be notified
 when the enum strings change.)
 
-<li>configMenu can save and restore most kinds of PVs from other IOCs, but
-currently it can't handle array or long-string PVs in a remote IOC.  If you
-use configMenu for remote PVs, you should tell autosave to retry connections
-periodically, by including the following line in save_restore.cmd:
+<li>Beginning with R5-7, configMenu can save/restore all kinds of PVs from/to
+other IOCs.  If you use configMenu for remote PVs, you should tell autosave to
+retry connections periodically, by including the following line in
+save_restore.cmd:
 
 <pre>
 save_restoreSet_CAReconnect(1)
