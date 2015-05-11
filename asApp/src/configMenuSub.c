@@ -6,6 +6,7 @@
 #include <dbScan.h>
 #include <dbAccess.h>
 #include <aSubRecord.h>
+#include <epicsStdio.h>
 
 #include "configMenuClient.h"
 
@@ -17,12 +18,12 @@ void makeLegal(char *name);
 
 void configMenuCallback(int status, void *puserPvt) {
 	aSubRecord *pasub = (aSubRecord *)puserPvt;
-	long *d = (long *)pasub->d;
+	epicsInt32 *d = (epicsInt32 *)pasub->d;
 
 	if (configMenuDebug)
 		printf("configMenuCallback:status=%d, puserPvt=%p\n", status, puserPvt);
 	dbScanLock((dbCommon *)pasub);
-	*d = (long)status;
+	*d = (epicsInt32)status;
 	dbScanUnlock((dbCommon *)pasub);
 	scanOnce((dbCommon *)puserPvt);
 }
@@ -45,15 +46,15 @@ static long configMenu_init(aSubRecord *pasub) {
  */
 static long configMenu_do(aSubRecord *pasub) {
 	char *a = (char *)pasub->a;
-	long *b = (long *)pasub->b;
+	epicsInt32 *b = (epicsInt32 *)pasub->b;
 	char *c = (char *)pasub->c;
-	long *d = (long *)pasub->d;
+	epicsInt32 *d = (epicsInt32 *)pasub->d;
 	short *e = (short *)pasub->e;
 	char *f = (char *)pasub->f;
 	char *g = (char *)pasub->g;
-	long *vala = (long *)pasub->vala;
-	long *valb = (long *)pasub->valb;
-	long *valc = (long *)pasub->valc;
+	epicsInt32 *vala = (epicsInt32 *)pasub->vala;
+	epicsInt32 *valb = (epicsInt32 *)pasub->valb;
+	epicsInt32 *valc = (epicsInt32 *)pasub->valc;
 	char *macrostring = NULL;
 	char filename[100];
 
@@ -77,13 +78,13 @@ static long configMenu_do(aSubRecord *pasub) {
 			makeLegal(a);
 			epicsSnprintf(filename, 99, "%s_%s.cfg", g, a);
 			*b = fdbrestoreX(filename, macrostring, configMenuCallback, (void *)pasub);
-			if (configMenuDebug) printf("configMenu_do:fdbrestore returned %ld\n", *b);
+			if (configMenuDebug) printf("configMenu_do:fdbrestore returned %d\n", *b);
 			*vala = 1;
 			*valb = 1;
 		} else {
 			/* this is a callback from restore operation */
 			if (configMenuDebug)
-				printf("configMenu_do:callback status=%ld\n", *valc);
+				printf("configMenu_do:callback status=%d\n", *valc);
 			*valc = (*d ? 1 : 0);
 			*vala = 0;
 			*valb = 0;
@@ -101,14 +102,14 @@ static long configMenu_do(aSubRecord *pasub) {
 			}
 			makeLegal(a);
 			epicsSnprintf(filename, 99, "%s_%s.cfg", g, a);
-			*b = manual_save(f, filename, configMenuCallback, (void *)pasub);
-			if (configMenuDebug) printf("configMenu_do:manual_save returned %ld\n", *b);
+			*b = (epicsInt32)manual_save(f, filename, configMenuCallback, (void *)pasub);
+			if (configMenuDebug) printf("configMenu_do:manual_save returned %d\n", *b);
 			*vala = 1;
 			*valb = 1;
 		} else {
 			/* this is a callback from a save operation */
 			if (configMenuDebug)
-				printf("configMenu_do:save callback status=%ld\n", *valc);
+				printf("configMenu_do:save callback status=%d\n", *valc);
 			*valc = (*d ? 1 : 0);
 			*vala = 0;
 			*valb = 0;
