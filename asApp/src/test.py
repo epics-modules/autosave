@@ -74,24 +74,30 @@ pv_values = {
 
 alphabet = "abcdefghijklmnopqrstuvwxyz"
 
+def put(pv, val):
+	try:
+		epics.caput(pv, val)
+	except:
+		print "exception while putting '%s' to '%s'" % (repr(val), pv)
+
 def doPuts(verbose=0):
 	for (pv) in pv_types.keys():
 		pv_type = pv_types[pv]
 		if pv_type == "char":
 			pv_values[pv] = random.randint(0,0xff)
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "uchar":
 			pv_values[pv] = random.randint(0,0xff)
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "short":
 			pv_values[pv] = random.randint(0,0xffff)-0x7fff
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "ushort":
 			pv_values[pv] = random.randint(0,0xffff)
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "enum":
 			p = epics.PV(prefix+pv)
@@ -99,17 +105,18 @@ def doPuts(verbose=0):
 			# SCAN field, can use I/O Intr (2)
 			if i==2: i=3
 			pv_values[pv] = i
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "double":
 			pv_values[pv] = random.random()
 			s = pv_values[pv].__str__()
-			epics.caput(prefix+pv, s)
+			if verbose: print "double: writing string value '%s' " % s
+			put(prefix+pv, s)
 
 		elif pv_type == "float":
 			pv_values[pv] = random.random()
 			s = pv_values[pv].__str__()
-			epics.caput(prefix+pv, s)
+			put(prefix+pv, s)
 
 		elif pv_type == "string":
 			s = ""
@@ -117,7 +124,7 @@ def doPuts(verbose=0):
 			for i in range(m):
 				s = s+alphabet[random.randint(0,25)]
 			pv_values[pv] = s
-			epics.caput(prefix+pv, s)
+			put(prefix+pv, s)
 
 		elif pv_type == "link":
 			s = ""
@@ -125,15 +132,15 @@ def doPuts(verbose=0):
 			for i in range(m):
 				s = s+alphabet[random.randint(0,25)]
 			pv_values[pv] = s + " NPP NMS"
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "long":
 			pv_values[pv] = random.randint(0,0xffffffff)-0x7fffffff
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "ulong":
 			pv_values[pv] = random.randint(0,0xffffffff)
-			epics.caput(prefix+pv, pv_values[pv])
+			put(prefix+pv, pv_values[pv])
 
 		#arrays
 
@@ -145,7 +152,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xff))
 			pv_values[pv] = values
 			if verbose>1: print "char_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "double_array":
 			p = epics.PV(prefix+pv)
@@ -155,7 +162,7 @@ def doPuts(verbose=0):
 				values.append(random.random())
 			pv_values[pv] = values
 			if verbose>1: print "double_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "float_array":
 			p = epics.PV(prefix+pv)
@@ -165,7 +172,7 @@ def doPuts(verbose=0):
 				values.append(random.random())
 			pv_values[pv] = values
 			if verbose>1: print "float_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "long_array":
 			p = epics.PV(prefix+pv)
@@ -175,7 +182,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xffffffff)-0x7fffffff)
 			pv_values[pv] = values
 			if verbose>1: print "long_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "short_array":
 			p = epics.PV(prefix+pv)
@@ -185,7 +192,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xffff)-0x7fff)
 			pv_values[pv] = values
 			if verbose>1: print "short_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "string_array":
 			p = epics.PV(prefix+pv)
@@ -199,7 +206,7 @@ def doPuts(verbose=0):
 				values.append(s)
 			pv_values[pv] = values
 			if verbose>1: print "string_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "uchar_array":
 			p = epics.PV(prefix+pv)
@@ -209,7 +216,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xff))
 			pv_values[pv] = values
 			if verbose>1: print "uchar_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "ulong_array":
 			p = epics.PV(prefix+pv)
@@ -219,7 +226,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xffffffff))
 			pv_values[pv] = values
 			if verbose>1: print "ulong_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "ushort_array":
 			p = epics.PV(prefix+pv)
@@ -229,7 +236,7 @@ def doPuts(verbose=0):
 				values.append(random.randint(0,0xffff))
 			pv_values[pv] = values
 			if verbose>1: print "ushort_array: writing values ", values
-			epics.caput(prefix+pv, numpy.array(pv_values[pv]))
+			put(prefix+pv, numpy.array(pv_values[pv]))
 		else:
 			if verbose: print "pv_type", pv_type, "not supported"
 		
