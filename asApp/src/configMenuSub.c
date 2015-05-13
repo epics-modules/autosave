@@ -146,6 +146,9 @@ static long configMenuList_do(aSubRecord *pasub) {
 	int i, status=0;
 
 	pLI = (struct configFileListItem *) ellFirst(configMenuList);
+	if (pLI==NULL) {
+		*findFiles = 1;
+	}
 	if (*findFiles || (pLI->name==NULL) || (pLI->name[0]=='\0')) {
 		status = findConfigFiles(configName, configMenuList);
 		if (configMenuDebug || status) printf("configMenuList_do(%s): findConfigFiles returned %d\n",
