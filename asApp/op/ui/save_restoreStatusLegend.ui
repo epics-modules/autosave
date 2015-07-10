@@ -38,7 +38,7 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
                 </color>
             </property>
             <property name="text">
-                <string>&apos;MCTRP&apos; progress/status bits mean...</string>
+                <string>&apos;PRTCM&apos; progress/status bits mean...</string>
             </property>
             <property name="fontScaleMode">
                 <enum>ESimpleLabel::WidthAndHeight</enum>
@@ -117,8 +117,8 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
             </property>
             <property name="geometry">
                 <rect>
-                    <x>25</x>
-                    <y>30</y>
+                    <x>30</x>
+                    <y>90</y>
                     <width>350</width>
                     <height>15</height>
                 </rect>
@@ -153,8 +153,8 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
             </property>
             <property name="geometry">
                 <rect>
-                    <x>25</x>
-                    <y>45</y>
+                    <x>30</x>
+                    <y>75</y>
                     <width>350</width>
                     <height>15</height>
                 </rect>
@@ -189,7 +189,7 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
             </property>
             <property name="geometry">
                 <rect>
-                    <x>25</x>
+                    <x>30</x>
                     <y>60</y>
                     <width>350</width>
                     <height>15</height>
@@ -225,8 +225,8 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
             </property>
             <property name="geometry">
                 <rect>
-                    <x>25</x>
-                    <y>75</y>
+                    <x>30</x>
+                    <y>45</y>
                     <width>350</width>
                     <height>15</height>
                 </rect>
@@ -261,8 +261,8 @@ QPushButton::menu-indicator {image: url(none.png); width: 0}
             </property>
             <property name="geometry">
                 <rect>
-                    <x>25</x>
-                    <y>90</y>
+                    <x>30</x>
+                    <y>30</y>
                     <width>350</width>
                     <height>15</height>
                 </rect>
