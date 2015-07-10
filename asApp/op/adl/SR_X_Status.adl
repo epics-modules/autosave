@@ -1,7 +1,7 @@
 
 file {
-	name="/home/oxygen4/MOONEY/epics/synApps_5_1/support/autosave/cvs/asApp/op/adl/SR_X_Status.adl"
-	version=030004
+	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/SR_X_Status.adl"
+	version=030107
 }
 display {
 	object {
@@ -250,7 +250,7 @@ polygon {
 	}
 	clr=0
 	bclr=63
-	label="-MCTRP"
+	label="-PRTCM"
 }
 "text update" {
 	object {
@@ -309,7 +309,8 @@ byte {
 		clr=14
 		bclr=3
 	}
-	sbit=4
+	sbit=0
+	ebit=4
 }
 "text update" {
 	object {

@@ -1,7 +1,7 @@
 
 file {
 	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/save_restoreStatus_more.adl"
-	version=030102
+	version=030107
 }
 display {
 	object {
@@ -205,7 +205,7 @@ polygon {
 	}
 	clr=0
 	bclr=63
-	label="-M C T R P"
+	label="-P R T C M"
 }
 "text update" {
 	object {
@@ -482,7 +482,8 @@ byte {
 		clr=14
 		bclr=3
 	}
-	sbit=4
+	sbit=0
+	ebit=4
 }
 "text update" {
 	object {
@@ -556,7 +557,8 @@ byte {
 		clr=14
 		bclr=3
 	}
-	sbit=4
+	sbit=0
+	ebit=4
 }
 "text update" {
 	object {

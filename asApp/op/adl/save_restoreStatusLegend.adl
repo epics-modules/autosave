@@ -1,7 +1,7 @@
 
 file {
-	name="C:\Program Files\EPICS WIN32 Extensions\synApps_5_1_adl\save_restoreStatusLegend.adl"
-	version=020306
+	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/save_restoreStatusLegend.adl"
+	version=030107
 }
 display {
 	object {
@@ -13,7 +13,7 @@ display {
 	clr=14
 	bclr=3
 	cmap=""
-	gridSpacing=10
+	gridSpacing=5
 	gridOn=0
 	snapToGrid=1
 }
@@ -97,7 +97,7 @@ text {
 	"basic attribute" {
 		clr=14
 	}
-	textix="'MCTRP' progress/status bits mean..."
+	textix="'PRTCM' progress/status bits mean..."
 }
 text {
 	object {
@@ -113,8 +113,8 @@ text {
 }
 text {
 	object {
-		x=25
-		y=30
+		x=30
+		y=90
 		width=350
 		height=15
 	}
@@ -125,8 +125,8 @@ text {
 }
 text {
 	object {
-		x=25
-		y=45
+		x=30
+		y=75
 		width=350
 		height=15
 	}
@@ -137,7 +137,7 @@ text {
 }
 text {
 	object {
-		x=25
+		x=30
 		y=60
 		width=350
 		height=15
@@ -149,8 +149,8 @@ text {
 }
 text {
 	object {
-		x=25
-		y=75
+		x=30
+		y=45
 		width=350
 		height=15
 	}
@@ -161,8 +161,8 @@ text {
 }
 text {
 	object {
-		x=25
-		y=90
+		x=30
+		y=30
 		width=350
 		height=15
 	}
