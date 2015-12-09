@@ -16,7 +16,8 @@ asVerify_LIBS	+= Com
 
 #DBDINC += xxxRecord
 
-# Trial version that uses dbLoadRecordsHookRegister.
+# To enable autosaveBuild, use dbLoadRecordsHookRegister.  (But it doesn't
+# appear in EPICS base until 3.14.12.5, so disable by default for now.)
 #USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
 
 # <name>.dbd will be created from <name>Include.dbd
@@ -61,3 +62,4 @@ include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
 
+dbrestore.o:   ../Makefile
