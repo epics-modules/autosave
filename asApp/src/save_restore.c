@@ -828,7 +828,6 @@ STATIC int save_restore(void)
 	if (save_restoreDebug > 1)
 			printf("save_restore:save_restore: entry; status_prefix='%s'\n", status_prefix);
 
-	opMsgQueue = epicsMessageQueueCreate(OP_MSG_QUEUE_SIZE, OP_MSG_SIZE);
 	epicsTimeGetCurrent(&currTime);
 	last_seq_check = remount_check_time = currTime; /* struct copy */
 
@@ -2148,6 +2147,11 @@ STATIC int create_data_set(
 	if (!save_restore_init) {
 		if ((sr_mutex = epicsMutexCreate()) == 0) {
 			printf("save_restore:create_data_set: could not create list header mutex");
+			return(ERROR);
+		}
+		opMsgQueue = epicsMessageQueueCreate(OP_MSG_QUEUE_SIZE, OP_MSG_SIZE);
+		if (opMsgQueue == NULL) {
+			printf("save_restore:create_data_set: could not create message queue");
 			return(ERROR);
 		}
 		taskID = epicsThreadCreate("save_restore", taskPriority,
