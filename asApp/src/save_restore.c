@@ -146,6 +146,9 @@
 #include	<sys/stat.h>
 #include	<time.h>
 #include	<sys/types.h> /* for dirList */
+#ifdef vxWorks
+	#include	<version.h> /* for VxWorks VERSION */
+#endif
 
 #include	<dbDefs.h>
 #include	<cadef.h>		/* includes dbAddr.h */
@@ -168,8 +171,18 @@
 #include 	"osdNfs.h"              /* qiao: routine of os dependent code, for NFS */
 #include	"configMenuClient.h"
 
-#ifndef _WIN32
-  #define SET_FILE_PERMISSIONS 1
+#define SET_FILE_PERMISSIONS 1
+
+#ifdef _WIN32
+  #define SET_FILE_PERMISSIONS 0
+#endif
+
+#ifdef vxWorks
+	#if defined(_WRS_VXWORKS_MAJOR) && ((_WRS_VXWORKS_MAJOR >= 6) && (_WRS_VXWORKS_MINOR >= 6))
+		#define SET_FILE_PERMISSIONS 1
+	#else
+		#define SET_FILE_PERMISSIONS 0
+	#endif
 #endif
 
 #if SET_FILE_PERMISSIONS
