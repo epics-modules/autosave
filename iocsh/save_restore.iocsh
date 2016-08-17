@@ -2,7 +2,9 @@
 
 #- ###################################################
 #- PREFIX         - IOC Prefix
-#  SAVE_PATH      - Location of auto_positions, auto_settings, and autosave directory 
+#- SAVE_PATH      - Location of auto_positions, auto_settings, and autosave directory 
+#- POSITION_FILE  - Name of positions.sav file
+#- SETTING_FILE   - Name of settings.sav file 
 #- AUTOSAVE       - Location of Autosave module
 #-
 #- STD            - Optional: Location of STD module (if built into IOC)
@@ -32,6 +34,10 @@
 
 set_savefile_path("$(SAVE_PATH)", "autosave")
 
+#- Add save path and autosave to list of directories to find files
+set_requestfile_path("$(SAVE_PATH)", "")
+set_requestfile_path("$(AUTOSAVE)", "asApp/Db")
+
 save_restoreSet_status_prefix("$(PREFIX)")
 save_restoreSet_CAReconnect($(CA_RECONNECT=1))
 save_restoreSet_IncompleteSetsOk($(INCOMPLETE=1))
@@ -48,9 +54,9 @@ dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=$(PREFIX), DEAD_S
 #- Specify what save files should be restored.  Note these files must be
 #- in the directory specified in set_savefile_path(), or, if that function
 #- has not been called, from the directory current when iocInit is invoked
-set_pass0_restoreFile("auto_positions.sav")
-set_pass0_restoreFile("auto_settings.sav")
-set_pass1_restoreFile("auto_settings.sav")
+set_pass0_restoreFile("$(POSITION_FILE)")
+set_pass0_restoreFile("$(SETTING_FILE)")
+set_pass1_restoreFile("$(SETTING_FILE)")
 
 #- Note doAfterIocInit() supplied by std module.
 doAfterIocInit("create_monitor_set('auto_positions.req',$(POSITION_PERIOD=5),'P=$(PREFIX)')")
