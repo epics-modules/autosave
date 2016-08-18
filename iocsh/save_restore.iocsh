@@ -5,8 +5,6 @@
 #- SAVE_PATH      - Location of auto_positions, auto_settings, and autosave directory 
 #- AUTOSAVE       - Location of Autosave module
 #-
-#- STD            - Optional: Location of STD module (if built into IOC)
-#-
 #- INCOMPLETE     - Optional: Ok to save/restore save sets with missing values?
 #-                  Default: 1
 #-
