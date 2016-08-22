@@ -1,0 +1,40 @@
+# ### autosave_settings.iocsh ###
+
+#- ###################################################
+#- PREFIX         - IOC Prefix
+#- AUTOSAVE       - Location of autosave module
+#- SAVE_PATH      - Location to create autosave directory where files will be saved
+#- INCOMPLETE     - Optional: Ok to save/restore save sets with missing values?
+#-                  Default: 1
+#-
+#- DATED_BACKUP   - Optional: Save dated backup files?
+#-                  Default: 1
+#-
+#- CA_RECONNECT   - Optional: Retry connecting to PVs whose initial connection attempt failed?
+#-                  Default: 1
+#-
+#- NUM_SEQ        - Optional: Number of sequenced backup files to write
+#-                  Default: 3
+#-
+#- SEQ_PERIOD     - Optional: Time interval in seconds between sequenced backups
+#-                - Default: 300
+#- ###################################################
+
+set_savefile_path("$(SAVE_PATH)", "autosave")
+
+#- Add save path and autosave to list of directories to find files
+set_requestfile_path("$(SAVE_PATH)", "")
+set_requestfile_path("$(AUTOSAVE)", "asApp/Db")
+
+save_restoreSet_status_prefix("$(PREFIX)")
+save_restoreSet_CAReconnect($(CA_RECONNECT=1))
+save_restoreSet_IncompleteSetsOk($(INCOMPLETE=1))
+save_restoreSet_DatedBackupFiles($(DATED_BACKUP=1))
+save_restoreSet_NumSeqFiles($(NUM_SEQ=3))
+save_restoreSet_SeqPeriodInSeconds($(SEQ_PERIOD=300))
+
+#- Time interval in seconds between forced save-file writes.  (-1 means forever).
+#- This is intended to get save files written even if the normal trigger mechanism is broken.
+save_restoreSet_CallbackTimeout(-1)
+
+dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=$(PREFIX), DEAD_SECONDS=5")
