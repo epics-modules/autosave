@@ -1,0 +1,35 @@
+# ### autosaveBuild.iocsh ###
+
+#- ###################################################
+#- PREFIX         - IOC Prefix
+#- AUTOSAVE       - Location of Autosave module
+#- POSITION_PERIOD- Optional: Time interval in seconds between saving positions
+#-                - Default: 5
+#- 
+#- SETTING_PERIOD - Optional: Time interval in seconds between saving settings
+#-                - Default: 30
+#- ###################################################
+
+#- Specify what save files should be restored.  Note these files must be
+#- in the directory specified in set_savefile_path(), or, if that function
+#- has not been called, from the directory current when iocInit is invoked
+set_pass0_restoreFile("built_positions.req")
+set_pass0_restoreFile("built_settings.req")
+set_pass1_restoreFile("built_settings.req")
+
+#- Note doAfterIocInit() supplied by std module.
+doAfterIocInit("create_monitor_set('built_positions.req',$(POSITION_PERIOD=5), PREFIX=$(PREFIX))")
+doAfterIocInit("create_monitor_set('built_settings.req',$(SETTING_PERIOD=30), PREFIX=$(PREFIX))")
+
+#- Debug-output level
+save_restoreSet_Debug(0)
+
+#- Tell autosave to automatically build built_settings.req and
+#- built_positions.req from databases and macros supplied to dbLoadRecords()
+#- (and dbLoadTemplate(), which calls dbLoadRecords()).
+#- This requires EPICS 3.15.1 or later, or 3.14 patched as described in
+#- autosave R5-5 documentation.
+epicsEnvSet("BUILT_SETTINGS", "built_settings.req")
+epicsEnvSet("BUILT_POSITIONS", "built_positions.req")
+autosaveBuild("$(BUILT_SETTINGS)", "_settings.req", 1)
+autosaveBuild("$(BUILT_POSITIONS)", "_positions.req", 1)

@@ -1,0 +1,16 @@
+# ### configMenu.iocsh ###
+
+#- ###################################################
+#- PREFIX         - IOC Prefix
+#- CONFIG         - Menu name, will search for $(CONFIG)Menu.req
+#- AUTOSAVE       - Location of autosave module
+#- ###################################################
+
+#- configMenu example.
+dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=$(PREFIX),CONFIG=$(CONFIG)")
+
+#- Note that the request file MUST be named $(CONFIG)Menu.req
+#- If the macro CONFIGMENU is defined with any value, backup (".savB") and
+#- sequence files (".savN") will not be written.  We don't want these for configMenu.
+#- Run this after iocInit:
+doAfterIocInit("create_manual_set('$(CONFIG)Menu.req','P=$(PREFIX),CONFIG=$(CONFIG),CONFIGMENU=1')")
