@@ -3,8 +3,6 @@
 #- ###################################################
 #- PREFIX         - IOC Prefix
 #- SAVE_PATH      - Location of auto_positions, auto_settings, and autosave directory 
-#- POSITIONS_FILE - Name of positions req file
-#- SETTINGS_FILE  - Name of settings req file
 #- AUTOSAVE       - Location of Autosave module
 #-
 #- INCOMPLETE     - Optional: Ok to save/restore save sets with missing values?
@@ -52,13 +50,23 @@ dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=$(PREFIX), DEAD_S
 #- Specify what save files should be restored.  Note these files must be
 #- in the directory specified in set_savefile_path(), or, if that function
 #- has not been called, from the directory current when iocInit is invoked
-set_pass0_restoreFile("$(POSITIONS_FILE)")
-set_pass0_restoreFile("$(SETTINGS_FILE)")
-set_pass1_restoreFile("$(SETTINGS_FILE)")
+set_pass0_restoreFile("built_positions.req")
+set_pass0_restoreFile("built_settings.req")
+set_pass1_restoreFile("built_settings.req")
 
 #- Note doAfterIocInit() supplied by std module.
-doAfterIocInit("create_monitor_set('$(POSITIONS_FILE)',$(POSITION_PERIOD=5),'P=$(PREFIX)')")
-doAfterIocInit("create_monitor_set('$(SETTINGS_FILE)',$(SETTING_PERIOD=30),'P=$(PREFIX)')")
+doAfterIocInit("create_monitor_set('built_positions.req',$(POSITION_PERIOD=5))")
+doAfterIocInit("create_monitor_set('built_settings.req',$(SETTING_PERIOD=30))")
 
 #- Debug-output level
 save_restoreSet_Debug(0)
+
+#- Tell autosave to automatically build built_settings.req and
+#- built_positions.req from databases and macros supplied to dbLoadRecords()
+#- (and dbLoadTemplate(), which calls dbLoadRecords()).
+#- This requires EPICS 3.15.1 or later, or 3.14 patched as described in
+#- autosave R5-5 documentation.
+epicsEnvSet("BUILT_SETTINGS", "built_settings.req")
+epicsEnvSet("BUILT_POSITIONS", "built_positions.req")
+autosaveBuild("$(BUILT_SETTINGS)", "_settings.req", 1)
+autosaveBuild("$(BUILT_POSITIONS)", "_positions.req", 1)
