@@ -401,10 +401,10 @@ STATIC int write_it(char *filename, struct chlist *plist);
 STATIC int write_save_file(struct chlist *plist, const char *configName, char *retSaveFile);
 STATIC void do_seq(struct chlist *plist);
 STATIC int create_data_set(char *filename, int save_method, int period,
-		char *trigger_channel, int mon_period, char *macrostring);
+		char *trigger_channel, int mon_period, char *macrostring, const char *save_filename);
 STATIC int do_manual_restore(char *filename, int file_type, char *macrostring);
 STATIC int readReqFile(const char *file, struct chlist *plist, char *macrostring);
-STATIC int do_remove_data_set(char *filename);
+STATIC int do_remove_data_set(char *filename, char *macrostring, char *save_filename);
 STATIC int request_manual_restore(char *filename, int file_type, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
 
 STATIC void ca_connection_callback(struct connection_handler_args args);      /* qiao: call back function for ca connection of the dataset channels */
@@ -415,15 +415,15 @@ STATIC void defaultCallback(int status, void *puserPvt);
 
 int fdbrestore(char *filename);
 int set_savefile_name(char *filename, char *save_filename);
-int create_periodic_set(char *filename, int period, char *macrostring);
-int create_triggered_set(char *filename, char *trigger_channel, char *macrostring);
-int create_monitor_set(char *filename, int period, char *macrostring);
-int create_manual_set(char *filename, char *macrostring);
+int create_periodic_set(char *filename, int period, char *macrostring, char *save_filename);
+int create_triggered_set(char *filename, char *trigger_channel, char *macrostring, char *save_filename);
+int create_monitor_set(char *filename, int period, char *macrostring, char *save_filename);
+int create_manual_set(char *filename, char *macrostring, char *save_filename);
 void save_restoreShow(int verbose);
 int set_requestfile_path(char *path, char *pathsub);
 int set_savefile_path(char *path, char *pathsub);
 int set_saveTask_priority(int priority);
-int remove_data_set(char *filename);
+int remove_data_set(char *filename, char *macrostring);
 int reload_periodic_set(char *filename, int period, char *macrostring);
 int reload_triggered_set(char *filename, char *trigger_channel, char *macrostring);
 int reload_monitor_set(char * filename, int period, char *macrostring);
@@ -436,7 +436,7 @@ int findConfigFiles(char *config, ELLLIST *configMenuList);
  * and a full argument list for calls from local client code.
  */
 int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puserPvt);
-int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt);
+int manual_save(char *request_file, char *macrostring, char *save_file, callbackFunc callbackFunction, void *puserPvt);
 char *getMacroString(char *request_file);
 
 /* functions to set save_restore parameters */
@@ -677,7 +677,7 @@ int findConfigFiles(char *config, ELLLIST *configMenuList) {
 	return(-1);
 }
 
-int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puserPvt)
+int manual_save(char *request_file, char *macrostring, char *save_file, callbackFunc callbackFunction, void *puserPvt)
 {
 	op_msg msg;
 
@@ -688,6 +688,8 @@ int manual_save(char *request_file, char *save_file, callbackFunc callbackFuncti
 	strNcpy(msg.requestfilename, request_file, OP_MSG_FILENAME_SIZE);
 	msg.filename[0] = '\0';
 	if (save_file) strNcpy(msg.filename, save_file, OP_MSG_FILENAME_SIZE);
+	msg.macrostring[0] = '\0';
+	if (macrostring) strNcpy(msg.macrostring, macrostring, OP_MSG_MACRO_SIZE);
 	if (callbackFunction==NULL) {
 		callbackFunction = defaultCallback;
 		puserPvt = NULL;
@@ -1144,6 +1146,7 @@ STATIC int save_restore(void)
 			int status=0;
 			int num_errs;
 			char fullPath[NFS_PATH_LEN+1] = "";
+			char save_filename[FN_LEN];
 
 			switch (msg.operation) {
 
@@ -1171,8 +1174,8 @@ STATIC int save_restore(void)
 				break;
 
 			case op_Remove:
-				if (save_restoreDebug) printf("save_restore task: calling do_remove_data_set('%s')\n", msg.filename);
-				status = do_remove_data_set(msg.filename);
+				if (save_restoreDebug) printf("save_restore task: calling do_remove_data_set('%s', '%s')\n", msg.filename, msg.macrostring);
+				status = do_remove_data_set(msg.filename, msg.macrostring, save_filename);
 				if (save_restoreDebug>1) printf("save_restore: remove status=%d (0==success)\n", status);
 				epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "Remove '%s' %s", msg.filename, status?"Failed":"Succeeded");
 				break;
@@ -1181,22 +1184,22 @@ STATIC int save_restore(void)
 			case op_ReloadTriggeredSet:
 			case op_ReloadMonitorSet:
 			case op_ReloadManualSet:
-				if (save_restoreDebug) printf("save_restore task: calling do_remove_data_set('%s')\n", msg.filename);
-				status = do_remove_data_set(msg.filename);
+				if (save_restoreDebug) printf("save_restore task: calling do_remove_data_set('%s', '%s')\n", msg.filename, msg.macrostring);
+				status = do_remove_data_set(msg.filename, msg.macrostring, save_filename);
 				if (save_restoreDebug>1) printf("save_restore: remove status=%d (0==success)\n", status);
 				if (status == 0) {
 				switch (msg.operation) {
 					case op_ReloadPeriodicSet:
-						status = create_periodic_set(msg.filename, msg.period, msg.macrostring);
+						status = create_periodic_set(msg.filename, msg.period, msg.macrostring, save_filename);
 						break;
 					case op_ReloadTriggeredSet:
-						status = create_triggered_set(msg.filename, msg.trigger_channel, msg.macrostring);
+						status = create_triggered_set(msg.filename, msg.trigger_channel, msg.macrostring, save_filename);
 						break;
 					case op_ReloadMonitorSet:
-						status = create_monitor_set(msg.filename, msg.period, msg.macrostring);
+						status = create_monitor_set(msg.filename, msg.period, msg.macrostring, save_filename);
 						break;
 					case op_ReloadManualSet:
-						status = create_manual_set(msg.filename, msg.macrostring);
+						status = create_manual_set(msg.filename, msg.macrostring, save_filename);
 						break;
 					/* These can't occur, but are included anyway just to shut the compiler up. */
 					case op_RestoreFromSaveFile: case op_RestoreFromAsciiFile: case op_Remove:
@@ -1218,7 +1221,8 @@ STATIC int save_restore(void)
 				fullPath[0] = '\0';
 				plist = lptr;
 				while (plist != 0) {
-					if (strcmp(plist->reqFile, msg.requestfilename) == 0) break;
+					if (strcmp(plist->reqFile, msg.requestfilename) == 0 && 
+						(strlen(msg.macrostring) == 0 || strcmp(plist->macrostring, msg.macrostring) == 0)) break;
 					plist = plist->pnext;
 				}
 				if (plist) {
@@ -2105,16 +2109,16 @@ int set_savefile_name(char *filename, char *save_filename)
 }
 
 
-int create_periodic_set(char *filename, int period, char *macrostring)
+int create_periodic_set(char *filename, int period, char *macrostring, char *save_filename)
 {
-	return(create_data_set(filename, PERIODIC, period, 0, 0, macrostring));
+	return(create_data_set(filename, PERIODIC, period, 0, 0, macrostring, save_filename));
 }
 
 
-int create_triggered_set(char *filename, char *trigger_channel, char *macrostring)
+int create_triggered_set(char *filename, char *trigger_channel, char *macrostring, char *save_filename)
 {
 	if (trigger_channel && (isalpha((int)trigger_channel[0]) || isdigit((int)trigger_channel[0]))) {
-		return(create_data_set(filename, TRIGGERED, 0, trigger_channel, 0, macrostring));
+		return(create_data_set(filename, TRIGGERED, 0, trigger_channel, 0, macrostring, save_filename));
 	}
 	else {
 		printf("save_restore:create_triggered_set: Error: trigger-channel name is required.\n");
@@ -2123,15 +2127,15 @@ int create_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 }
 
 
-int create_monitor_set(char *filename, int period, char *macrostring)
+int create_monitor_set(char *filename, int period, char *macrostring, char *save_filename)
 {
-	return(create_data_set(filename, MONITORED, 0, 0, period, macrostring));
+	return(create_data_set(filename, MONITORED, 0, 0, period, macrostring, save_filename));
 }
 
 
-int create_manual_set(char *filename, char *macrostring)
+int create_manual_set(char *filename, char *macrostring, char *save_filename)
 {
-	return(create_data_set(filename, MANUAL, 0, 0, 0, macrostring));
+	return(create_data_set(filename, MANUAL, 0, 0, 0, macrostring, save_filename));
 }
 
 
@@ -2144,7 +2148,8 @@ STATIC int create_data_set(
 	int		period,				/* maximum time between saves  */
 	char	*trigger_channel,	/* db channel to trigger save  */
 	int		mon_period,			/* minimum time between saves  */
-	char	*macrostring
+	char	*macrostring,
+	const char *save_filename 	/* savefile */
 )
 {
 	struct chlist	*plist;
@@ -2193,7 +2198,7 @@ STATIC int create_data_set(
 	}
 	plist = lptr;
 	while (plist != 0) {
-		if (!strcmp(plist->reqFile,filename)) {
+		if (!strcmp(plist->reqFile,filename) && (save_filename == NULL || !strcmp(plist->save_file, save_filename))) {
 			if (plist->save_method & save_method) {
 				printf("save_restore:create_data_set: '%s' already in %x mode",filename,save_method);
 				unlockList();
@@ -2268,6 +2273,7 @@ STATIC int create_data_set(
 	strNcpy(plist->statusStr,"Initializing list", STATUS_STR_LEN);
 
 	/** construct the save_file name **/
+	if (save_filename == NULL) {
 	strNcpy(plist->save_file, plist->reqFile, FN_LEN);
 #if 0
 	inx = 0;
@@ -2279,6 +2285,9 @@ STATIC int create_data_set(
 #endif
 	plist->save_file[inx] = 0;	/* truncate if necessary to leave room for ".sav" + null */
 	strcat(plist->save_file,".sav");
+	} else {
+		strNcpy(plist->save_file, save_filename, FN_LEN);
+	}
 	/* make full name, including file path */
 	makeNfsPath(plist->saveFile, saveRestoreFilePath, plist->save_file);
 
@@ -2503,18 +2512,20 @@ int set_saveTask_priority(int priority)
 	return(OK);
 }
 
-STATIC int remove_data_set(char *filename)
+STATIC int remove_data_set(char *filename, char *macrostring)
 {
 	op_msg msg;
 
 	msg.operation = op_Remove;
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
+	msg.macrostring[0] = '\0';
+	if (macrostring) strNcpy(msg.macrostring, macrostring, OP_MSG_MACRO_SIZE);
 	epicsMessageQueueSend(opMsgQueue, (void *)&msg, OP_MSG_SIZE);
 	return(0);
 }
 
 /*** remove a data set from the list ***/
-STATIC int do_remove_data_set(char *filename)
+STATIC int do_remove_data_set(char *filename, char *macrostring, char *save_filename)
 {
 	int found = 0;
 	int numchannels = 0;
@@ -2529,8 +2540,9 @@ STATIC int do_remove_data_set(char *filename)
 	plist = lptr;
 	previous = 0;
 	while(plist) {
-		if (!strcmp(plist->reqFile, filename)) {
+		if (!strcmp(plist->reqFile, filename) && (strlen(macrostring) == 0 || strcmp(plist->macrostring, macrostring) == 0)) {
 			found = 1;
+			strNcpy(save_filename, plist->save_file, FN_LEN);
 			break;
 		}
 		previous = plist;
@@ -3613,11 +3625,12 @@ IOCSH_ARG_ARRAY fdbrestoreX_Args[2] = {&fdbrestoreX_Arg0, &fdbrestoreX_Arg1};
 IOCSH_FUNCDEF   fdbrestoreX_FuncDef = {"fdbrestoreX",2,fdbrestoreX_Args};
 static void     fdbrestoreX_CallFunc(const iocshArgBuf *args) {fdbrestoreX(args[0].sval, args[1].sval, NULL, NULL);}
 
-/* int manual_save(char *request_file); */
+/* int manual_save(char *request_file, char *macrostring); */
 IOCSH_ARG       manual_save_Arg0    = {"request file",iocshArgString};
-IOCSH_ARG_ARRAY manual_save_Args[1] = {&manual_save_Arg0};
-IOCSH_FUNCDEF   manual_save_FuncDef = {"manual_save",1,manual_save_Args};
-static void     manual_save_CallFunc(const iocshArgBuf *args) {manual_save(args[0].sval, NULL, NULL, NULL);}
+IOCSH_ARG       manual_save_Arg1    = {"macrostring",iocshArgString};
+IOCSH_ARG_ARRAY manual_save_Args[2] = {&manual_save_Arg0,&manual_save_Arg1};
+IOCSH_FUNCDEF   manual_save_FuncDef = {"manual_save",2,manual_save_Args};
+static void     manual_save_CallFunc(const iocshArgBuf *args) {manual_save(args[0].sval, args[1].sval, NULL, NULL, NULL);}
 
 /* int set_savefile_name(char *filename, char *save_filename); */
 IOCSH_ARG       set_savefile_name_Arg0    = {"filename",iocshArgString};
@@ -3626,36 +3639,40 @@ IOCSH_ARG_ARRAY set_savefile_name_Args[2] = {&set_savefile_name_Arg0,&set_savefi
 IOCSH_FUNCDEF   set_savefile_name_FuncDef = {"set_savefile_name",2,set_savefile_name_Args};
 static void     set_savefile_name_CallFunc(const iocshArgBuf *args) {set_savefile_name(args[0].sval,args[1].sval);}
 
-/* int create_periodic_set(char *filename, int period, char *macrostring); */
+/* int create_periodic_set(char *filename, int period, char *macrostring, char *save_filename); */
 IOCSH_ARG       create_periodic_set_Arg0    = {"filename",iocshArgString};
 IOCSH_ARG       create_periodic_set_Arg1    = {"period",iocshArgInt};
 IOCSH_ARG       create_periodic_set_Arg2    = {"macro string",iocshArgString};
-IOCSH_ARG_ARRAY create_periodic_set_Args[3] = {&create_periodic_set_Arg0,&create_periodic_set_Arg1,&create_periodic_set_Arg2};
-IOCSH_FUNCDEF   create_periodic_set_FuncDef = {"create_periodic_set",3,create_periodic_set_Args};
-static void     create_periodic_set_CallFunc(const iocshArgBuf *args) {create_periodic_set(args[0].sval,args[1].ival,args[2].sval);}
+IOCSH_ARG       create_periodic_set_Arg3    = {"savefile",iocshArgString};
+IOCSH_ARG_ARRAY create_periodic_set_Args[4] = {&create_periodic_set_Arg0,&create_periodic_set_Arg1,&create_periodic_set_Arg2,&create_periodic_set_Arg3};
+IOCSH_FUNCDEF   create_periodic_set_FuncDef = {"create_periodic_set",4,create_periodic_set_Args};
+static void     create_periodic_set_CallFunc(const iocshArgBuf *args) {create_periodic_set(args[0].sval,args[1].ival,args[2].sval,args[3].sval);}
 
-/* int create_triggered_set(char *filename, char *trigger_channel, char *macrostring); */
+/* int create_triggered_set(char *filename, char *trigger_channel, char *macrostring, char *save_filename); */
 IOCSH_ARG       create_triggered_set_Arg0    = {"filename",iocshArgString};
 IOCSH_ARG       create_triggered_set_Arg1    = {"trigger_channel",iocshArgString};
 IOCSH_ARG       create_triggered_set_Arg2    = {"macro string",iocshArgString};
-IOCSH_ARG_ARRAY create_triggered_set_Args[3] = {&create_triggered_set_Arg0,&create_triggered_set_Arg1,&create_triggered_set_Arg2};
-IOCSH_FUNCDEF   create_triggered_set_FuncDef = {"create_triggered_set",3,create_triggered_set_Args};
-static void     create_triggered_set_CallFunc(const iocshArgBuf *args) {create_triggered_set(args[0].sval,args[1].sval,args[2].sval);}
+IOCSH_ARG       create_triggered_set_Arg3    = {"savefile",iocshArgString};
+IOCSH_ARG_ARRAY create_triggered_set_Args[4] = {&create_triggered_set_Arg0,&create_triggered_set_Arg1,&create_triggered_set_Arg2,&create_triggered_set_Arg3};
+IOCSH_FUNCDEF   create_triggered_set_FuncDef = {"create_triggered_set",4,create_triggered_set_Args};
+static void     create_triggered_set_CallFunc(const iocshArgBuf *args) {create_triggered_set(args[0].sval,args[1].sval,args[2].sval,args[3].sval);}
 
-/* int create_monitor_set(char *filename, int period, char *macrostring); */
+/* int create_monitor_set(char *filename, int period, char *macrostring, char *save_filename); */
 IOCSH_ARG       create_monitor_set_Arg0    = {"filename",iocshArgString};
 IOCSH_ARG       create_monitor_set_Arg1    = {"period",iocshArgInt};
 IOCSH_ARG       create_monitor_set_Arg2    = {"macro string",iocshArgString};
-IOCSH_ARG_ARRAY create_monitor_set_Args[3] = {&create_monitor_set_Arg0,&create_monitor_set_Arg1,&create_monitor_set_Arg2};
-IOCSH_FUNCDEF   create_monitor_set_FuncDef = {"create_monitor_set",3,create_monitor_set_Args};
-static void     create_monitor_set_CallFunc(const iocshArgBuf *args) {create_monitor_set(args[0].sval,args[1].ival,args[2].sval);}
+IOCSH_ARG       create_monitor_set_Arg3    = {"savefile",iocshArgString};
+IOCSH_ARG_ARRAY create_monitor_set_Args[4] = {&create_monitor_set_Arg0,&create_monitor_set_Arg1,&create_monitor_set_Arg2,&create_monitor_set_Arg3};
+IOCSH_FUNCDEF   create_monitor_set_FuncDef = {"create_monitor_set",4,create_monitor_set_Args};
+static void     create_monitor_set_CallFunc(const iocshArgBuf *args) {create_monitor_set(args[0].sval,args[1].ival,args[2].sval,args[3].sval);}
 
-/* int create_manual_set(char *filename, char *macrostring); */
+/* int create_manual_set(char *filename, char *macrostring, char *save_filename); */
 IOCSH_ARG       create_manual_set_Arg0    = {"filename",iocshArgString};
 IOCSH_ARG       create_manual_set_Arg1    = {"macrostring",iocshArgString};
-IOCSH_ARG_ARRAY create_manual_set_Args[2] = {&create_manual_set_Arg0,&create_manual_set_Arg1};
-IOCSH_FUNCDEF   create_manual_set_FuncDef = {"create_manual_set",2,create_manual_set_Args};
-static void     create_manual_set_CallFunc(const iocshArgBuf *args) {create_manual_set(args[0].sval,args[1].sval);}
+IOCSH_ARG       create_manual_set_Arg2    = {"savefile",iocshArgString};
+IOCSH_ARG_ARRAY create_manual_set_Args[3] = {&create_manual_set_Arg0,&create_manual_set_Arg1,&create_manual_set_Arg2};
+IOCSH_FUNCDEF   create_manual_set_FuncDef = {"create_manual_set",3,create_manual_set_Args};
+static void     create_manual_set_CallFunc(const iocshArgBuf *args) {create_manual_set(args[0].sval,args[1].sval,args[2].sval);}
 
 /* void save_restoreShow(int verbose); */
 IOCSH_ARG       save_restoreShow_Arg0    = {"verbose",iocshArgInt};
@@ -3693,11 +3710,12 @@ IOCSH_ARG_ARRAY save_restoreSet_NFSHost_Args[3] = {&save_restoreSet_NFSHost_Arg0
 IOCSH_FUNCDEF   save_restoreSet_NFSHost_FuncDef = {"save_restoreSet_NFSHost",3,save_restoreSet_NFSHost_Args};
 static void     save_restoreSet_NFSHost_CallFunc(const iocshArgBuf *args) {save_restoreSet_NFSHost(args[0].sval,args[1].sval,args[2].sval);}
 
-/* int remove_data_set(char *filename); */
+/* int remove_data_set(char *filename, char *macrostring); */
 IOCSH_ARG       remove_data_set_Arg0    = {"filename",iocshArgString};
-IOCSH_ARG_ARRAY remove_data_set_Args[1] = {&remove_data_set_Arg0};
-IOCSH_FUNCDEF   remove_data_set_FuncDef = {"remove_data_set",1,remove_data_set_Args};
-static void     remove_data_set_CallFunc(const iocshArgBuf *args) {remove_data_set(args[0].sval);}
+IOCSH_ARG       remove_data_set_Arg1    = {"macrostring",iocshArgString};
+IOCSH_ARG_ARRAY remove_data_set_Args[2] = {&remove_data_set_Arg0,&remove_data_set_Arg1};
+IOCSH_FUNCDEF   remove_data_set_FuncDef = {"remove_data_set",2,remove_data_set_Args};
+static void     remove_data_set_CallFunc(const iocshArgBuf *args) {remove_data_set(args[0].sval,args[1].sval);}
 
 /* int reload_periodic_set(char *filename, int period, char *macrostring); */
 IOCSH_ARG       reload_periodic_set_Arg0    = {"filename",iocshArgString};

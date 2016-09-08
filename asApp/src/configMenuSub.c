@@ -100,9 +100,12 @@ static long configMenu_do(aSubRecord *pasub) {
 				*valc = 1;
 				return(0);
 			}
+			if (f) {
+				macrostring = getMacroString(f);
+			}
 			makeLegal(a);
 			epicsSnprintf(filename, 99, "%s_%s.cfg", g, a);
-			*b = (epicsInt32)manual_save(f, filename, configMenuCallback, (void *)pasub);
+			*b = (epicsInt32)manual_save(f, macrostring, filename, configMenuCallback, (void *)pasub);
 			if (configMenuDebug) printf("configMenu_do:manual_save returned %d\n", *b);
 			*vala = 1;
 			*valb = 1;
