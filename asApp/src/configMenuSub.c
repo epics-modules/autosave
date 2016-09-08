@@ -190,14 +190,20 @@ static long configMenuList_do(aSubRecord *pasub) {
 
 		pLI = (struct configFileListItem *) ellFirst(configMenuList);
 		for (i=0; i<jStart && pLI; i++) {
-			if (configMenuDebug) printf("configMenuList_do(%s): skipping name '%s'\n", configName, pLI->name);
+			if (configMenuDebug) {
+				printf("configMenuList_do(%s): skipping name '%s'\n", configName, pLI->name ? pLI->name : "(null)");
+			}
 			pLI = (struct configFileListItem *) ellNext(&(pLI->node));
 		}
 
 		for (i=0; i<NUM_ITEMS; i++) {
 			if (pLI) {
 				strncpy(f[i], pLI->name, 39);
-				strncpy(f[i+NUM_ITEMS], pLI->description, 39);
+				if (pLI->description) {
+					strncpy(f[i+NUM_ITEMS], pLI->description, 39);
+				} else {
+					strncpy(f[i+NUM_ITEMS], "no description", 39);
+				}
 				pLI = (struct configFileListItem *) ellNext(&(pLI->node));
 			} else {
 				f[i][0] = '\0';
