@@ -467,6 +467,14 @@ void save_restoreSet_CallbackTimeout(int t) {
 
 /********************************* code *********************************/
 
+int isValid1stPVChar(char chr)
+{
+  return isalpha((int)chr) || isdigit((int)chr) || chr == '_' || chr == '-'
+	  || chr == '+' || chr == ':' || chr == '[' || chr == ']' || chr == '<'
+	  || chr == '>' || chr == ';';
+}
+
+
 int isAbsolute(const char* filename)
 {
 	if ( '/' == filename[0] )
@@ -3516,7 +3524,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 			if (save_restoreDebug >= 2) printf("save_restore:readReqFile: calling readReqFile('%s', %p,'%s')\n",
 				templatefile, plist, new_macro);
 			readReqFile(templatefile, plist, new_macro);
-		} else if (isalpha((int)name[0]) || isdigit((int)name[0]) || name[0] == '$') {
+		} else if (isValid1stPVChar(name[0]) || name[0] == '$') {
 			pchannel = (struct channel *)calloc(1,sizeof (struct channel));
 			if (pchannel == (struct channel *)0) {
 				plist->status = SR_STATUS_WARN;
