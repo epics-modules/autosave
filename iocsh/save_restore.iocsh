@@ -2,8 +2,12 @@
 
 #- ###################################################
 #- PREFIX         - IOC Prefix
-#- POSITIONS_FILE - Name of positions req file, macro PREFIX will be defined for the file
-#- SETTINGS_FILE  - Name of settings req file, macro PREFIX will be defined for the file
+#- POSITIONS_FILE - Name of positions file, script will search for $(POSITIONS_FILE).req, 
+#-                  saved positions will be in $(POSITIONS_FILE).sav
+#-                  macro PREFIX will be defined for the file
+#- SETTINGS_FILE  - Name of settings file, script will search for $(SETTINGS_FILE).req, 
+#-                  saved settings will be in $(SETTINGS_FILE).sav
+#-                  macro PREFIX will be defined for the file
 #- AUTOSAVE       - Location of Autosave module
 #- POSITION_PERIOD- Optional: Time interval in seconds between saving positions
 #-                - Default: 5
@@ -15,13 +19,13 @@
 #- Specify what save files should be restored.  Note these files must be
 #- in the directory specified in set_savefile_path(), or, if that function
 #- has not been called, from the directory current when iocInit is invoked
-set_pass0_restoreFile("$(POSITIONS_FILE)")
-set_pass0_restoreFile("$(SETTINGS_FILE)")
-set_pass1_restoreFile("$(SETTINGS_FILE)")
+set_pass0_restoreFile("$(POSITIONS_FILE).sav")
+set_pass0_restoreFile("$(SETTINGS_FILE).sav")
+set_pass1_restoreFile("$(SETTINGS_FILE).sav")
 
 #- Note doAfterIocInit() supplied by std module.
-doAfterIocInit("create_monitor_set('$(POSITIONS_FILE)',$(POSITION_PERIOD=5),'PREFIX=$(PREFIX)')")
-doAfterIocInit("create_monitor_set('$(SETTINGS_FILE)',$(SETTING_PERIOD=30),'PREFIX=$(PREFIX)')")
+doAfterIocInit("create_monitor_set('$(POSITIONS_FILE).req',$(POSITION_PERIOD=5),'PREFIX=$(PREFIX)')")
+doAfterIocInit("create_monitor_set('$(SETTINGS_FILE).req',$(SETTING_PERIOD=30),'PREFIX=$(PREFIX)')")
 
 #- Debug-output level
 save_restoreSet_Debug(0)
