@@ -1628,6 +1628,45 @@ STATIC int check_file(char *file)
 	return(file_state);
 }
 
+/*
+ * Print human readable messages when fchmod enter an exception
+ *
+ */
+void print_chmod_error(int errNumber)
+{
+        char shortMessage[100];
+        char longMessage[3000];
+
+        switch (errNumber) {
+                case EBADF:
+                        strcpy(shortMessage, "EBADF: Descriptor is not valid.");
+                        strcpy(longMessage, "A file descriptor argument was out of range, referred to a file that was not open, or a read or write request was made to a file that is not open for that operation.");
+                        break;
+
+                case EPERM:
+                        strcpy(shortMessage, "EPERM: The operation is not permitted.");
+                        strcpy(longMessage, "You must have appropriate privileges or be the owner of the object or other resource to do the requested operation.");
+                        break;
+
+                case EROFS:
+                        strcpy(shortMessage, "EROFS: Read-only file system.");
+                        strcpy(longMessage, "You have attempted an update operation in a file system that only supports read operations.");
+                        break;
+
+                case EINTR:
+                        strcpy(shortMessage, "EINTR: Interrupted function call.");
+                        strcpy(longMessage, "The function was interrupted by a signal.");
+                        break;
+
+                case EINVAL:
+                        strcpy(shortMessage, "EINVAL: The value specified for the argument is not correct.");
+                        strcpy(longMessage, "A function was passed incorrect argument values, or an operation was attempted on an object and the operation specified is not supported for that type of object.");
+                        break;
+        }
+
+        printf("Error %d - %s\n%s\n", errNumber, shortMessage, longMessage);
+}
+
 
 /*
  * Actually write the file
@@ -1671,7 +1710,11 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		int status;
 		/* open() doesn't seem to set file permissions anymore */
 		status = fchmod (filedes, (mode_t) file_permissions);
-		if (status) printf("write_it: fchmod returned %d\n", status);
+		if (status) {
+			int err = errno;
+			printf("write_it - when changing %s file permission:\n", filename);
+			print_chmod_error(err);
+		}
 		out_fd = fdopen(filedes, "w");
 	}
 #else
