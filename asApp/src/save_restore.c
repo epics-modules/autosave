@@ -283,6 +283,7 @@ STATIC int listLock = 0;						/* replaces long-term holding of sr_mutex */
 #define NUM_STATUS_PV_SETS 8
 STATIC int statusPvsInUse[NUM_STATUS_PV_SETS] = {0};
 STATIC epicsMutexId	sr_mutex = NULL;			/* mut(ual) ex(clusion) for list of save sets */
+int mustSetPermissions = 0;                                    /* use fchmod() only if save_restoreSet_FilePermissions is used */
 
 /* Support for manual and programmed operations */
 
@@ -449,6 +450,7 @@ void save_restoreSet_status_prefix(char *prefix) {strNcpy(status_prefix, prefix,
 #if SET_FILE_PERMISSIONS
 void save_restoreSet_FilePermissions(int permissions) {
 	file_permissions = (mode_t)permissions;
+	mustSetPermissions = 1;
 	printf("save_restore: File permissions set to 0%o\n", (unsigned int)file_permissions);
 }
 #endif
@@ -1628,6 +1630,44 @@ STATIC int check_file(char *file)
 	return(file_state);
 }
 
+/*
+ * Print human readable messages when fchmod enter an exception
+ *
+ */
+void print_chmod_error(int errNumber)
+{
+        char shortMessage[100];
+        char longMessage[3000];
+
+        switch (errNumber) {
+                case EBADF:
+                        strcpy(shortMessage, "EBADF: Descriptor is not valid.");
+                        strcpy(longMessage, "A file descriptor argument was out of range, referred to a file that was not open, or a read or write request was made to a file that is not open for that operation.");
+                        break;
+
+                case EPERM:
+                        strcpy(shortMessage, "EPERM: The operation is not permitted.");
+                        strcpy(longMessage, "You must have appropriate privileges or be the owner of the object or other resource to do the requested operation.");
+                        break;
+
+                case EROFS:
+                        strcpy(shortMessage, "EROFS: Read-only file system.");
+                        strcpy(longMessage, "You have attempted an update operation in a file system that only supports read operations.");
+                        break;
+
+                case EINTR:
+                        strcpy(shortMessage, "EINTR: Interrupted function call.");
+                        strcpy(longMessage, "The function was interrupted by a signal.");
+                        break;
+
+                case EINVAL:
+                        strcpy(shortMessage, "EINVAL: The value specified for the argument is not correct.");
+                        strcpy(longMessage, "A function was passed incorrect argument values, or an operation was attempted on an object and the operation specified is not supported for that type of object.");
+        }
+
+        printf("Error %d - %s\n%s\n", errNumber, shortMessage, longMessage);
+}
+
 
 /*
  * Actually write the file
@@ -1668,10 +1708,16 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		}
 		return(ERROR);
 	} else {
-		int status;
-		/* open() doesn't seem to set file permissions anymore */
-		status = fchmod (filedes, (mode_t) file_permissions);
-		if (status) printf("write_it: fchmod returned %d\n", status);
+		if (mustSetPermissions) {
+			int status;
+			/* open() doesn't seem to set file permissions anymore */
+			status = fchmod (filedes, (mode_t) file_permissions);
+			if (status) {
+				int err = errno;
+				printf("write_it - when changing %s file permission:\n", filename);
+				print_chmod_error(err);
+			}
+		}
 		out_fd = fdopen(filedes, "w");
 	}
 #else
