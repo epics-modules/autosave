@@ -16,6 +16,9 @@
 volatile int configMenuDebug=0;
 void makeLegal(char *name);
 
+/* We need to know when a save or restore operation has completed, so client software
+ * can wait for the operation to complete before acting on the result.
+ */
 void configMenuCallback(int status, void *puserPvt) {
 	aSubRecord *pasub = (aSubRecord *)puserPvt;
 	epicsInt32 *d = (epicsInt32 *)pasub->d;
