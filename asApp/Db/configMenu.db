@@ -39,7 +39,8 @@ record(busy, "$(P)$(CONFIG)Menu:busy") {
 record(longout, "$(P)$(CONFIG)Menu:Page") {
 	field(FLNK, "$(P)$(CONFIG)MenuList:do.PROC")
 }
-# Note: the max number of menu entries is determined by NUM_ITEMS in configMenu.c
+# Note: the number of menu entries per page must agree with NUM_ITEMS
+# in configMenuSub.c
 record(calcout, "$(P)$(CONFIG)Menu:PageUp") {
 	field(INPA, "$(P)$(CONFIG)Menu:Page")
 	field(CALC, "max(0,a+1)")
