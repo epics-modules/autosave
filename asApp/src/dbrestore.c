@@ -317,6 +317,100 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	return(status);
 }
 
+/* enum_restore
+**
+**  Parse *value_string to extract an integer value and its equivalent ENUM string.
+**  Expect the following syntax:
+**   <begin>@enum@<white><unsigned-integer><white>"<string>"<end>[<anything>]
+*/
+static long enum_restore(int pass, DBENTRY *pdbentry, char *PVname, char *value_string)
+{
+	long 	  status = 0;
+	int     enumVal, nn;
+	char 	  enumStr[64], *s;
+	dbfType field_type = pdbentry->pflddes->field_type;
+	
+	if (save_restoreDebug >= 5) {
+		errlogPrintf ("enum_restore:entry:field type '%s' '%s:\n", pamapdbfType[field_type].strvalue, value_string);
+	}
+	if (strncmp (value_string, ENUM_MARKER, ENUM_MARKER_LEN)) {
+		errlogPrintf("enum_restore:A: value_string parse failed: '%s'\n", value_string);
+		return (-1);
+	}
+	value_string += ENUM_MARKER_LEN;
+	if (sscanf (value_string, "%u %n", &enumVal, &nn) != 1) {
+		errlogPrintf("enum_restore:B: value_string parse failed: '%s'\n", value_string);
+		return (-1);
+	}
+	value_string += nn;
+	if (save_restoreDebug >= 5) {
+		errlogPrintf ("enum_restore:enum value = %u '%s'\n", enumVal, value_string);
+	}
+	if (value_string[0] != '"') {
+		errlogPrintf("enum_restore:C: value_string parse failed: '%s'\n", value_string);
+		return (-1);
+	}
+	strncpy (enumStr, &value_string[1], sizeof (enumStr));
+	if (strlen (enumStr) >= sizeof (enumStr)) {
+		errlogPrintf("enum_restore:D: value_string parse failed: '%s'\n", value_string);
+		return (-1);
+	}
+	s = strchr (enumStr, '"');
+	if (s == NULL) {
+		errlogPrintf("enum_restore:E: value_string parse failed: '%s'\n", value_string);
+		return (-1);
+	}
+	*s = '\0';
+	if (save_restoreDebug >= 5) {
+		errlogPrintf("enum_restore:enum string = '%s'\n", enumStr);
+	}
+	switch (field_type) {
+	case DBF_ENUM:	 case DBF_MENU:	 case DCT_MENU:
+		if (strlen (enumStr) > 0) {
+			s = dbVerify(pdbentry, enumStr);
+			if (s == NULL) {
+				status = dbPutString(pdbentry, enumStr);
+				if (save_restoreDebug >= 5) {
+					errlogPrintf("enum_restore:A: dbPutString() returns %ld:", status);
+				}
+			} else {
+				sprintf (enumStr, "%u", enumVal);
+				status = dbPutString(pdbentry, enumStr);
+				if (save_restoreDebug >= 5) {
+					errlogPrintf("enum_restore:B: dbPutString() returns %ld:", status);
+				}
+			}
+		} else {
+			sprintf (enumStr, "%u", enumVal);
+			status = dbPutString(pdbentry, enumStr);
+			if (save_restoreDebug >= 5) {
+				errlogPrintf("enum_restore:C: dbPutString() returns %ld:", status);
+			}
+		}
+		if (save_restoreDebug >= 15) errMessage(status, " ");
+		if ((s = dbVerify(pdbentry, enumStr))) {
+			errlogPrintf("enum_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
+			status = -1;
+		}
+		break;
+
+	default:
+		status = -1;
+		if (save_restoreDebug >= 1) {
+			errlogPrintf ("enum_restore: field_type '%d' not handled\n", field_type);
+		}
+		break;
+	}
+	if (status) {
+		errlogPrintf("enum_restore: dbPutString of '%s' for '%s' failed\n", enumStr, PVname);
+		errMessage(status," ");
+	}
+	if (save_restoreDebug >= 5) {
+		errlogPrintf ("enum_restore: dbGetString() returns '%s'\n",dbGetString(pdbentry));
+	}
+	return(status);
+}
+
 static void *p_data = NULL;
 static long p_data_size = 0;
 
@@ -791,6 +885,8 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
  *       e.g., "1.2"
  *       OR
  *          @array@ { "<val>" "<val>" }
+ *       OR
+ *          @enum@ <integer-val> "<string-val>"
  */
 int reboot_restore(char *filename, initHookState init_state)
 {
@@ -806,7 +902,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	DBENTRY		dbentry;
 	DBENTRY		*pdbentry = &dbentry;
 	long		status;
-	int			n, write_backup, num_errors, is_scalar;
+	int			n, write_backup, num_errors, is_scalar, is_not_enum;;
 	long		*pStatusVal = 0;
 	char		*statusStr = 0;
 	char		realName[64];	/* name without trailing '$' */
@@ -945,6 +1041,7 @@ int reboot_restore(char *filename, initHookState init_state)
 		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
 			if (strchr(PVname,'.') == 0) strcat(PVname,".VAL"); /* if no field name, add default */
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
+			is_not_enum = strncmp(value_string,  ENUM_MARKER,  ENUM_MARKER_LEN);
 			if (save_restoreDebug > 9) errlogPrintf("\n");
 			if (is_scalar) {
 				long num_elements, field_size, field_type;
@@ -1002,7 +1099,11 @@ int reboot_restore(char *filename, initHookState init_state)
 			}
 			if (found_field) {
 				if (is_scalar || is_long_string) {
-					status = scalar_restore(pass, pdbentry, PVname, value_string);
+					if (is_not_enum) {
+						status = scalar_restore(pass, pdbentry, PVname, value_string);
+					} else {
+						status = enum_restore(pass, pdbentry, PVname, value_string);
+					}
 				} else {
 					status = SR_array_restore(pass, inp_fd, PVname, value_string, 0);
 				}
