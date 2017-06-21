@@ -1,7 +1,7 @@
 
 file {
 	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/configMenu_smallA.adl"
-	version=030107
+	version=030111
 }
 display {
 	object {
@@ -157,72 +157,61 @@ text {
 	textix="Load config by name:"
 	align="horiz. centered"
 }
-composite {
+text {
 	object {
 		x=75
+		y=145
+		width=35
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="Page:"
+	align="horiz. right"
+}
+"message button" {
+	object {
+		x=110
 		y=140
-		width=85
+		width=15
 		height=20
 	}
-	"composite name"=""
-	children {
-		text {
-			object {
-				x=75
-				y=145
-				width=35
-				height=14
-			}
-			"basic attribute" {
-				clr=14
-			}
-			textix="Page:"
-			align="horiz. right"
-		}
-		"message button" {
-			object {
-				x=110
-				y=140
-				width=15
-				height=20
-			}
-			control {
-				chan="$(P)$(CONFIG)Menu:PageDn.PROC"
-				clr=14
-				bclr=51
-			}
-			label="-"
-			release_msg="1"
-		}
-		"text entry" {
-			object {
-				x=125
-				y=140
-				width=20
-				height=20
-			}
-			control {
-				chan="$(P)$(CONFIG)Menu:Page"
-				clr=14
-				bclr=51
-			}
-			limits {
-			}
-		}
-		"message button" {
-			object {
-				x=145
-				y=140
-				width=15
-				height=20
-			}
-			control {
-				chan="$(P)$(CONFIG)Menu:PageUp.PROC"
-				clr=14
-				bclr=51
-			}
-			label="+"
-			release_msg="1"
-		}
+	control {
+		chan="$(P)$(CONFIG)Menu:PageDn.PROC"
+		clr=14
+		bclr=51
 	}
+	label="-"
+	release_msg="1"
+}
+"text entry" {
+	object {
+		x=125
+		y=140
+		width=20
+		height=20
+	}
+	control {
+		chan="$(P)$(CONFIG)Menu:Page"
+		clr=14
+		bclr=51
+	}
+	limits {
+	}
+}
+"message button" {
+	object {
+		x=145
+		y=140
+		width=15
+		height=20
+	}
+	control {
+		chan="$(P)$(CONFIG)Menu:PageUp.PROC"
+		clr=14
+		bclr=51
+	}
+	label="+"
+	release_msg="1"
 }

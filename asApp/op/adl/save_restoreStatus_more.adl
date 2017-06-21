@@ -1,7 +1,7 @@
 
 file {
 	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/save_restoreStatus_more.adl"
-	version=030107
+	version=030111
 }
 display {
 	object {
@@ -325,72 +325,61 @@ polygon {
 	bclr=63
 	label="-Less"
 }
-composite {
+"text update" {
+	object {
+		x=120
+		y=86
+		width=210
+		height=12
+	}
+	monitor {
+		chan="$(P)SR_rebootStatusStr"
+		clr=54
+		bclr=2
+	}
+	limits {
+	}
+}
+"text update" {
+	object {
+		x=10
+		y=80
+		width=100
+		height=20
+	}
+	monitor {
+		chan="$(P)SR_rebootStatus"
+		clr=54
+		bclr=3
+	}
+	limits {
+	}
+}
+text {
 	object {
 		x=10
 		y=60
-		width=320
-		height=40
+		width=150
+		height=20
 	}
-	"composite name"=""
-	children {
-		"text update" {
-			object {
-				x=120
-				y=86
-				width=210
-				height=12
-			}
-			monitor {
-				chan="$(P)SR_rebootStatusStr"
-				clr=54
-				bclr=2
-			}
-			limits {
-			}
-		}
-		"text update" {
-			object {
-				x=10
-				y=80
-				width=100
-				height=20
-			}
-			monitor {
-				chan="$(P)SR_rebootStatus"
-				clr=54
-				bclr=3
-			}
-			limits {
-			}
-		}
-		text {
-			object {
-				x=10
-				y=60
-				width=150
-				height=20
-			}
-			"basic attribute" {
-				clr=14
-			}
-			textix="reboot status"
-		}
-		"text update" {
-			object {
-				x=170
-				y=63
-				width=150
-				height=14
-			}
-			monitor {
-				chan="$(P)SR_rebootTime"
-				clr=54
-				bclr=3
-			}
-			limits {
-			}
-		}
+	"basic attribute" {
+		clr=14
+	}
+	textix="reboot status"
+}
+"text update" {
+	object {
+		x=170
+		y=63
+		width=150
+		height=14
+	}
+	monitor {
+		chan="$(P)SR_rebootTime"
+		clr=54
+		bclr=3
+	}
+	limits {
 	}
 }
 polyline {
