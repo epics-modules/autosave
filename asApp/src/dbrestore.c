@@ -243,10 +243,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 			errlogPrintf("dbrestore:scalar_restore: dbPutString() returns %ld:", status);
 			errMessage(status, " ");
 		}
-		if ((s = dbVerify(pdbentry, value_string))) {
-			errlogPrintf("save_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
-			status = -1;
-		}
+		
 		break;
 
 	case DBF_INLINK: case DBF_OUTLINK: case DBF_FWDLINK:
@@ -256,10 +253,6 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 			if (save_restoreDebug >= 15) {
 				errlogPrintf("dbrestore:scalar_restore: dbPutString() returns %ld:", status);
 				errMessage(status, " ");
-			}
-			if ((s = dbVerify(pdbentry, value_string))) {
-				errlogPrintf("save_restore: for '%s', dbVerify() says '%s'\n", PVname, s);
-				status = -1;
 			}
 		} else if (save_restoreDebug > 1) {
 				errlogPrintf("dbrestore:scalar_restore: Can't restore link field (%s) in pass 1.\n", PVname);
