@@ -10,16 +10,43 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
-<h3>5.7.2 (unreleased)</h3>
+<h3>5.8</h3>
 <ul>
+
 <li>Modified save_restore.c to create message queue before returning from
 create_data_set().
+
 <li>Modified configMenuSub.c to defend against .cfg file with no "currDesc" PV.
+
+<li>Don't try to set file permissions for vxWorks < 6.6
+
+<li>Added top level directory, iocsh, and added the scripts autosaveBuild.iocsh,
+configMenu.iocsh, autosave_settings.iocsh, and save_restore.iocsh which are
+callable by iocshLoad().  (See <A
+HREF="https://github.com/epics-modules/xxx/wiki/IOC-Shell-Scripts">IOC Shell
+Scripts</A>, for more information.) 
+
 <li>Martin Konrad's fix to allow all legal PV names in an autosave-request file.
-<li>Keenan Lang: Added callable iocsh scripts.  Further information about callable iocsh scripts
-can be found in the <A HREF="https://github.com/epics-modules/xxx/wiki/IOC-Shell-Scripts">xxx module wiki</A>
+
+<li>Keenan Lang: Added callable iocsh scripts.  Further information about
+callable iocsh scripts can be found in the <A
+HREF="https://github.com/epics-modules/xxx/wiki/IOC-Shell-Scripts">xxx module
+wiki</A>
+
 <li>marcio.paduan.donadio: Added function to print human readable error message
-case fchmod fails.  fchmod should be called only if save_restoreSet_FilePermissions is used.
+case fchmod fails.  fchmod should be called only if
+save_restoreSet_FilePermissions is used.
+
+<li>marcio.paduan.donadio: save_restoreStatus.db: Alarms are set by default in
+mbbo records when a failure/warning condition is met
+
+<li>dbrestore.c: Removed dbVerify calls, because that function is not in EPICS
+3.16.
+
+<li>Modified .adl files so caQtDM conversion yields better results.
+
+<li>use dbPut() for DBF_NOACCESS fields in dbrestore:scaler_restore.  This fixes
+the problem of one-element waveform and aao records not being restored in 3.15.
 
 </ul>
 

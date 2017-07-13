@@ -8,7 +8,7 @@ content="text/html; charset=iso-8859-1">
 
 <body bgcolor="#FFFFFF">
 
-<h1 align="center">autosave R5-7</h1>
+<h1 align="center">autosave R5-8</h1>
 
 <h2>Table of Contents</h2>
 <ul>
@@ -68,8 +68,8 @@ used manually, by software clients, and by other IOC code.
 
 <P>Autosave also contains a facility, called <i>autosaveBuild</i>, to generate
 autosave-request files as part of the operation of the EPICS functions
-dbLoadRecords() and dbLoadTemplate().  This facility requires EPICS 3.15, or
-3.14 with a patch.
+dbLoadRecords() and dbLoadTemplate().  This facility requires EPICS 3.14.12.5
+or later, or an earlier version of 3.14 with a patch.
 
 <a name="Important nuances"></a>
 <hr>
@@ -233,7 +233,7 @@ in turn, is included in xxx/iocBoot/iocvxWorks/auto_settings.req.
 generate autosave-request files from information contained in command and
 database files. See synApps/support/utils/makeAutosaveFiles.py.</i>
 
-<P> Beginning with synApps version 5.5, autosave contains software to
+<P> Beginning with autosave version 5.5, autosave contains software to
 generate autosave-request files from dbLoadRecords() and dbLoadTemplate()
 calls.  See <a href="#autosaveBuild">autosaveBuild</a>.
 
@@ -274,7 +274,7 @@ can fix a stale file handle by dismounting and remounting the file system.
 
 Use NFS, preferably as described above, or by including an
 <code>nfsMount()</code> command in your startup script.  Save_restore is only
-tested with NFS, and probably will not work with vxWorks' netDrv .
+tested with NFS, and probably will not work with vxWorks' netDrv.
 
 <P>When autosave runs under operating systems other than vxWorks and RTEMS, it
 simply uses whatever mount the operating system, or a system administrator, has
@@ -306,6 +306,10 @@ write save files, but the files will be corrupted because save_restore will not
 be permitted to change their lengths.  Save_restore attempts to detect this
 condition, but cannot work around it if the file length must increase.
 
+<P>If you're using autosaveBuild, you must also give autosave write permission
+to the directory that will contain the request file(s) autosave will write.
+
+
 <h4>8. Specify restore files (optional, though this is the intended and most common use)</h4>
 
 Specify which save files are to be restored before record initialization (pass 0)
@@ -317,7 +321,7 @@ commands set_pass&lt;N&gt;_restoreFile(), as in this example:
 	set_pass1_restoreFile("auto_settings.req", "P=xxx:")
 </pre>
 
-(Note "macrostring" is optional, and a new feature of autosave 5.4.)
+(Note the macrostring is optional, and a new feature of autosave 5.4.)
 
 <P>Place these commands in the startup file before <code>iocInit</code>.  In versions earlier
 than 4.4, autosave would attempt to restore  "auto_positions.sav" and "auto_settings.sav", if
@@ -337,18 +341,20 @@ in this case.)
 
 <p>Notes on restore passes:
 <ol>
+
 <li><P>Link fields cannot be restored (by dbStatic calls) after record
 initialization.  If you want save/restore to work for link fields you must
 specify them in a pass-0 file.  
+
 <li><P> Device support code for the motor record uses the value of the field
 DVAL, restored during pass 0, only if the value read from the hardware is
 zero.  If the value from hardware is nonzero, it is used instead of the
 restored value.
+
 <li><P>Arrays cannot be restored during pass 0. 
 
-<li><P>Scalar PV's that have type DBF_NOACCESS in the .dbd file, and are set
-to some other DBF type during record initialization, cannot be restored during
-pass 0. 
+<li><P>Scalar PV's that have type DBF_NOACCESS in the .dbd file, and are set to
+some other DBF type by record support, cannot be restored during pass 0. 
 
 <li>It is not an error to attempt to restore PV's during the wrong pass. The
 default strategy, implemented with auto_settings.req and auto_positions.req, is
@@ -480,9 +486,10 @@ before <code>create_monitor_set()</code>.
 <h2>autosaveBuild (automatic request-file generation)</h2>
 <hr>
 
-<P> Note: this facility requires an EPICS base version higher than 3.15.0.2, or
-a patch to EPICS base 3.14.  To enable the code in autosave, you must edit
+<P> Note: this facility requires an EPICS base version higher than 3.14.12.5, or
+a patch to an earlier version of EPICS base 3.14.  To enable the code in autosave, you must edit
 asApp/src/Makefile, and uncomment the line
+
 <pre>
 #USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
 </pre>
@@ -532,8 +539,8 @@ While automated building is enabled, autosave will generate request-file names
 and search for those files in its request-file path.  If it finds a request
 file, it will add the appropriate line to <code>built_settings.req</code>.
 
-<P>All this does is get the file <code>built_settings.req</code> built.  If you
-want it to be used, you must add the following line to
+<P>All this does is get the file <code>built_settings.req</code> written.  If
+you want it to be used, you must add the following line to
 <code>auto_settings.req</code>:
 
 <blockquote><pre>
@@ -1091,19 +1098,22 @@ Autosave will not hate you for doing this, though it will complain.
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puser)</code>
 
-<dd>(version for c-code clients) This function does the same job as the iocsh version above.  If
-	<code>macrostring</code> is not NULL, the macro definitions it contains will be applied to
-	the contents of <code>filename</code>. If <code>callbackFunction</code> is not NULL, it
-	specifies a function of type <code>void f(int status, void *puser)</code> that will be called
-	when the save operation is done. 
+<dd>(version for c-code clients) This function does the same job as the iocsh
+	version above.  If <code>macrostring</code> is not NULL, the macro
+	definitions it contains will be applied to the contents of
+	<code>filename</code>. If <code>callbackFunction</code> is not NULL, it
+	specifies a function of type <code>void f(int status, void *puser)</code>
+	that will be called when the save operation is done. This is part of the
+	implementation of <i>configMenu</i>.
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>char *getMacroString(char *request_file)</code>
 
-<dd>If <code>create_*_set()</code> was ever called for <code>request_file</code>, then the
-	macro-substitution string supplied in that call was recorded by autosave, and can be recovered
-	with this function.  This is part of the implementation of <i>configMenu</i>, and it allows .cfg
-	files to include macros.
+<dd>If <code>create_*_set()</code> was ever called for
+	<code>request_file</code>, then the macro-substitution string supplied in
+	that call was recorded by autosave, and can be recovered with this
+	function.  This is part of the implementation of <i>configMenu</i>, and it
+	allows .cfg files to include macros.
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>void makeAutosaveFiles(void)</code>
@@ -1172,12 +1182,14 @@ $(P)test1.VAL
 <P><dt><code>int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction,
 void *puser);</code>
 
-<dd>(version for c-code clients)  Cause current PV values for the request file to be saved.  Any
-	request file named in a create_xxx_set() command can be saved manually.  If
-	<code>save_file</code> is not NULL and not empty, it specifies the name of the file that will
-	be written.  If <code>callbackFunction</code> is not NULL, it specifies a function of type
-	<code>void f(int status, void *puser)</code> that will be called when the save operation is
-	done.
+<dd>(version for c-code clients)  Cause current PV values for the request file
+	to be saved.  Any request file named in a create_xxx_set() command can be
+	saved manually.  If <code>save_file</code> is not NULL and not empty, it
+	specifies the name of the file that will be written.  If
+	<code>callbackFunction</code> is not NULL, it specifies a function of type
+	<code>void f(int status, void *puser)</code> that will be called when the
+	save operation is done. This is part of the implementation of
+	<i>configMenu</i>.
 
 <!-------------------------------------------------------------------------------------->
 <P><dt><code>int reboot_restore(char *save_file, initHookState init_state)</code>
