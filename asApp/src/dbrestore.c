@@ -217,7 +217,6 @@ STATIC int myFileCopy(const char *source, const char *dest)
 STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *value_string)
 {
 	long 	n, status = 0;
-	char 	*s;
 	DBADDR	dbaddr;
 	DBADDR	*paddr = &dbaddr;
 	dbfType field_type = pdbentry->pflddes->field_type;
@@ -272,20 +271,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 		if (pass == 1) {
 			status = dbNameToAddr(PVname, paddr);
 			if (!status) {
-				/* record initilization may have changed the field type */
-				field_type = paddr->field_type;
-				if (field_type <= DBF_MENU) {
-					if (save_restoreDebug > 1) {
-						errlogPrintf("dbrestore:scalar_restore: calling dbFastPutConvertRoutine for field (%s), type %d, with value '%s'.\n",
-							PVname, field_type, value_string);
-					}
-					status = (*dbFastPutConvertRoutine[DBR_STRING][field_type])
-						(value_string, paddr->pfield, paddr);
-					if (status) {
-						errlogPrintf("dbFastPutConvert failed (status=%ld) for field '%s'.\n",
-							status, PVname);
-					}
-				}
+				status = dbPut(paddr, DBR_STRING, value_string, 1);
 			}
 		} else if (save_restoreDebug > 1) {
 			errlogPrintf("dbrestore:scalar_restore: Can't restore DBF_NOACCESS field (%s) in pass 0.\n", PVname);
@@ -300,7 +286,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 		break;
 	}
 	if (status) {
-		errlogPrintf("save_restore: dbPutString/dbPutMenuIndex of '%s' for '%s' failed\n",
+		errlogPrintf("dbrestore:scalar_restore: restore of '%s' for '%s' failed\n",
 			value_string, PVname);
 		errMessage(status," ");
 	}
