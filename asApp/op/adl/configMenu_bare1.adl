@@ -1,14 +1,14 @@
 
 file {
-	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/configMenu_bare1.adl"
-	version=030107
+	name="/net/s100dserv/xorApps/zed/epics/synApps/support/autosave-R5-8/asApp/op/adl/configMenu_bare1.adl"
+	version=030111
 }
 display {
 	object {
 		x=632
-		y=25
+		y=50
 		width=240
-		height=32
+		height=20
 	}
 	clr=14
 	bclr=3
