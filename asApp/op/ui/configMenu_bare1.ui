@@ -5,9 +5,9 @@
     <property name="geometry">
         <rect>
             <x>632</x>
-            <y>25</y>
+            <y>50</y>
             <width>240</width>
-            <height>32</height>
+            <height>20</height>
         </rect>
     </property>
     <property name="styleSheet">
