@@ -6,6 +6,8 @@ compiler:
 cache:
   directories:
     - $HOME/.cache
+notifications:
+  email: false
 addons:
   apt:
     packages:
