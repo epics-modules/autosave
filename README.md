@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/epics-modules/autosave.svg?branch=master)](https://travis-ci.org/epics-modules/autosave)
+
 # autosave
 APS BCDA synApps module: autosave
 

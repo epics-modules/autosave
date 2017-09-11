@@ -1,0 +1,30 @@
+sudo: false
+dist: trusty
+language: c
+compiler:
+  - gcc
+cache:
+  directories:
+    - $HOME/.cache
+addons:
+  apt:
+    packages:
+    - libreadline6-dev
+    - libncurses5-dev
+    - perl
+    - clang
+    - g++-mingw-w64-i686
+    - re2c
+env:
+    - BASE=R3.15.5    STATIC=shared
+    - BASE=R3.14.12.6 STATIC=shared
+    
+before_install: chmod +x ./.ci/assemble_synApps.sh
+
+install: ./.ci/assemble_synApps.sh
+    
+    
+script: 
+  # Build the module
+  - make
+ 
