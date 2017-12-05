@@ -10,6 +10,17 @@ content="text/html; charset=iso-8859-1">
 
 <h1 align="center">autosave Release Notes</h1>
 
+<h3>5.9</h3>
+<ul>
+
+<li>Added op/ui/autoconvert directory.
+
+<li>New version of *Main.cpp file from base 3.15.5; contains epicsExit() after iocsh(NULL) which is needed for epicsAtExit() to work on Windows
+
+<li>Use dbLoadRecordsHook by default.  (This enables automated build of autosave request files.)
+
+</ul>
+
 <h3>5.8</h3>
 <ul>
 
