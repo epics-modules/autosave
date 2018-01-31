@@ -1238,6 +1238,16 @@ void *puser);</code>
 	<P>This function can be called at any time.
 
 <!-------------------------------------------------------------------------------------->
+<P><dt><code>void save_restoreSet_periodicDatedBackups(int periodInMinutes)</code>
+<dd>Enables periodic dated backups, and sets the period.  If periodInMinutes <= 0,
+	disable periodic dated backups.  When enabled, autosave will write files
+	named like this "auto_settings.sav_b_180131-122100", for those save sets
+	that are eligible for backups.  Save sets are eligible for backups if neither
+	their file path nor their file name comes from a PV, and if they are not configMenu
+	save sets.
+	<P>This function can be called at any time.
+
+<!-------------------------------------------------------------------------------------->
 <P><dt><code>void save_restoreSet_Debug(int debug_level)</code>
 <dd>Sets the value <code>(int) save_restoreDebug</code> (initially 0).  Increase to
 	get more informational messages printed to the console.
