@@ -46,3 +46,6 @@ set_requestfile_path(startup, "autosave")
 set_requestfile_path(autosave, "asApp/Db")
 
 dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=as:")
+
+# daily periodic dated backups (period is specified in minutes)
+#save_restoreSet_periodicDatedBackups(1440)
