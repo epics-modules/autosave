@@ -411,6 +411,7 @@ STATIC int request_manual_restore(char *filename, int file_type, char *macrostri
 STATIC void ca_connection_callback(struct connection_handler_args args);      /* qiao: call back function for ca connection of the dataset channels */
 STATIC void ca_disconnect();                                                  /* qiao: disconnect all existing CA channels */
 STATIC void defaultCallback(int status, void *puserPvt);
+STATIC void doPeriodicDatedBackup(struct chlist *plist);
 
 /*** user-callable functions ***/
 
@@ -446,6 +447,16 @@ void save_restoreSet_NumSeqFiles(int numSeqFiles) {save_restoreNumSeqFiles = num
 void save_restoreSet_SeqPeriodInSeconds(int period) {save_restoreSeqPeriodInSeconds = MAX(10, period);}
 void save_restoreSet_IncompleteSetsOk(int ok) {save_restoreIncompleteSetsOk = ok;}
 void save_restoreSet_DatedBackupFiles(int ok) {save_restoreDatedBackupFiles = ok;}
+static int save_restorePeriodicDatedBackups=0;
+static int save_restoreDatedBackupPeriod;
+void save_restoreSet_periodicDatedBackups(int periodInMinutes) {
+	if (periodInMinutes>0) {
+		save_restorePeriodicDatedBackups = 1;
+		save_restoreDatedBackupPeriod = periodInMinutes*60;
+	} else {
+		save_restorePeriodicDatedBackups = 0;
+	}
+}
 void save_restoreSet_status_prefix(char *prefix) {strNcpy(status_prefix, prefix, 30);}
 #if SET_FILE_PERMISSIONS
 void save_restoreSet_FilePermissions(int permissions) {
@@ -842,6 +853,7 @@ STATIC int save_restore(void)
 	char *cp, nameString[FN_LEN];
 	int i, do_seq_check, just_remounted, n, saveNeeded=0;
 	epicsTimeStamp currTime, last_seq_check, remount_check_time, delayStart;
+	epicsTimeStamp lastPeriodicDatedBackup;
 	char datetime[32];
 	double timeDiff;
 	int NFS_managed = save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
@@ -853,6 +865,7 @@ STATIC int save_restore(void)
 
 	epicsTimeGetCurrent(&currTime);
 	last_seq_check = remount_check_time = currTime; /* struct copy */
+	lastPeriodicDatedBackup = currTime;
 
 	ca_context_create(ca_enable_preemptive_callback);
 
@@ -1047,6 +1060,17 @@ STATIC int save_restore(void)
 					(epicsTimeDiffInSeconds(&currTime, &plist->backup_time) >
 						save_restoreSeqPeriodInSeconds)) {
 					do_seq(plist);
+				}
+			}
+
+			/*** periodicated backups ***/
+			if (save_restorePeriodicDatedBackups) {
+				if (epicsTimeDiffInSeconds(&currTime, &lastPeriodicDatedBackup) >
+						save_restoreDatedBackupPeriod) {
+					if (plist->do_backups) {
+						doPeriodicDatedBackup(plist);
+						lastPeriodicDatedBackup = currTime;
+					}
 				}
 			}
 
@@ -2132,6 +2156,54 @@ STATIC void do_seq(struct chlist *plist)
 	epicsTimeGetCurrent(&plist->backup_time);
 	if (++(plist->backup_sequence_num) >=  save_restoreNumSeqFiles)
 		plist->backup_sequence_num = 0;
+}
+
+STATIC void doPeriodicDatedBackup(struct chlist *plist) {
+	char	save_file[NFS_PATH_LEN+3] = "";
+	char	tmpstr[TMPSTRLEN];
+	char	datetime[32];
+
+	if (save_restoreDebug > 1) {
+		printf("save_restore:doPeriodicDatedBackup: entry\n");
+	}
+
+	fGetDateStr(datetime);
+	/* Make full file names */
+	if (plist->savePathPV_chid) {
+		/* This list's path name comes from a PV */
+		ca_array_get(DBR_STRING,1,plist->savePathPV_chid,tmpstr);
+		ca_pend_io(1.0);
+		if (tmpstr[0] == '\0') return;
+		strNcpy(save_file, tmpstr, sizeof(save_file));
+		if (!isAbsolute(save_file)) {
+			makeNfsPath(save_file, saveRestoreFilePath, save_file);
+		}
+	} else {
+		/* Use standard path name. */
+		strNcpy(save_file, saveRestoreFilePath, sizeof(save_file));
+	}
+
+	if (plist->saveNamePV_chid) {
+		/* This list's file name comes from a PV */
+		ca_array_get(DBR_STRING,1,plist->saveNamePV_chid,tmpstr);
+		ca_pend_io(1.0);
+		if (tmpstr[0] == '\0') return;
+		makeNfsPath(save_file, save_file, tmpstr);
+	} else {
+		/* Use file name constructed from the request file name. */
+		makeNfsPath(save_file, save_file, plist->save_file);
+	}
+
+	strncat(save_file, "_b_", sizeof(save_file)-strlen(save_file));
+	strncat(save_file, datetime, sizeof(save_file)-strlen(save_file));
+	if (save_restoreDebug > 1) {
+		printf("save_restore:doPeriodicDatedBackup: filename is '%s'\n", save_file);
+	}
+	if (write_it(save_file, plist) == ERROR) {
+		printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+		printf("save_restore:doPeriodicDatedBackup: Can't write file. [%s]\n", save_file);
+		printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+	}
 }
 
 /* Called only by the user */
@@ -3860,6 +3932,13 @@ IOCSH_ARG_ARRAY asVerify_Args[3] = {&asVerify_Arg0, &asVerify_Arg1, &asVerify_Ar
 IOCSH_FUNCDEF   asVerify_FuncDef = {"asVerify",3,asVerify_Args};
 static void     asVerify_CallFunc(const iocshArgBuf *args) {asVerify(args[0].sval,args[1].ival,args[2].sval);}
 
+/* void save_restoreSet_periodicDatedBackups(int periodMinutes) */
+IOCSH_ARG       save_restoreSet_periodicDatedBackups_Arg0    = {"periodMinutes",iocshArgInt};
+IOCSH_ARG_ARRAY save_restoreSet_periodicDatedBackups_Args[1] = {&save_restoreSet_periodicDatedBackups_Arg0};
+IOCSH_FUNCDEF   save_restoreSet_periodicDatedBackups_FuncDef = {"save_restoreSet_periodicDatedBackups",1,save_restoreSet_periodicDatedBackups_Args};
+static void     save_restoreSet_periodicDatedBackups_CallFunc(const iocshArgBuf *args) {save_restoreSet_periodicDatedBackups(args[0].ival);}
+
+
 void save_restoreRegister(void)
 {
     iocshRegister(&fdbrestore_FuncDef, fdbrestore_CallFunc);
@@ -3894,6 +3973,7 @@ void save_restoreRegister(void)
     iocshRegister(&save_restoreSet_CAReconnect_FuncDef, save_restoreSet_CAReconnect_CallFunc);
     iocshRegister(&save_restoreSet_CallbackTimeout_FuncDef, save_restoreSet_CallbackTimeout_CallFunc);
     iocshRegister(&asVerify_FuncDef, asVerify_CallFunc);
+	iocshRegister(&save_restoreSet_periodicDatedBackups_FuncDef, save_restoreSet_periodicDatedBackups_CallFunc);
 }
 
 epicsExportRegistrar(save_restoreRegister);
