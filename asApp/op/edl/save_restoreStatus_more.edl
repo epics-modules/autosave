@@ -6,7 +6,7 @@ release 0
 x 208
 y 539
 w 400
-h 230
+h 255
 font "helvetica-medium-r-18.0"
 ctlFont "helvetica-medium-r-8.0"
 btnFont "helvetica-medium-r-18.0"
@@ -263,20 +263,6 @@ objType "controls"
 newPos
 endObjectProperties
 
-# (Group)
-object activeGroupClass
-beginObjectProperties
-major 4
-minor 0
-release 0
-x 10
-y 60
-w 320
-h 40
-
-beginGroup
-
-
 # (Text Control)
 object activeXTextDspClass
 beginObjectProperties
@@ -366,11 +352,6 @@ useHexPrefix
 objType "controls"
 newPos
 endObjectProperties
-
-endGroup
-
-endObjectProperties
-
 
 # (Lines)
 object activeLineClass
@@ -506,9 +487,9 @@ controlPv "$(P)SR_0_State"
 lineColor index 14
 onColor index 14
 offColor index 3
-endian "big"
-numBits 6
-shift -1
+endian "little"
+numBits 5
+shift 0
 endObjectProperties
 
 # (Text Control)
@@ -621,9 +602,9 @@ controlPv "$(P)SR_1_State"
 lineColor index 14
 onColor index 14
 offColor index 3
-endian "big"
-numBits 6
-shift -1
+endian "little"
+numBits 5
+shift 0
 endObjectProperties
 
 # (Text Control)
@@ -739,6 +720,74 @@ visMin 0
 visMax 1
 endObjectProperties
 
+# (Static Text)
+object activeXTextClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 155
+y 233
+w 120
+h 14
+font "helvetica-medium-r-8.0"
+fgColor index 14
+useDisplayBg
+value {
+ "Disable Max Secs"
+}
+endObjectProperties
+
+# (Text Control)
+object activeXTextDspClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 276
+y 231
+w 90
+h 20
+controlPv "$(P)SR_disableMaxSecs"
+font "helvetica-medium-r-8.0"
+smartRefresh
+fastUpdate
+fgColor index 14
+bgColor index 51
+editable
+autoHeight
+format decimal
+motifWidget
+nullColor index 32
+useHexPrefix
+objType "controls"
+newPos
+endObjectProperties
+
+# (Lines)
+object activeLineClass
+beginObjectProperties
+major 4
+minor 0
+release 0
+x 0
+y 226
+w 401
+h 2
+lineColor index 54
+fillColor index 54
+lineWidth 2
+numPoints 2 {
+xPoints  {
+0 1
+1 400
+}
+yPoints  {
+0 227
+1 227
+}
+endObjectProperties
+
 # (Related Display)
 object relatedDisplayClass
 beginObjectProperties
@@ -754,7 +803,7 @@ bgColor index 63
 topShadowColor index 2
 botShadowColor index 12
 font "helvetica-medium-r-10.0"
-buttonLabel "M C T R P"
+buttonLabel "P R T C M"
 numPvs 2
 numDsps 1
 displayFileName {
@@ -855,22 +904,25 @@ closeDisplay {
   0 1
 }
 endObjectProperties
-# (Group)
-object activeGroupClass
+
+# (Choice Button)
+object activeChoiceButtonClass
 beginObjectProperties
 major 4
 minor 0
 release 0
-x 10
-y 60
-w 320
-h 40
-
-beginGroup
-
-
-endGroup
-
+x 6
+y 231
+w 130
+h 20
+fgColor index 14
+bgColor index 51
+selectColor index 51
+inconsistentColor index 14
+topShadowColor index 0
+botShadowColor index 14
+controlPv "$(P)SR_disable"
+font "helvetica-medium-r-10.0"
+orientation "horizontal"
 endObjectProperties
-
 
