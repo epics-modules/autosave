@@ -1,14 +1,14 @@
 
 file {
 	name="/home/oxygen/MOONEY/epics/synApps/support/autosave/asApp/op/adl/save_restoreStatus.adl"
-	version=030102
+	version=030111
 }
 display {
 	object {
-		x=665
-		y=25
+		x=675
+		y=544
 		width=400
-		height=105
+		height=130
 	}
 	clr=14
 	bclr=3
@@ -363,5 +363,62 @@ polygon {
 		(362,17)
 		(359,20)
 		(358,20)
+	}
+}
+text {
+	object {
+		x=155
+		y=109
+		width=120
+		height=14
+	}
+	"basic attribute" {
+		clr=14
+	}
+	textix="Disable Max Secs"
+}
+"choice button" {
+	object {
+		x=6
+		y=107
+		width=130
+		height=20
+	}
+	control {
+		chan="$(P)SR_disable"
+		clr=14
+		bclr=51
+	}
+	stacking="column"
+}
+"text entry" {
+	object {
+		x=276
+		y=107
+		width=90
+		height=20
+	}
+	control {
+		chan="$(P)SR_disableMaxSecs"
+		clr=14
+		bclr=51
+	}
+	limits {
+	}
+}
+polyline {
+	object {
+		x=0
+		y=102
+		width=401
+		height=2
+	}
+	"basic attribute" {
+		clr=54
+		width=2
+	}
+	points {
+		(1,103)
+		(400,103)
 	}
 }
