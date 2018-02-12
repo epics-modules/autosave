@@ -357,6 +357,16 @@ STATIC char	SR_rebootTime_PV[PV_NAME_LEN] = "";
 STATIC char	SR_rebootTimeStr[STRING_LEN] = "";
 STATIC chid	SR_rebootTime_chid;
 
+/* disable support */
+STATIC char	SR_disable_PV[PV_NAME_LEN] = "";
+STATIC int	SR_disable = 0;
+STATIC chid	SR_disable_chid;
+STATIC char	SR_disableMaxSecs_PV[PV_NAME_LEN] = "";
+STATIC int	SR_disableMaxSecs = 0;
+STATIC chid	SR_disableMaxSecs_chid;
+static epicsTimeStamp disableStart;
+static epicsTimeStamp nullTimeStamp = {0};
+
 volatile int	save_restoreNumSeqFiles = 3;			/* number of sequence files to maintain */
 volatile int	save_restoreSeqPeriodInSeconds = 60;	/* period between sequence-file writes */
 volatile int	save_restoreIncompleteSetsOk = 1;		/* will save/restore incomplete sets? */
@@ -895,6 +905,17 @@ STATIC int save_restore(void)
 		TATTLE(ca_search(SR_rebootStatus_PV, &SR_rebootStatus_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatus_PV);
 		TATTLE(ca_search(SR_rebootStatusStr_PV, &SR_rebootStatusStr_chid), "save_restore: ca_search(%s) returned %s", SR_rebootStatusStr_PV);
 		TATTLE(ca_search(SR_rebootTime_PV, &SR_rebootTime_chid), "save_restore: ca_search(%s) returned %s", SR_rebootTime_PV);
+
+		/* disable support */
+		strNcpy(SR_disable_PV, status_prefix, PV_NAME_LEN);
+		strncat(SR_disable_PV, "SR_disable", PV_NAME_LEN-1-strlen(SR_disable_PV));
+		TATTLE(ca_search(SR_disable_PV, &SR_disable_chid), "save_restore: ca_search(%s) returned %s", SR_disable_PV);
+
+		strNcpy(SR_disableMaxSecs_PV, status_prefix, PV_NAME_LEN);
+		strncat(SR_disableMaxSecs_PV, "SR_disableMaxSecs", PV_NAME_LEN-1-strlen(SR_disableMaxSecs_PV));
+		TATTLE(ca_search(SR_disableMaxSecs_PV, &SR_disableMaxSecs_chid), "save_restore: ca_search(%s) returned %s", SR_disableMaxSecs_PV);
+
+
 		if (ca_pend_io(0.5)!=ECA_NORMAL) {
 			printf("save_restore: Can't connect to all status PV(s)\n");
 		}
@@ -929,6 +950,31 @@ STATIC int save_restore(void)
 	while(1) {
 
 		if (save_restore_shutdown) goto shutdown;
+
+		/* disable support */
+		if (CONNECTED(SR_disable_chid)) {
+			ca_get(DBR_LONG, SR_disable_chid, &SR_disable);
+		}
+		if (CONNECTED(SR_disableMaxSecs_chid)) {
+			ca_get(DBR_LONG, SR_disableMaxSecs_chid, &SR_disableMaxSecs);
+		}
+		if (ca_pend_io(0.5) == ECA_NORMAL) {
+			if (SR_disable) {
+				if (disableStart.secPastEpoch==nullTimeStamp.secPastEpoch) {
+					epicsTimeGetCurrent(&disableStart);
+				} else {
+					epicsTimeGetCurrent(&currTime);
+					if (epicsTimeDiffInSeconds(&currTime, &disableStart) > SR_disableMaxSecs) {
+						SR_disable = 0;
+						ca_put(DBR_LONG, SR_disable_chid, &SR_disable);
+						disableStart = nullTimeStamp;
+					}
+				}
+			}
+		}
+		if (SR_disable) {
+			goto disable;
+		}
 
 		SR_status = SR_STATUS_OK;
 		strcpy(SR_statusStr, "Ok");
@@ -1173,6 +1219,7 @@ STATIC int save_restore(void)
 
 		/*** service client commands and/or sleep for MIN_DELAY ***/
 
+disable:
 		epicsTimeGetCurrent(&delayStart);
 		while (epicsMessageQueueReceiveWithTimeout(opMsgQueue, (void*) &msg, OP_MSG_SIZE, (double)MIN_DELAY) >= 0) {
 			int status=0;
