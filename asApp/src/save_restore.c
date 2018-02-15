@@ -1438,8 +1438,7 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 	}
 	epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "%s: %d of %d PV's connected", plist->save_file, n, m);
 	if (verbose) {
-		printf(SR_recentlyStr);
-		printf("\n");
+		printf("%s\n", SR_recentlyStr);
 	}
 
 	return(get_channel_values(plist));
