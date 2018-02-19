@@ -2566,7 +2566,7 @@ void save_restoreShow(int verbose)
 			printf("    last saved file - %s\n",plist->last_save_file);
 			printf("    %d channel%c not connected (or ca_get failed)\n",plist->not_connected,
 				(plist->not_connected == 1) ? ' ' : 's');
-			if (verbose) {
+			if (verbose && !save_restore_shutdown) {
 				for (pchannel = plist->pchan_list; pchannel != 0; pchannel = pchannel->pnext) {
 					printf("\t%s chid:%p state:%s (max:%ld curr:%ld elements)\t%s", pchannel->name,
 						pchannel->chid, pchannel->chid?ca_state_string[ca_state(pchannel->chid)]:"noChid",
