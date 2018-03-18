@@ -2846,6 +2846,10 @@ STATIC int request_manual_restore(char *filename, int file_type, char *macrostri
 		return(-1);
 	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
+	if ((macrostring) && (strlen(macrostring) > (OP_MSG_MACRO_SIZE-1))) {
+		printf("request_manual_restore: macro string '%s' is too long for message queue\n", macrostring);
+		return(-1);
+	}
 	if ((macrostring) && (strlen(macrostring)>0)) {
 		strNcpy(msg.macrostring, macrostring, OP_MSG_MACRO_SIZE);
 	} else {
