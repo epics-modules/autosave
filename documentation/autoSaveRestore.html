@@ -333,13 +333,14 @@ than 4.4, autosave would attempt to restore  "auto_positions.sav" and "auto_sett
 no restore files had been specified.  Beginning with version 4.5, only files specified in
 calls to set_pass<i>n</i>_restoreFile() are restored.
 
-<P>If you specify only a file name, not a path, to set_pass&lt;n&gt;_restoreFile(), autosave
-will prepend the path specified in set_savefile_path().  This is the most common way to
-specify a restore file.
+<P>If the first argument to set_pass<i>n</i>_restoreFile() is a string that
+doesn't begin with '/', autosave will prepend the path specified in
+set_savefile_path().  The most common way to specify a restore file is simply to
+specify its name, without any path information.
 
-<P>Beginning with autosave 5.4, if you specify a full path beginning with '/', autosave will
-not prepend anything to it.  (Also, autosave will not write a restore-time backup of the file
-in this case.) 
+<P>Beginning with autosave 5.4, if you specify a full path (a string that
+begins with '/'), autosave will not prepend anything to it.  (Also, autosave
+will not write a restore-time backup of the file in this case.) 
 
 <P>To disable boot-time restore completely, delete or comment out all
 <code>set_pass<i>n</i>_restoreFile()</code> calls.
