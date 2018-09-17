@@ -149,3 +149,4 @@ get_support configure        synApps_5_8
 echo "SUPPORT=$HOME/.cache/support" > configure/RELEASE
 echo "EPICS_BASE=$EPICS_BASE" >> configure/RELEASE
 
+echo "EPICS_BASE=$EPICS_BASE" > $TRAVIS_BUILD_DIR/configure/RELEASE 
