@@ -1850,18 +1850,18 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		}
 
 		errno = 0;
-		if (pchannel->curr_elements <= 1) {
+		if (is_long_string) {
+			/* write first BUF-SIZE-1 characters of long string, so dbrestore doesn't choke. */
+			strNcpy(value_string, pchannel->pArray, BUF_SIZE);
+			value_string[BUF_SIZE-1] = '\0';
+			n = fprintf(out_fd, "%-s\n", value_string);
+		} else if (pchannel->curr_elements <= 1) {
 			/* treat as scalar */
 			if (pchannel->enum_val >= 0) {
 				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
-		} else if (is_long_string) {
-			/* write first BUF-SIZE-1 characters of long string, so dbrestore doesn't choke. */
-			strNcpy(value_string, pchannel->pArray, BUF_SIZE);
-			value_string[BUF_SIZE-1] = '\0';
-			n = fprintf(out_fd, "%-s\n", value_string);
 		} else {
 			/* treat as array */
 			n = SR_write_array_data(out_fd, pchannel->name, (void *)pchannel->pArray, pchannel->curr_elements);
