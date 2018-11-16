@@ -3381,7 +3381,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 		if (save_restoreDebug >= 5) {
 			printf("save_restore:do_manual_restore: PVname='%s'\n", PVname);
 		}
-		if (isalpha((int)PVname[0]) || isdigit((int)PVname[0])) {
+		if (isValid1stPVChar((int)PVname[0])) {
 			/* handle long string name */
 			strNcpy(realName, PVname, PV_NAME_LEN);
 			is_long_string = 0;
