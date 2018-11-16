@@ -2286,7 +2286,7 @@ int create_periodic_set(char *filename, int period, char *macrostring)
 
 int create_triggered_set(char *filename, char *trigger_channel, char *macrostring)
 {
-	if (trigger_channel && (isalpha((int)trigger_channel[0]) || isdigit((int)trigger_channel[0]))) {
+	if (trigger_channel && isValid1stPVChar((int)trigger_channel[0])) {
 		return(create_data_set(filename, TRIGGERED, 0, trigger_channel, 0, macrostring));
 	}
 	else {
