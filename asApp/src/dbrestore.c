@@ -305,7 +305,7 @@ long SR_put_array_values(char *PVname, void *p_data, long num_values)
 	DBADDR *paddr = &dbaddr;
 	long status, max_elements=0;
 	STATIC long curr_no_elements=0, offset=0;
-	struct rset	*prset;
+	rset *prset;
 	dbfType field_type;
 						
 	if ((status = dbNameToAddr(PVname, paddr)) != 0) {
