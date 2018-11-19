@@ -5,6 +5,8 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
+USR_CFLAGS += -DUSE_TYPED_RSET
+
 PROD_HOST += asVerify
 asVerify_SRCS	+= asVerify.c verify.c
 asVerify_LIBS	+= ca

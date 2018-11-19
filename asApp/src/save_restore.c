@@ -1102,7 +1102,7 @@ STATIC int save_restore(void)
 
 			/*** Periodically make sequenced backup of most recent saved file ***/
 			if (do_seq_check && plist->do_backups && (plist->status > SR_STATUS_FAIL)) {
-				if (save_restoreNumSeqFiles && plist->last_save_file &&
+				if (save_restoreNumSeqFiles && plist->last_save_file[0] &&
 					(epicsTimeDiffInSeconds(&currTime, &plist->backup_time) >
 						save_restoreSeqPeriodInSeconds)) {
 					do_seq(plist);
@@ -1438,8 +1438,7 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 	}
 	epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "%s: %d of %d PV's connected", plist->save_file, n, m);
 	if (verbose) {
-		printf(SR_recentlyStr);
-		printf("\n");
+		printf("%s\n", SR_recentlyStr);
 	}
 
 	return(get_channel_values(plist));
@@ -2241,8 +2240,8 @@ STATIC void doPeriodicDatedBackup(struct chlist *plist) {
 		makeNfsPath(save_file, save_file, plist->save_file);
 	}
 
-	strncat(save_file, "_b_", sizeof(save_file)-strlen(save_file));
-	strncat(save_file, datetime, sizeof(save_file)-strlen(save_file));
+	strncat(save_file, "_b_", sizeof(save_file)-strlen(save_file)-1);
+	strncat(save_file, datetime, sizeof(save_file)-strlen(save_file)-1);
 	if (save_restoreDebug > 1) {
 		printf("save_restore:doPeriodicDatedBackup: filename is '%s'\n", save_file);
 	}
