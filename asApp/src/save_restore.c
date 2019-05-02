@@ -3110,9 +3110,12 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 					while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
 					switch (*bp) {
 					case ELEMENT_END:
-						found = 1; bp++; break;
+						found = 1; 
+						bp++; 
+						break;
 					case ESCAPE:
-						if (*(++bp) == ELEMENT_END) bp++; break;
+						if (*(++bp) == ELEMENT_END)    { bp++; } 
+						break;
 					default:
 						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
 							end_of_file = 1;

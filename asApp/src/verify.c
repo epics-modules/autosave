@@ -81,7 +81,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	if (status) {
 		printf("asVerify: Can't go back to beginning of file.  I quit.\n");
 		fclose(fp); fp = NULL;
-		if (write_restore_file) fclose(fr); fr = NULL;
+		if (write_restore_file)    { fclose(fr); fr = NULL; }
 		return(-1);
 	}
 
@@ -93,7 +93,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	if (CA_buffer == NULL) {
 		printf("asVerify: Can't allocate CA buffer.  I quit.\n");
 		fclose(fp); fp = NULL;
-		if (write_restore_file) fclose(fr); fr = NULL;
+		if (write_restore_file)    { fclose(fr); fr = NULL; }
 		return(-1);
 	}
 
@@ -493,9 +493,12 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 					while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
 					switch (*bp) {
 					case ELEMENT_END:
-						found = 1; bp++; break;
+						found = 1; 
+						bp++; 
+						break;
 					case ESCAPE:
-						if (*(++bp) == ELEMENT_END) bp++; break;
+						if (*(++bp) == ELEMENT_END)    { bp++; } 
+						break;
 					default:
 						if ((bp = fgets(buffer, BUF_SIZE, fp)) == NULL) {
 							end_of_file = 1;
