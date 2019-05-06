@@ -13,6 +13,11 @@ include $(TOP)/configure/CONFIG
 #DB += xxx.db
 DB += save_restoreStatus.db
 DB += configMenu.db
+
+REQ += configMenuNames.req
+REQ += configMenu.req
+REQ += configMenu_settings.req
+
 #----------------------------------------------------
 # If <anyname>.db template is not named <anyname>*.template add
 # <anyname>_template = <templatename>
