@@ -11,3 +11,9 @@ EPICS_BASE=/home/oxygen/MOONEY/epics/bazaar/base-3.14
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
 #SCH2EDIF_PATH=
+
+# These lines allow developers to override these RELEASE settings
+# without having to modify this file directly.
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local
