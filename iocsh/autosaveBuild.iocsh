@@ -2,6 +2,8 @@
 
 #- ###################################################
 #- PREFIX         - IOC Prefix
+#- BUILD_PATH     - Optional: Location to create BUILT_SETTINGS and BUILT_POSITIONS
+#-                  Default: Current Directory
 #- AUTOSAVE       - Location of Autosave module
 #- POSITION_PERIOD- Optional: Time interval in seconds between saving positions
 #-                - Default: 5
@@ -31,5 +33,6 @@ save_restoreSet_Debug(0)
 #- autosave R5-5 documentation.
 epicsEnvSet("BUILT_SETTINGS", "built_settings.req")
 epicsEnvSet("BUILT_POSITIONS", "built_positions.req")
-autosaveBuild("$(BUILT_SETTINGS)", "_settings.req", 1)
-autosaveBuild("$(BUILT_POSITIONS)", "_positions.req", 1)
+autosaveBuild("$(BUILD_PATH=.)/$(BUILT_SETTINGS)", "_settings.req", 1)
+autosaveBuild("$(BUILD_PATH=.)/$(BUILT_POSITIONS)", "_positions.req", 1)
+set_requestfile_path("$(BUILD_PATH=.)")
