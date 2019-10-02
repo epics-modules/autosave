@@ -6,8 +6,13 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=/home/oxygen/MOONEY/epics/bazaar/base-3.14
--include $(TOP)/../configure/EPICS_BASE.$(EPICS_HOST_ARCH)
+
 
 #Capfast users may need the following definitions
 #CAPFAST_TEMPLATES=
 #SCH2EDIF_PATH=
+
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local
+-include $(TOP)/configure/RELEASE.local
+
