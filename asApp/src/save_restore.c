@@ -1676,12 +1676,6 @@ STATIC int get_channel_values(struct chlist *plist)
 #define BS_OK		2	/* File is good */
 #define BS_NEW		3	/* Just wrote the file */
 
-#ifdef _WIN32
-  #define BS_SEEK_DISTANCE -7
-#else
-  #define BS_SEEK_DISTANCE -6
-#endif
-
 STATIC int check_file(char *file)
 {
 	FILE *fd;
@@ -1689,12 +1683,44 @@ STATIC int check_file(char *file)
 	int	 file_state = BS_NONE;
 
 	if ((fd = fopen(file, "r")) != NULL) {
-		if ((fseek(fd, BS_SEEK_DISTANCE, SEEK_END)) ||
-			(fgets(tmpstr, 6, fd) == 0) ||
-			(strncmp(tmpstr, "<END>", 5) != 0)) {
+		if (fseek(fd, -7, SEEK_END)) {
+			printf("save_restore:check_file: seek failed\n");
 			file_state = BS_BAD;
-		} else file_state = BS_OK;
+			fclose(fd);
+			return(file_state);
+		}
+		if (fgets(tmpstr, 7, fd) == 0) {
+			printf("save_restore:check_file: fgets failed\n");
+			file_state = BS_BAD;
+			fclose(fd);
+			return(file_state);
+		}
+		if (save_restoreDebug >= 5) printf("save_restore:check_file: tmpstr='%s'\n", tmpstr);
+		if (strncmp(tmpstr, "<END>", 5) == 0) {
+			file_state = BS_OK;
+			fclose(fd);
+			return(file_state);
+		}
 
+		if (fseek(fd, -6, SEEK_END)) {
+			printf("save_restore:check_file: seek failed\n");
+			file_state = BS_BAD;
+			fclose(fd);
+			return(file_state);
+		}
+		if (fgets(tmpstr, 6, fd) == 0) {
+			printf("save_restore:check_file: fgets failed\n");
+			file_state = BS_BAD;
+			fclose(fd);
+			return(file_state);
+		}
+		if (save_restoreDebug >= 5) printf("save_restore:check_file: tmpstr='%s'\n", tmpstr);
+		if (strncmp(tmpstr, "<END>", 5) == 0) {
+			file_state = BS_OK;
+			fclose(fd);
+			return(file_state);
+		}
+		file_state = BS_BAD;
 		fclose(fd);
 	}
 	return(file_state);
@@ -3380,6 +3406,9 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 		/* it might also consist of zero characters) */
 		n = sscanf(bp,"%s%c%[^\n]", PVname, &c, value_string);
 		if (n < 3) *value_string = 0;
+		if (strncmp(PVname, "<END>", 5) == 0) {
+			break;
+		}
 		if (save_restoreDebug >= 5) {
 			printf("save_restore:do_manual_restore: PVname='%s'\n", PVname);
 		}

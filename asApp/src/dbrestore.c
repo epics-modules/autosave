@@ -910,6 +910,9 @@ int reboot_restore(char *filename, initHookState init_state)
 			}
 			continue;
 		}
+		if (strncmp(PVname, "<END>", 5) == 0) {
+			break;
+		}
 		if (PVname[0] == '#') {
 			/* user must have edited the file manually; accept this line as a comment */
 			is_scalar = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN);
