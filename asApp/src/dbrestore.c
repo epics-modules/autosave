@@ -221,6 +221,13 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	DBADDR	*paddr = &dbaddr;
 	dbfType field_type = pdbentry->pflddes->field_type;
 	short special = pdbentry->pflddes->special;
+	/* The buffer holding the string value must be at least one byte longer than
+	   the actual value (due to the terminating null byte). */
+	size_t value_string_len = strlen(value_string) + 1;
+
+	/* We do know the length of the buffer for sure, because this depends on the
+	   calling code, so we limit to the actual string size. */
+	epicsStrnRawFromEscaped(value_string, value_string_len, value_string, value_string_len);
 
 	if (save_restoreDebug >= 5) errlogPrintf("dbrestore:scalar_restore:entry:field type '%s'\n", pamapdbfType[field_type].strvalue);
 	switch (field_type) {
@@ -488,6 +495,12 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		}
 		/* doesn't look like array data.  just restore what we have */
 		if (p_data) {
+			/* We do know the length of the buffer for sure, because this
+			   depends on the calling code, so we limit to the actual string
+			   size. The buffer must be one byte longer, due to the terminating
+			   null byte. */
+			size_t value_string_len = strlen(value_string) + 1;
+			epicsStrnRawFromEscaped(value_string, value_string_len, value_string, value_string_len);
 			switch (field_type) {
 			case DBF_STRING:
 				/* future: translate escape sequence */
@@ -574,7 +587,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 							errlogPrintf("dbrestore:SR_array_restore: new buffer: '%s'\n", bp);
 						}
 						if (*bp == ELEMENT_END) break;
-					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
+					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END) || (bp[1] == ESCAPE))) {
 						/* escaped character */
 						bp++;
 					}
@@ -598,7 +611,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 						bp++; 
 						break;
 					case ESCAPE:
-						if (*(++bp) == ELEMENT_END)    { bp++; } 
+						++bp;
+						if (*bp == ELEMENT_END || *bp == ESCAPE) {
+							++bp;
+						}
 						break;
 					default:
 						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
@@ -610,9 +626,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 				if ((num_read<max_elements) && !gobble) {
 					/* Append value to local array. */
 					if (p_data) {
+						epicsStrnRawFromEscaped(string, MAX_STRING_SIZE, string, MAX_STRING_SIZE);
 						switch (field_type) {
 						case DBF_STRING:
-							/* future: translate escape sequence */
 							strNcpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), string, MAX_STRING_SIZE);
 							break;
 						case DBF_ENUM: case DBF_USHORT: case DBF_MENU:
@@ -751,7 +767,6 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 	if ((p_data == NULL) && !gobble) status = -1;
 	return(status);
 }
-
 
 /*
  * file_restore
@@ -1386,11 +1401,17 @@ long SR_write_array_data(FILE *out_fd, char *name, void *pArray, long num_elemen
 			pc = &p_char[i*MAX_STRING_SIZE];
 			n += fprintf(out_fd, "%1c", ELEMENT_BEGIN);
 			for (j=0; j<MAX_STRING_SIZE-1 && *pc; j++, pc++) {
-				if ((*pc == ELEMENT_BEGIN) || (*pc == ELEMENT_END)){
+				if ((*pc == ELEMENT_BEGIN) || (*pc == ELEMENT_END) || (*pc == ESCAPE)) {
 					n += fprintf(out_fd, "%1c", ESCAPE);
 					j++;
 				}
-				n += fprintf(out_fd, "%1c", *pc);
+				if (*pc == '\n') {
+					n += fprintf(out_fd, "%1cn", ESCAPE);
+				} else if (*pc == '\r') {
+					n += fprintf(out_fd, "%1cr", ESCAPE);
+				} else {
+					n += fprintf(out_fd, "%1c", *pc);
+				}
 			}
 			n += fprintf(out_fd, "%1c ", ELEMENT_END);
 			break;
