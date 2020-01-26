@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>save_restoreStatus_tiny</name>
+  <x>165</x>
+  <y>338</y>
+  <width>400</width>
+  <height>60</height>
+  <background_color>
+    <color red="200" green="200" blue="200">
+    </color>
+  </background_color>
+  <grid_visible>false</grid_visible>
+  <widget type="rectangle" version="2.0.0">
+    <name>rectangle #6</name>
+    <width>400</width>
+    <height>57</height>
+    <line_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </line_color>
+    <background_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>text #9</name>
+    <text>save_restore status</text>
+    <x>40</x>
+    <y>-2</y>
+    <width>300</width>
+    <height>22</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <horizontal_alignment>1</horizontal_alignment>
+  </widget>
+  <widget type="polyline" version="2.0.0">
+    <name>polyline #12</name>
+    <y>58</y>
+    <width>402</width>
+    <height>3</height>
+    <line_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </line_color>
+    <points>
+      <point x="1.0" y="1.0">
+      </point>
+      <point x="400.0" y="1.0">
+      </point>
+    </points>
+  </widget>
+  <widget type="polyline" version="2.0.0">
+    <name>polyline #16</name>
+    <y>22</y>
+    <width>402</width>
+    <height>3</height>
+    <line_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </line_color>
+    <points>
+      <point x="1.0" y="1.0">
+      </point>
+      <point x="400.0" y="1.0">
+      </point>
+    </points>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>text #20</name>
+    <text>Recently:</text>
+    <x>5</x>
+    <y>45</y>
+    <width>55</width>
+    <height>10</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="10.0">
+      </font>
+    </font>
+    <auto_size>true</auto_size>
+  </widget>
+  <widget type="polygon" version="2.0.0">
+    <name>polygon #23</name>
+    <x>370</x>
+    <width>17</width>
+    <line_width>0</line_width>
+    <line_color>
+      <color red="222" green="19" blue="9">
+      </color>
+    </line_color>
+    <background_color>
+      <color red="222" green="19" blue="9">
+      </color>
+    </background_color>
+    <points>
+      <point x="8.0" y="20.0">
+      </point>
+      <point x="4.0" y="17.0">
+      </point>
+      <point x="1.0" y="13.0">
+      </point>
+      <point x="0.0" y="8.0">
+      </point>
+      <point x="0.0" y="4.0">
+      </point>
+      <point x="0.0" y="1.0">
+      </point>
+      <point x="2.0" y="0.0">
+      </point>
+      <point x="5.0" y="0.0">
+      </point>
+      <point x="8.0" y="2.0">
+      </point>
+      <point x="8.0" y="5.0">
+      </point>
+      <point x="9.0" y="2.0">
+      </point>
+      <point x="12.0" y="0.0">
+      </point>
+      <point x="15.0" y="0.0">
+      </point>
+      <point x="16.0" y="1.0">
+      </point>
+      <point x="17.0" y="4.0">
+      </point>
+      <point x="17.0" y="8.0">
+      </point>
+      <point x="15.0" y="13.0">
+      </point>
+      <point x="12.0" y="17.0">
+      </point>
+      <point x="9.0" y="20.0">
+      </point>
+      <point x="8.0" y="20.0">
+      </point>
+    </points>
+    <rules>
+      <rule name="vis_if_not_zero" prop_id="visible" out_exp="false">
+        <exp bool_exp="!(pv0!=0)">
+          <value>false</value>
+        </exp>
+        <pv_name>$(P)SR_heartbeat</pv_name>
+      </rule>
+    </rules>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>text update #28</name>
+    <pv_name>$(P)SR_status</pv_name>
+    <x>10</x>
+    <y>25</y>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </background_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>text update #32</name>
+    <pv_name>$(P)SR_statusStr</pv_name>
+    <x>120</x>
+    <y>32</y>
+    <width>210</width>
+    <height>12</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="12.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </background_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>text update #36</name>
+    <pv_name>$(P)SR_recentlyStr</pv_name>
+    <x>60</x>
+    <y>45</y>
+    <width>270</width>
+    <height>12</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="12.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </background_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>related display #40</name>
+    <actions>
+      <action type="open_display">
+        <file>save_restoreStatus.opi</file>
+        <target>replace</target>
+        <description>save-sets 0 &amp; 1</description>
+      </action>
+    </actions>
+    <text>More</text>
+    <x>340</x>
+    <y>37</y>
+    <width>55</width>
+    <height>20</height>
+    <foreground_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="40" green="147" blue="21">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="polygon" version="2.0.0">
+    <name>polygon #43</name>
+    <x>350</x>
+    <width>17</width>
+    <line_width>0</line_width>
+    <line_color>
+      <color red="0" green="0" blue="0">
+      </color>
+    </line_color>
+    <background_color>
+      <color red="0" green="0" blue="0">
+      </color>
+    </background_color>
+    <points>
+      <point x="8.0" y="20.0">
+      </point>
+      <point x="4.0" y="17.0">
+      </point>
+      <point x="1.0" y="13.0">
+      </point>
+      <point x="0.0" y="8.0">
+      </point>
+      <point x="0.0" y="4.0">
+      </point>
+      <point x="0.0" y="1.0">
+      </point>
+      <point x="2.0" y="0.0">
+      </point>
+      <point x="5.0" y="0.0">
+      </point>
+      <point x="8.0" y="2.0">
+      </point>
+      <point x="8.0" y="5.0">
+      </point>
+      <point x="9.0" y="2.0">
+      </point>
+      <point x="12.0" y="0.0">
+      </point>
+      <point x="15.0" y="0.0">
+      </point>
+      <point x="16.0" y="1.0">
+      </point>
+      <point x="17.0" y="4.0">
+      </point>
+      <point x="17.0" y="8.0">
+      </point>
+      <point x="15.0" y="13.0">
+      </point>
+      <point x="12.0" y="17.0">
+      </point>
+      <point x="9.0" y="20.0">
+      </point>
+      <point x="8.0" y="20.0">
+      </point>
+    </points>
+    <rules>
+      <rule name="vis_if_zero" prop_id="visible" out_exp="false">
+        <exp bool_exp="!(pv0==0)">
+          <value>false</value>
+        </exp>
+        <pv_name>$(P)SR_deadIfZero</pv_name>
+      </rule>
+    </rules>
+  </widget>
+</display>

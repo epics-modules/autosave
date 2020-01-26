@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>configMenu</name>
+  <x>1150</x>
+  <y>593</y>
+  <width>240</width>
+  <height>400</height>
+  <background_color>
+    <color red="200" green="200" blue="200">
+    </color>
+  </background_color>
+  <grid_visible>false</grid_visible>
+  <grid_step_x>5</grid_step_x>
+  <widget type="label" version="2.0.0">
+    <name>text #6</name>
+    <text>config Name</text>
+    <x>45</x>
+    <y>95</y>
+    <width>150</width>
+    <height>13</height>
+    <horizontal_alignment>1</horizontal_alignment>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #9</name>
+    <file>configMenuHead_bare.bob</file>
+    <width>240</width>
+    <height>93</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #11</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>5</N>
+    </macros>
+    <x>5</x>
+    <y>210</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #13</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>1</N>
+    </macros>
+    <x>5</x>
+    <y>110</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #15</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>2</N>
+    </macros>
+    <x>5</x>
+    <y>135</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #17</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>3</N>
+    </macros>
+    <x>5</x>
+    <y>160</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #19</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>4</N>
+    </macros>
+    <x>5</x>
+    <y>185</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #21</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>10</N>
+    </macros>
+    <x>5</x>
+    <y>335</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #23</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>6</N>
+    </macros>
+    <x>5</x>
+    <y>235</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #25</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>7</N>
+    </macros>
+    <x>5</x>
+    <y>260</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #27</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>8</N>
+    </macros>
+    <x>5</x>
+    <y>285</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="embedded" version="2.0.0">
+    <name>composite #29</name>
+    <file>configMenu_bare1.bob</file>
+    <macros>
+      <N>9</N>
+    </macros>
+    <x>5</x>
+    <y>310</y>
+    <width>230</width>
+    <height>20</height>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>related display #31</name>
+    <actions>
+      <action type="open_display">
+        <file>configMenu_more.opi</file>
+        <target>replace</target>
+        <description>Less</description>
+      </action>
+    </actions>
+    <text>More</text>
+    <x>185</x>
+    <y>380</y>
+    <width>50</width>
+    <height>20</height>
+    <foreground_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="51" green="153" blue="0">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>related display #34</name>
+    <actions>
+      <action type="open_display">
+        <file>configMenu_small.opi</file>
+        <target>replace</target>
+        <description>Less</description>
+      </action>
+    </actions>
+    <text>Less</text>
+    <x>135</x>
+    <y>380</y>
+    <width>50</width>
+    <height>20</height>
+    <foreground_color>
+      <color red="255" green="255" blue="255">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="51" green="153" blue="0">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>text update #37</name>
+    <pv_name>$(P)$(CONFIG)Menu:busy</pv_name>
+    <x>5</x>
+    <y>385</y>
+    <height>15</height>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <foreground_color>
+      <color red="10" green="0" blue="184">
+      </color>
+    </foreground_color>
+    <background_color>
+      <color red="200" green="200" blue="200">
+      </color>
+    </background_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>text #41</name>
+    <text>Page:</text>
+    <x>80</x>
+    <y>365</y>
+    <width>35</width>
+    <height>14</height>
+    <horizontal_alignment>2</horizontal_alignment>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>message button #44</name>
+    <actions>
+    </actions>
+    <pv_name>$(P)$(CONFIG)Menu:PageDn.PROC</pv_name>
+    <text>-</text>
+    <x>115</x>
+    <y>360</y>
+    <width>15</width>
+    <height>20</height>
+    <background_color>
+      <color red="115" green="223" blue="255">
+      </color>
+    </background_color>
+  </widget>
+  <widget type="textentry" version="3.0.0">
+    <name>text entry #47</name>
+    <pv_name>$(P)$(CONFIG)Menu:Page</pv_name>
+    <x>130</x>
+    <y>360</y>
+    <width>20</width>
+    <font>
+      <font family="Liberation Sans" style="REGULAR" size="16.0">
+      </font>
+    </font>
+    <background_color>
+      <color red="115" green="223" blue="255">
+      </color>
+    </background_color>
+    <format>1</format>
+    <show_units>false</show_units>
+    <border_alarm_sensitive>false</border_alarm_sensitive>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>message button #51</name>
+    <actions>
+    </actions>
+    <pv_name>$(P)$(CONFIG)Menu:PageUp.PROC</pv_name>
+    <text>+</text>
+    <x>150</x>
+    <y>360</y>
+    <width>15</width>
+    <height>20</height>
+    <background_color>
+      <color red="115" green="223" blue="255">
+      </color>
+    </background_color>
+  </widget>
+</display>
