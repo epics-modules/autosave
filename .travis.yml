@@ -1,7 +1,6 @@
 # .travis.xml for use with EPICS Base ci-scripts
 # (see: https://github.com/epics-base/ci-scripts)
 
-sudo: false
 language: c
 compiler: gcc
 dist: xenial
@@ -15,9 +14,6 @@ cache:
 env:
   global:
    - SETUP_PATH=.ci
-
-notifications:
-  email: false
 
 addons:
   apt:
