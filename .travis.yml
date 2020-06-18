@@ -14,10 +14,13 @@ cache:
 env:
   global:
    - SETUP_PATH=.ci
+    # for the sequencer on Windows
+    - CHOCO=re2c
 
 addons:
   apt:
     packages:
+    # for all EPICS builds
     - libreadline6-dev
     - libncurses5-dev
     - perl
@@ -35,37 +38,77 @@ addons:
     update: true
 
 install:
-  - ./.ci/travis/prepare.sh
+  - python .ci/cue.py prepare
 
 script:
-  - ./.ci/travis/build.sh
+  - python .ci/cue.py build
+  - python .ci/cue.py test
+  - python .ci/cue.py test-results
 
 # Build using default gcc for Base branches 7.0 and 3.15
 
 jobs:
   include:
 
+# Older Base releases
+
+  - env: BASE=R3.14.12.8
+
+  - env: BASE=R3.14.12.8 BCFG=static
+
+  - env: BASE=R3.15.7
+
+  - env: BASE=R3.15.7 BCFG=static
+
 # Default gcc and clang, static build
 
   - env: BASE=7.0
 
+  - env: BASE=7.0 BCFG=static
+
   - env: BASE=7.0
     compiler: clang
 
-  - env: BASE=7.0 STATIC=YES
+  - env: BASE=7.0 EXTRA="CMD_CXXFLAGS=-std=c++11"
+    compiler: clang
 
 # Trusty: compiler versions very close to RHEL 7
 
   - env: BASE=7.0
     dist: trusty
 
+  - env: BASE=7.0 BCFG=debug
+    dist: trusty
+
+# Other gcc versions (added as an extra package)
+
+  - env: BASE=7.0
+    compiler: gcc-6
+    addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
+
+  - env: BASE=7.0
+    compiler: gcc-7
+    addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
+
 # Cross-compilations to Windows using MinGW and WINE
     
-  - env: BASE=7.0 WINE=32 TEST=NO STATIC=YES
-    compiler: mingw
+  - env: BASE=7.0 WINE=32 TEST=NO BCFG=static
 
-  - env: BASE=7.0 WINE=64 TEST=NO STATIC=NO
-    compiler: mingw
+  - env: BASE=7.0 WINE=64 TEST=NO
+
+# Windows builds
+
+  - env: BASE=7.0 
+    os: windows
+    compiler: vs2017
+
+  - env: BASE=7.0 BCFG=static
+    os: windows
+    compiler: vs2017
+
+  - env: BASE=7.0 BCFG=debug
+    os: windows
+    compiler: vs2017
 
 # MacOS build
 
@@ -78,23 +121,3 @@ jobs:
   - env: BASE=7.0 RTEMS=4.10
 
   - env: BASE=7.0 RTEMS=4.9
-
-# Older Base releases
-
-  - env: BASE=R3.15.7
-
-  - env: BASE=R3.15.7 STATIC=YES
-
-  - env: BASE=R3.14.12.8
-
-  - env: BASE=R3.14.12.8 STATIC=YES
-
-# Other gcc versions (added as an extra package)
-
-  - env: BASE=7.0
-    compiler: gcc-6
-    addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
-
-  - env: BASE=7.0
-    compiler: gcc-7
-    addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
