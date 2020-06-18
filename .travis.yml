@@ -1,46 +1,100 @@
-sudo: false
-dist: trusty
+# .travis.xml for use with EPICS Base ci-scripts
+# (see: https://github.com/epics-base/ci-scripts)
+
 language: c
-compiler:
-  - gcc
+compiler: gcc
+dist: xenial
+
+# Minimal set of packages needed to compile EPICS Base
+
 cache:
   directories:
-    - $HOME/.cache
-notifications:
-  email: false
+  - $HOME/.cache
+
+env:
+  global:
+   - SETUP_PATH=.ci
+
 addons:
   apt:
     packages:
     - libreadline6-dev
     - libncurses5-dev
     - perl
+    # for clang compiler
     - clang
+    # for mingw builds (32bit and 64bit)
     - g++-mingw-w64-i686
-    - re2c
-matrix:
-    include:
-    - name: "3.16 master"
-      env: BASE=3.16  STATIC=shared
+    - g++-mingw-w64-x86-64
+    # for RTEMS cross builds
+    - qemu-system-x86
+  homebrew:
+    packages:
+    # for all EPICS builds
+    - bash
+    update: true
+
+install:
+  - ./.ci/travis/prepare.sh
+
+script:
+  - ./.ci/travis/build.sh
+
+# Build using default gcc for Base branches 7.0 and 3.15
+
+jobs:
+  include:
+
+# Default gcc and clang, static build
+
+  - env: BASE=7.0
+
+  - env: BASE=7.0
+    compiler: clang
+
+  - env: BASE=7.0 STATIC=YES
+
+# Trusty: compiler versions very close to RHEL 7
+
+  - env: BASE=7.0
+    dist: trusty
+
+# Cross-compilations to Windows using MinGW and WINE
     
-    - name: "3.15 master"
-      env: BASE=3.15  STATIC=shared
-        
-    - name: "3.14 master"
-      env: BASE=3.14  STATIC=shared
-        
-    - name: "Windows Shared"
-      env: BASE=3.16  STATIC=shared CMPLR=clang WINE=32
-        
-    - name: "Windows Static"
-      env: BASE=3.16  STATIC=static CMPLR=clang WINE=32
-    
+  - env: BASE=7.0 WINE=32 TEST=NO STATIC=YES
+    compiler: mingw
 
-        
-before_install: chmod +x ./.ci/assemble_synApps.sh
+  - env: BASE=7.0 WINE=64 TEST=NO STATIC=NO
+    compiler: mingw
 
-install: ./.ci/assemble_synApps.sh
+# MacOS build
 
-script: 
-    # Build the module
-    - make
- 
+  - env: BASE=7.0
+    os: osx
+    compiler: clang
+
+# Cross-compilation to RTEMS
+
+  - env: BASE=7.0 RTEMS=4.10
+
+  - env: BASE=7.0 RTEMS=4.9
+
+# Older Base releases
+
+  - env: BASE=R3.15.7
+
+  - env: BASE=R3.15.7 STATIC=YES
+
+  - env: BASE=R3.14.12.8
+
+  - env: BASE=R3.14.12.8 STATIC=YES
+
+# Other gcc versions (added as an extra package)
+
+  - env: BASE=7.0
+    compiler: gcc-6
+    addons: { apt: { packages: ["g++-6"], sources: ["ubuntu-toolchain-r-test"] } }
+
+  - env: BASE=7.0
+    compiler: gcc-7
+    addons: { apt: { packages: ["g++-7"], sources: ["ubuntu-toolchain-r-test"] } }
