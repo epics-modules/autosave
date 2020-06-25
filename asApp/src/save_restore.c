@@ -1016,7 +1016,8 @@ STATIC int save_restore(void)
 
 		/* look at each list */
 		while (waitForListLock(5) == 0) {
-			if (save_restoreDebug > 1) printf("save_restore: '%s' waiting for listLock()\n", plist->reqFile);
+			if (save_restoreDebug > 1)
+				printf("save_restore: '%s' waiting for listLock()\n", lptr ? lptr->reqFile : "<null>");
 		}
 		plist = lptr;
 		while (plist != 0) {
@@ -1318,7 +1319,9 @@ disable:
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
-				epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "Save of '%s' %s", (status ? msg.filename : plist->save_file), status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "Save of '%s' %s",
+								status ? msg.filename : (plist ? plist->save_file : "<null>"),
+  								status ? "Failed" : "Succeeded");
 				if (!status && num_errs) status = num_errs;
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
