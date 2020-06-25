@@ -2064,7 +2064,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 	/* Currently, all lists do backups, unless their file path or file name comes from a PV, or the configName argument. */
 	if (plist->do_backups && (configName==NULL)) {
 		strNcpy(backup_file, save_file, NFS_PATH_LEN);
-		strncat(backup_file, "B", 1);
+		strncat(backup_file, "B", NFS_PATH_LEN + 2 - strlen(backup_file));
 
 		/* Ensure that backup is ok before we overwrite .sav file. */
 		backup_state = check_file(backup_file);

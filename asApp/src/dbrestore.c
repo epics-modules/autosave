@@ -1242,7 +1242,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 	if (inp_fd) return(inp_fd);
 
 	/* Still here?  Try the backup file. */
-	strncat(file, "B", 1);
+	strncat(file, "B", PATH_SIZE - strlen(file));
 	errlogPrintf("save_restore: Trying backup file '%s'\n", file);
 	inp_fd = checkFile(file);
 	if (inp_fd) return(inp_fd);
