@@ -2102,6 +2102,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 		FILE *test_fd;
 
 		if ((test_fd = fopen(save_file,"rb")) != NULL) {
+			fclose(test_fd);
 			fGetDateStr(datetime);
 			strNcpy(backup_file, save_file, NFS_PATH_LEN);
 			strncat(backup_file, "_", NFS_PATH_LEN-strlen(backup_file));
