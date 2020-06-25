@@ -20,6 +20,8 @@ auto_settings.req. The python distribution you use must have PyEpics and numpy.
  You should see "0  differences found"
 
 """
+from __future__ import print_function
+
 import epics
 import numpy
 
@@ -78,7 +80,7 @@ def put(pv, val):
 	try:
 		epics.caput(pv, val)
 	except:
-		print "exception while putting '%s' to '%s'" % (repr(val), pv)
+		print("exception while putting '%s' to '%s'" % (repr(val), pv))
 
 def doPuts(verbose=0):
 	for (pv) in pv_types.keys():
@@ -110,7 +112,7 @@ def doPuts(verbose=0):
 		elif pv_type == "double":
 			pv_values[pv] = random.random()
 			s = pv_values[pv].__str__()
-			if verbose: print "double: writing string value '%s' " % s
+			if verbose: print("double: writing string value '%s' " % s)
 			put(prefix+pv, s)
 
 		elif pv_type == "float":
@@ -151,7 +153,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xff))
 			pv_values[pv] = values
-			if verbose>1: print "char_array: writing values ", values
+			if verbose>1: print("char_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "double_array":
@@ -161,7 +163,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.random())
 			pv_values[pv] = values
-			if verbose>1: print "double_array: writing values ", values
+			if verbose>1: print("double_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "float_array":
@@ -171,7 +173,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.random())
 			pv_values[pv] = values
-			if verbose>1: print "float_array: writing values ", values
+			if verbose>1: print("float_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "long_array":
@@ -181,7 +183,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xffffffff)-0x7fffffff)
 			pv_values[pv] = values
-			if verbose>1: print "long_array: writing values ", values
+			if verbose>1: print("long_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "short_array":
@@ -191,7 +193,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xffff)-0x7fff)
 			pv_values[pv] = values
-			if verbose>1: print "short_array: writing values ", values
+			if verbose>1: print("short_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "string_array":
@@ -205,7 +207,7 @@ def doPuts(verbose=0):
 					s = s+alphabet[random.randint(0,25)]
 				values.append(s)
 			pv_values[pv] = values
-			if verbose>1: print "string_array: writing values ", values
+			if verbose>1: print("string_array: writing values ", values)
 			put(prefix+pv, pv_values[pv])
 
 		elif pv_type == "uchar_array":
@@ -215,7 +217,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xff))
 			pv_values[pv] = values
-			if verbose>1: print "uchar_array: writing values ", values
+			if verbose>1: print("uchar_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "ulong_array":
@@ -225,7 +227,7 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xffffffff))
 			pv_values[pv] = values
-			if verbose>1: print "ulong_array: writing values ", values
+			if verbose>1: print("ulong_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 
 		elif pv_type == "ushort_array":
@@ -235,17 +237,17 @@ def doPuts(verbose=0):
 			for i in range(n):
 				values.append(random.randint(0,0xffff))
 			pv_values[pv] = values
-			if verbose>1: print "ushort_array: writing values ", values
+			if verbose>1: print("ushort_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 		else:
-			if verbose: print "pv_type", pv_type, "not supported"
+			if verbose: print("pv_type", pv_type, "not supported"
 		
 	for (pv) in pv_types.keys():
 		p = epics.PV(prefix+pv)
 		if p.nelm <= 1:
-			if verbose: print prefix+pv, " = ", pv_values[pv]
+			if verbose: print(prefix+pv, " = ", pv_values[pv])
 		else:
-			if verbose>1: print prefix+pv, " = ", pv_values[pv]
+			if verbose>1: print(prefix+pv, " = ", pv_values[pv])
 
 def different(a,b):
 	if type(a) == type(1.2):
@@ -261,15 +263,15 @@ def compare() :
 		currVal = epics.caget(prefix+pv)
 		if type(pv_values[pv]) != type([]):
 			if different(pv_values[pv], currVal):
-				print "PV:", prefix+pv, "different:"
-				print "\tsaved  =", pv_values[pv]
-				print "\tcurrent=", currVal
+				print("PV:", prefix+pv, "different:")
+				print("\tsaved  =", pv_values[pv])
+				print("\tcurrent=", currVal)
 				numDifferences = numDifferences+1
 		else:
 			for i in range(len(pv_values[pv])):
 				if different(pv_values[pv][i], currVal[i]):
-					print "PV:", i, prefix+pv, "different:"
-					print "\tsaved  =", pv_values[pv][i]
-					print "\tcurrent=", currVal[i]
+					print("PV:", i, prefix+pv, "different:")
+					print("\tsaved  =", pv_values[pv][i])
+					print("\tcurrent=", currVal[i])
 					numDifferences = numDifferences+1
-	print numDifferences, " differences found"
+	print( numDifferences, " differences found"
