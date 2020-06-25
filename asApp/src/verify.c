@@ -39,7 +39,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	char	*svalue, *svalue_read;
 	chid	chid;
 	FILE	*fp=NULL, *fr=NULL, *fr1=NULL;
-	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE];
+	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN+1], value_string[BUF_SIZE];
 	char	trial_restoreFileName[PATH_SIZE];
 	char	*CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
