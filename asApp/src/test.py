@@ -85,11 +85,7 @@ def put(pv, val):
 def doPuts(verbose=0):
 	for (pv) in pv_types.keys():
 		pv_type = pv_types[pv]
-		if pv_type == "char":
-			pv_values[pv] = random.randint(0,0xff)
-			put(prefix+pv, pv_values[pv])
-
-		elif pv_type == "uchar":
+		if pv_type == "char" or pv_type == "uchar":
 			pv_values[pv] = random.randint(0,0xff)
 			put(prefix+pv, pv_values[pv])
 
