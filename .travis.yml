@@ -13,9 +13,9 @@ cache:
 
 env:
   global:
-   - SETUP_PATH=.ci
-    # for the sequencer on Windows
-    - CHOCO=re2c
+  - SETUP_PATH=.ci
+  # for the sequencer on Windows
+  - CHOCO=re2c
 
 addons:
   apt:
@@ -52,18 +52,22 @@ script:
 # Define build jobs
 
 # Well-known variables to use
-# SET      source setup file
-# EXTRA    content will be added to make command line
-# STATIC   set to YES for static build (default: NO)
-# TEST     set to NO to skip running the tests (default: YES)
-# VV       set to make build scripts verbose (default: unset)
+# SET         source setup file
+# ADD_MODULES extra modules (for a specific job)
+# BCFG        build configuration (static/debug/static-debug;
+#             default: shared-optimized)
+# TEST        set to NO to skip running the tests (default: YES)
+# VV          set to make build scripts verbose (default: unset)
+# EXTRA       content will be added to make command line
+# EXTRA1..5   more additional arguments for the make command
+#             (one argument per variable)
 
 # Usually from setup files, but may be specified or overridden
 #  on a job line
-# MODULES  list of dependency modules
-# BASE     branch or release tag name of the EPICS Base to use
-# <MODULE> branch or release tag for a specific module
-# ...      see README for setup file syntax description
+# MODULES     list of dependency modules
+# BASE        branch or release tag name of the EPICS Base to use
+# <MODULE>    branch or release tag for a specific module
+# ...         see README for setup file syntax description
 
 jobs:
   include:
