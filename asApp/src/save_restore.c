@@ -1883,7 +1883,15 @@ STATIC int write_it(char *filename, struct chlist *plist)
 		} else if (pchannel->curr_elements <= 1) {
 			/* treat as scalar */
 			if (pchannel->enum_val >= 0) {
-				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
+				/*
+				** The channel would appear to be of type ENUM. Save the
+				** equivalent string too, if it is non-blank.
+				*/
+				if (strlen (pchannel->value) > 0) {
+					n = fprintf(out_fd, "%s %d \"%s\"\n", ENUM_MARKER, pchannel->enum_val, pchannel->value);
+				} else {
+					n = fprintf(out_fd, "%d\n",pchannel->enum_val);
+				}
 			} else {
 				n = fprintf(out_fd, "%-s\n", pchannel->value);
 			}
