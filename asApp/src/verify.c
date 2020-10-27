@@ -13,6 +13,7 @@
 #include "cadef.h"
 #include <iocsh.h>
 #include <epicsExport.h>
+#include <epicsString.h>
 
 #include "save_restore.h"
 
@@ -318,12 +319,15 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 						is_scalar_in_file?"scalar":"array", is_scalar?"scalar":"array");
 				} else {
 					if (is_long_string) {
+						epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
 						different = strncmp(value_string, svalue, BUF_SIZE);
 					} else if (is_scalar) {
+						epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
 						different = strcmp(value_string, svalue);
 					} else {
 						svalue_read = (char *)read_buffer;
 						for (i=0, different=0; i<element_count; i++) {
+							epicsStrnRawFromEscaped(svalue_read + (i * MAX_STRING_SIZE), MAX_STRING_SIZE, svalue_read + (i * MAX_STRING_SIZE), MAX_STRING_SIZE);
 							j = strncmp(&svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE], MAX_STRING_SIZE);
 							different += (j != 0);
 							if (debug>3) printf("'%40s' != '%40s'\n", &svalue_read[i*MAX_STRING_SIZE], &svalue[i*MAX_STRING_SIZE]);
@@ -343,20 +347,30 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 				if (write_restore_file) {
 					if (is_long_string) {
 						svalue[BUF_SIZE-1] = '\0';
-						fprintf(fr, "%s %s\n", PVname, svalue);
+						fprintf(fr, "%s ", PVname);
+						epicsStrPrintEscaped(fr, svalue, strlen(svalue));
+						fprintf(fr, "\n");
 					} else if (is_scalar) {
-						fprintf(fr, "%s %s\n", PVname, svalue);
+						fprintf(fr, "%s ", PVname);
+						epicsStrPrintEscaped(fr, svalue, strlen(svalue));
+						fprintf(fr, "\n");
 					} else {
 						fprintf(fr, "%s %-s %1c ", PVname, ARRAY_MARKER, ARRAY_BEGIN);
 						for (i=0; i<element_count; i++) {
 							pc = &svalue[i*MAX_STRING_SIZE];
 							fprintf(fr, "%1c", ELEMENT_BEGIN);
 							for (j=0; j<MAX_STRING_SIZE-1 && *pc; j++, pc++) {
-								if ((*pc == ELEMENT_BEGIN) || (*pc == ELEMENT_END)){
+								if ((*pc == ELEMENT_BEGIN) || (*pc == ELEMENT_END) || (*pc == ESCAPE)) {
 									fprintf(fr, "%1c", ESCAPE);
 									j++;
 								}
-								fprintf(fr, "%1c", *pc);
+								if (*pc == '\n') {
+									fprintf(fr, "%1cn", ESCAPE);
+								} else if (*pc == '\r') {
+									fprintf(fr, "%1cr", ESCAPE);
+								} else {
+									fprintf(fr, "%1c", *pc);
+								}
 							}
 							fprintf(fr, "%1c ", ELEMENT_END);
 						}
@@ -474,7 +488,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 						}
 						if (debug > 1) printf("array_read: new buffer: '%s'\n", bp);
 						if (*bp == ELEMENT_END) break;
-					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
+					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END) || (bp[1] == ESCAPE))) {
 						/* escaped character */
 						if (debug > 1) printf("array_read: escaped element-begin/end '%s'\n", bp);
 						bp++;
@@ -497,7 +511,10 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 						bp++; 
 						break;
 					case ESCAPE:
-						if (*(++bp) == ELEMENT_END)    { bp++; } 
+						++bp;
+						if (*bp == ELEMENT_END || *bp == ESCAPE) {
+							++bp;
+						}
 						break;
 					default:
 						if ((bp = fgets(buffer, BUF_SIZE, fp)) == NULL) {
@@ -509,6 +526,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 
 				/* Append value to local array. */
 				if (read_buffer) {
+					epicsStrnRawFromEscaped(string, MAX_STRING_SIZE, string, MAX_STRING_SIZE);
 					switch (field_type) {
 					case DBF_ENUM:
 						p_short[num_read++] = (short)atol(string);

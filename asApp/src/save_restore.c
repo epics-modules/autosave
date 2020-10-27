@@ -164,6 +164,7 @@
 #include	<epicsMessageQueue.h>
 #include	<epicsExit.h>
 #include	<epicsStdio.h>
+#include	<epicsString.h>
 #include	<epicsExport.h>
 
 #include	"save_restore.h"
@@ -1879,13 +1880,19 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			/* write first BUF-SIZE-1 characters of long string, so dbrestore doesn't choke. */
 			strNcpy(value_string, pchannel->pArray, BUF_SIZE);
 			value_string[BUF_SIZE-1] = '\0';
-			n = fprintf(out_fd, "%-s\n", value_string);
+			n = epicsStrPrintEscaped(out_fd, value_string, strlen(value_string));
+			if (n > 0) {
+				n = fprintf(out_fd, "\n");
+			}
 		} else if (pchannel->curr_elements <= 1) {
 			/* treat as scalar */
 			if (pchannel->enum_val >= 0) {
 				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
 			} else {
-				n = fprintf(out_fd, "%-s\n", pchannel->value);
+				n = epicsStrPrintEscaped(out_fd, pchannel->value, strlen(pchannel->value));
+				if (n > 0) {
+					n = fprintf(out_fd, "\n");
+				}
 			}
 		} else {
 			/* treat as array */
@@ -3037,6 +3044,12 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 		}
 		/* doesn't look like array data.  just restore what we have */
 		if (p_data && !gobble) {
+			/* We do know the length of the buffer for sure, because this
+			   depends on the calling code, so we limit to the actual string
+			   size. The buffer must be one byte longer due to the terminating
+			   null byte. */
+			size_t value_string_len = strlen(value_string) + 1;
+			epicsStrnRawFromEscaped(value_string, value_string_len, value_string, value_string_len);
 			switch (field_type) {
 			case DBF_STRING:
 				/* future: translate escape sequence */
@@ -3116,7 +3129,7 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 							printf("save_restore:manual_array_restore: new buffer: '%s'\n", bp);
 						}
 						if (*bp == ELEMENT_END) break;
-					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END))) {
+					} else if ((*bp == ESCAPE) && ((bp[1] == ELEMENT_BEGIN) || (bp[1] == ELEMENT_END) || (bp[1] == ESCAPE))) {
 						/* escaped character */
 						bp++;
 					}
@@ -3140,7 +3153,10 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 						bp++; 
 						break;
 					case ESCAPE:
-						if (*(++bp) == ELEMENT_END)    { bp++; } 
+						++bp;
+						if (*bp == ELEMENT_END || *bp == ESCAPE) {
+							++bp;
+						}
 						break;
 					default:
 						if ((bp = fgets(buffer, BUF_SIZE, inp_fd)) == NULL) {
@@ -3152,9 +3168,9 @@ STATIC int manual_array_restore(FILE *inp_fd, char *PVname, chid chanid, char *v
 				if (!gobble && (num_read<max_elements)) {
 					/* Append value to local array. */
 					if (p_data) {
+						epicsStrnRawFromEscaped(string, MAX_STRING_SIZE, string, MAX_STRING_SIZE);
 						switch (field_type) {
 						case DBF_STRING:
-							/* future: translate escape sequence */
 							strNcpy(&(p_char[(num_read++)*MAX_STRING_SIZE]), string, MAX_STRING_SIZE);
 							break;
 						case DBF_ENUM:
@@ -3437,6 +3453,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 				if (!is_long_string) {
 					/* Discard additional characters until end of line */
 					while (bp[strlen(bp)-1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+					epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
 					value_string[40] = '\0';
 					if (ca_search(realName, &chanid) != ECA_NORMAL) {
 						printf("save_restore:do_manual_restore: ca_search for %s failed\n", realName);
@@ -3462,6 +3479,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 					}
 					/* Discard additional characters until end of line */
 					while (bp[strlen(bp)-1] != '\n') bp = fgets(buffer, BUF_SIZE, inp_fd);
+					epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
 					if (ca_search(PVname, &chanid) != ECA_NORMAL) {
 						printf("save_restore:do_manual_restore: ca_search for %s failed\n", PVname);
 						num_errs++;
