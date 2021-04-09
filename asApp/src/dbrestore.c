@@ -799,7 +799,8 @@ int reboot_restore(char *filename, initHookState init_state)
 	char		**pairs = NULL;
 	char		*macrostring = NULL;
 
-	errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
+	if (save_restoreDebug)
+		errlogPrintf("reboot_restore: entry for file '%s'\n", filename);
 	/* initialize database access routines */
 	if (!pdbbase) {
 		errlogPrintf("reboot_restore: No Database Loaded\n");
@@ -829,7 +830,7 @@ int reboot_restore(char *filename, initHookState init_state)
 	if ((pStatusVal == 0) || (statusStr == 0)) {
 		errlogPrintf("reboot_restore: Can't find filename '%s' in list.\n",
 			filename);
-	} else {
+	} else if (save_restoreDebug) {
 		errlogPrintf("reboot_restore: Found filename '%s' in restoreFileList.\n",
 			filename);
 	}
@@ -840,8 +841,9 @@ int reboot_restore(char *filename, initHookState init_state)
 	} else {
 		makeNfsPath(fname, saveRestoreFilePath, filename);
 	}
-	errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n",
-		fname, (int)init_state, pass ? "after" : "before");
+	if (save_restoreDebug)
+		errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n",
+			fname, (int)init_state, pass ? "after" : "before");
 	if ((inp_fd = fopen_and_check(fname, &status)) == NULL) {
 		errlogPrintf("save_restore: Can't open save file.");
 		if (pStatusVal) *pStatusVal = SR_STATUS_FAIL;
@@ -1088,7 +1090,8 @@ int reboot_restore(char *filename, initHookState init_state)
 		p_data = NULL;
 		p_data_size = 0;
 	}
-	errlogPrintf("reboot_restore: done with file '%s'\n\n", filename);
+	if (save_restoreDebug)
+		errlogPrintf("reboot_restore: done with file '%s'\n\n", filename);
 	return(OK);
 }
 
