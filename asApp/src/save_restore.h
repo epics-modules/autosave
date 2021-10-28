@@ -54,6 +54,8 @@ static char SR_STATUS_STR[5][10] =
 #define ESCAPE '\\'
 #define ARRAY_MARKER "@array@"
 #define ARRAY_MARKER_LEN 7
+#define ENUM_MARKER "@enum@"
+#define ENUM_MARKER_LEN 6
 
 #define FN_LEN 80 /* filename length */
 #define STRING_LEN MAX_STRING_SIZE	/* EPICS max length for string PV */
