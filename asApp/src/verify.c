@@ -39,7 +39,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	char	*svalue, *svalue_read;
 	chid	chid;
 	FILE	*fp=NULL, *fr=NULL, *fr1=NULL;
-	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN], value_string[BUF_SIZE];
+	char	c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN+1], value_string[BUF_SIZE];
 	char	trial_restoreFileName[PATH_SIZE];
 	char	*CA_buffer=NULL, *read_buffer=NULL, *pc=NULL;
 	short	field_type;
@@ -81,7 +81,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	if (status) {
 		printf("asVerify: Can't go back to beginning of file.  I quit.\n");
 		fclose(fp); fp = NULL;
-		if (write_restore_file)    { fclose(fr); fr = NULL; }
+		if (fr) { fclose(fr); fr = NULL; }
 		return(-1);
 	}
 
@@ -93,7 +93,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 	if (CA_buffer == NULL) {
 		printf("asVerify: Can't allocate CA buffer.  I quit.\n");
 		fclose(fp); fp = NULL;
-		if (write_restore_file)    { fclose(fr); fr = NULL; }
+		if (fr) { fclose(fr); fr = NULL; }
 		return(-1);
 	}
 
@@ -153,7 +153,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
 			if (CA_buffer == NULL) {
 				printf("asVerify: Can't allocate CA buffer.  I quit.\n");
 				fclose(fp); fp = NULL;
-				if (write_restore_file) fclose(fr); fr = NULL;
+				if (fr) { fclose(fr); fr = NULL; }
 				return(-1);
 			}
 			/* use second half of CA_buffer for values read from .sav file */

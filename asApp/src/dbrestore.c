@@ -776,7 +776,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
  */
 int reboot_restore(char *filename, initHookState init_state)
 {
-	char		PVname[81]; /* Must be greater than max field width ("%80s") in the sscanf format below */
+    char		PVname[PV_NAME_LEN+1]; /* Must be greater than max field width ("%80s") in the sscanf format below */
 	char		bu_filename[PATH_SIZE+1], fname[PATH_SIZE+1] = "";
 	char		buffer[BUF_SIZE], *bp;
 	char		ebuffer[EBUF_SIZE]; /* make room for macro expansion */
@@ -1242,7 +1242,7 @@ FILE *fopen_and_check(const char *fname, long *status)
 	if (inp_fd) return(inp_fd);
 
 	/* Still here?  Try the backup file. */
-	strncat(file, "B", 1);
+	strncat(file, "B", PATH_SIZE - strlen(file));
 	errlogPrintf("save_restore: Trying backup file '%s'\n", file);
 	inp_fd = checkFile(file);
 	if (inp_fd) return(inp_fd);

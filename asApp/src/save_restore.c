@@ -1016,7 +1016,8 @@ STATIC int save_restore(void)
 
 		/* look at each list */
 		while (waitForListLock(5) == 0) {
-			if (save_restoreDebug > 1) printf("save_restore: '%s' waiting for listLock()\n", plist->reqFile);
+			if (save_restoreDebug > 1)
+				printf("save_restore: '%s' waiting for listLock()\n", lptr ? lptr->reqFile : "<null>");
 		}
 		plist = lptr;
 		while (plist != 0) {
@@ -1318,7 +1319,9 @@ disable:
 				}
 
 				if (save_restoreDebug>1) printf("save_restore: manual save status=%d (0==success)\n", status);
-				epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "Save of '%s' %s", (status ? msg.filename : plist->save_file), status?"Failed":"Succeeded");
+				epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN-1, "Save of '%s' %s",
+								status ? msg.filename : (plist ? plist->save_file : "<null>"),
+  								status ? "Failed" : "Succeeded");
 				if (!status && num_errs) status = num_errs;
 				if (msg.callbackFunction) (msg.callbackFunction)(status, msg.puserPvt);
 				break;
@@ -2061,7 +2064,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 	/* Currently, all lists do backups, unless their file path or file name comes from a PV, or the configName argument. */
 	if (plist->do_backups && (configName==NULL)) {
 		strNcpy(backup_file, save_file, NFS_PATH_LEN);
-		strncat(backup_file, "B", 1);
+		strncat(backup_file, "B", NFS_PATH_LEN + 2 - strlen(backup_file));
 
 		/* Ensure that backup is ok before we overwrite .sav file. */
 		backup_state = check_file(backup_file);
@@ -2099,6 +2102,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
 		FILE *test_fd;
 
 		if ((test_fd = fopen(save_file,"rb")) != NULL) {
+			fclose(test_fd);
 			fGetDateStr(datetime);
 			strNcpy(backup_file, save_file, NFS_PATH_LEN);
 			strncat(backup_file, "_", NFS_PATH_LEN-strlen(backup_file));

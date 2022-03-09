@@ -84,7 +84,11 @@ int main(int argc,char **argv)
 	if (fp == NULL) {printf("Can't open %s\n", filename); return(-1);}
 	tempname = tmpnam(NULL);
 	ftmp = fopen(tempname,"w");
-	if (ftmp == NULL) {printf("Can't open temp file.\n"); return(-1);}
+	if (ftmp == NULL) {
+		printf("Can't open temp file.\n");
+		fclose(fp);
+		return(-1);
+	}
 	while (!feof(fp) && (n=fread(s,1,BUF_SIZE,fp))) {
 		fwrite(s,1,n,ftmp);
 	}
