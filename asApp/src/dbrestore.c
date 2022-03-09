@@ -214,7 +214,7 @@ STATIC int myFileCopy(const char *source, const char *dest)
 }
 
 
-STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *value_string)
+STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *value_string, int is_long_string)
 {
 	long 	n, status = 0;
 	DBADDR	dbaddr;
@@ -278,7 +278,11 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 		if (pass == 1) {
 			status = dbNameToAddr(PVname, paddr);
 			if (!status) {
-				status = dbPut(paddr, DBR_STRING, value_string, 1);
+				if (is_long_string && paddr->field_type == DBF_CHAR) {
+					status = dbPut(paddr, DBF_CHAR, value_string, strlen(value_string) + 1);
+				} else {
+					status = dbPut(paddr, DBF_STRING, value_string, 1);
+				}
 			}
 		} else if (save_restoreDebug > 1) {
 			errlogPrintf("dbrestore:scalar_restore: Can't restore DBF_NOACCESS field (%s) in pass 0.\n", PVname);
@@ -1002,7 +1006,7 @@ int reboot_restore(char *filename, initHookState init_state)
 			}
 			if (found_field) {
 				if (is_scalar || is_long_string) {
-					status = scalar_restore(pass, pdbentry, PVname, value_string);
+					status = scalar_restore(pass, pdbentry, PVname, value_string, is_long_string);
 				} else {
 					status = SR_array_restore(pass, inp_fd, PVname, value_string, 0);
 				}
