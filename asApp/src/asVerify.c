@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <ctype.h> /* isalpha */
 #include <math.h> /* fabs */
@@ -13,6 +14,7 @@
 #include "cadef.h"
 
 #include "save_restore.h"
+#include "autosave_release.h"
 
 
 
@@ -42,6 +44,9 @@ void printUsage(void) {
 	fprintf(stderr,"that occur in a .req file.  (It will look for a PV named 'file'.)\n");
 }
 
+void printVersion(void) {
+	printf("asVerify, built from %s\n", AUTOSAVE_RELEASE);
+}
 
 int main(int argc,char **argv)
 {
@@ -52,23 +57,24 @@ int main(int argc,char **argv)
 	int		numDifferences;
 	int		status;
 	int		verbose=0, debug=0, write_restore_file=0;
+	int		opt;
 
-	/* Parse args */
-	if (argc == 1) {
+	while ((opt = getopt(argc, argv, "Vvrdh")) != -1) {
+		switch (opt) {
+			case 'V': printVersion(); exit(0);
+			case 'v': verbose = 1; break;
+			case 'r': write_restore_file = 1; break;
+			case 'd': printf("debug=%d\n", ++debug); break;
+			case 'h': printUsage(); exit(1);
+		}
+	}
+
+	if (argc <= optind) {
 		printUsage();
 		exit(1);
 	}
-	if (*argv[1] == '-') {
-		for (n=1; n<strlen(argv[1]); n++) {
-			if (argv[1][n] == 'v') verbose = 1;
-			if (argv[1][n] == 'r') write_restore_file = 1;
-			if (argv[1][n] == 'd') printf("debug=%d\n", ++debug);
-			if (argv[1][n] == 'h') {printUsage(); exit(1);}
-		}
-		strcpy(filename, argv[2]);
-	} else {
-		strcpy(filename, argv[1]);
-	}
+
+	strcpy(filename, argv[optind]);
 
 	status = ca_context_create(ca_disable_preemptive_callback);
 	if (!(status & CA_M_SUCCESS)) {

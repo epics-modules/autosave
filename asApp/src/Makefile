@@ -26,6 +26,7 @@ DBD += asSupport.dbd
 
 #include files
 INC += osdNfs.h
+INC += autosave_release.h
 
 #=============================
 
@@ -46,3 +47,6 @@ include $(TOP)/configure/RULES
 #  ADD RULES AFTER THIS LINE
 
 dbrestore.o:   ../Makefile
+
+$(COMMON_DIR)/autosave_release.h: $(TOP)/configure/CONFIG ../autosave_release.pl
+	$(PERL) ../autosave_release.pl $(AUTOSAVE_RELEASE) > $@
