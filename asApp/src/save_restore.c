@@ -2713,6 +2713,10 @@ STATIC int remove_data_set(char *filename)
 	op_msg msg;
 
 	msg.operation = op_Remove;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("remove_data_set: bad filename\n");
+		return(-1);
+	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
 	epicsMessageQueueSend(opMsgQueue, (void *)&msg, OP_MSG_SIZE);
 	return(0);
@@ -2792,6 +2796,10 @@ int reload_periodic_set(char *filename, int period, char *macrostring)
 
 	msg.operation = op_ReloadPeriodicSet;
 	msg.period = period;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("reload_periodic_set: bad filename\n");
+		return(-1);
+	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
 	if (strlen(macrostring) > (OP_MSG_MACRO_SIZE-1)) {
 		printf("macro string '%s' is too long for message queue\n", macrostring);
@@ -2807,6 +2815,10 @@ int reload_triggered_set(char *filename, char *trigger_channel, char *macrostrin
 	op_msg msg;
 
 	msg.operation = op_ReloadTriggeredSet;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("reload_triggered_set: bad filename\n");
+		return(-1);
+	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
 	if (strlen(macrostring) > (OP_MSG_MACRO_SIZE-1)) {
 		printf("macro string '%s' is too long for message queue\n", macrostring);
@@ -2825,6 +2837,10 @@ int reload_monitor_set(char * filename, int period, char *macrostring)
 
 	msg.operation = op_ReloadMonitorSet;
 	msg.period = period;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("reload_monitor_set: bad filename\n");
+		return(-1);
+	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
 	if (strlen(macrostring) > (OP_MSG_MACRO_SIZE-1)) {
 		printf("macro string '%s' is too long for message queue\n", macrostring);
@@ -2838,8 +2854,12 @@ int reload_monitor_set(char * filename, int period, char *macrostring)
 int reload_manual_set(char * filename, char *macrostring)
 {
 	op_msg msg;
-
+	
 	msg.operation = op_ReloadManualSet;
+	if ((filename == NULL) || (strlen(filename)<1) || (strlen(filename)>=OP_MSG_FILENAME_SIZE-1)) {
+		printf("reload_manual_set: bad filename\n");
+		return(-1);
+	}
 	strNcpy(msg.filename, filename, OP_MSG_FILENAME_SIZE);
 	if (strlen(macrostring) > (OP_MSG_MACRO_SIZE-1)) {
 		printf("macro string '%s' is too long for message queue\n", macrostring);
