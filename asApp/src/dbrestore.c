@@ -90,6 +90,7 @@
 #include	<dbAccessDefs.h>
 #include	<epicsStdio.h>
 #include	<epicsExport.h>
+#include    <epicsStdlib.h>
 
 #ifndef vxWorks
 #define OK 0
@@ -540,10 +541,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 				p_ulong[num_read++] = (epicsUInt32) strtoul(value_string,NULL,0);
 				break;
 			case DBF_INT64:
-				p_int64[num_read++] = (epicsInt64) strtoll(value_string,NULL,0);
+				epicsParseInt64(value_string, &p_int64[num_read++], 10, NULL);
 				break;
 			case DBF_UINT64:
-				p_uint64[num_read++] = (epicsUInt64) strtoull(value_string,NULL,0);
+				epicsParseUInt64(value_string, &p_uint64[num_read++], 10, NULL);
 				break;
 			case DBF_FLOAT:
 				p_float[num_read++] = mySafeDoubleToFloat(atof(value_string));
