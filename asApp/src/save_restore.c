@@ -1893,9 +1893,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
 				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
 			} else {
 				n = epicsStrPrintEscaped(out_fd, pchannel->value, strlen(pchannel->value));
-				if (n > 0) {
-					n = fprintf(out_fd, "\n");
-				}
+				n = fprintf(out_fd, "\n");
 			}
 		} else {
 			/* treat as array */
