@@ -1945,6 +1945,9 @@ STATIC int write_it(char *filename, struct chlist *plist)
 #else
 	n = fsync(fileno(out_fd));
 	if (n && (errno == ENOTSUP)) { n = 0; errno = 0; }
+#ifdef __rtems__
+	if (n && ((errno == EINVAL) || (errno == EROFS)) ) { n = 0; errno = 0; }
+#endif
 	if (n) {
 		printf("save_restore:write_it: fsync returned %d [%s]\n", n, datetime);
 		if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
