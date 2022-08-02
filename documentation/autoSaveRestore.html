@@ -901,6 +901,14 @@ and they can be modified at run time.
 Autosave cannot write enums as strings, because enum strings may not have been
 defined at the time they must be restored.
 
+<dt>Int64 and UInt64
+
+<dd>Saving of 64bit integer data is done through channel access which interprets
+the value as a double. This means that there are certain values that will not
+restore the same as they are saved. Values up until 2^52 should be completely
+fine, but after that point, restored values may lose out on the lower 12 bits
+of data.
+
 <dt>arrays of any kind
 
 <dd>Arrays are read using database access.  Channel access cannot read only the
