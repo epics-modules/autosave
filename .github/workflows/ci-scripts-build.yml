@@ -39,6 +39,7 @@ jobs:
       EXTRA: ${{ matrix.extra }}
       TEST: ${{ matrix.test }}
       SET: ${{ matrix.set }}
+      BASE: ${{ matrix.base }}
     strategy:
       fail-fast: false
       matrix:
