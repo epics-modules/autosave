@@ -1,0 +1,107 @@
+# .github/workflows/ci-scripts-build.yml for use with EPICS Base ci-scripts
+# (see: https://github.com/epics-base/ci-scripts)
+
+# This is YAML - indentation levels are crucial
+
+# Set the 'name:' properties to values that work for you (MYMODULE)
+
+name: "AUTOSAVE"
+
+# Trigger on pushes and PRs to any branch
+on:
+  push:
+    paths-ignore:
+      - 'documentation/*'
+      - '**/*.html'
+      - '**/*.md'
+    branches:
+        - master
+  pull_request:
+
+env:
+  SETUP_PATH: .github/workflows:.ci
+  # For the sequencer on Linux/Windows/MacOS
+  APT: re2c
+  CHOCO: re2c
+  BREW: re2c
+
+jobs:
+  build-base:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    # Set environment variables from matrix parameters
+    env:
+      CMP: ${{ matrix.cmp }}
+      BCFG: ${{ matrix.configuration }}
+      WINE: ${{ matrix.wine }}
+      RTEMS: ${{ matrix.rtems }}
+      RTEMS_TARGET: ${{ matrix.rtems_target }}
+      EXTRA: ${{ matrix.extra }}
+      TEST: ${{ matrix.test }}
+      SET: ${{ matrix.set }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Job names also name artifacts, character limitations apply
+        include:
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            base: 7.0
+            name: "Linux 7.0"
+
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            base: 3.16
+            name: "Linux 3.16"
+            
+          - os: ubuntu-20.04
+            cmp: gcc
+            configuration: default
+            base: 3.15
+            name: "Linux 3.15"
+                        
+          - os: macos-latest
+            cmp: clang
+            configuration: default
+            base: 7.0
+            name: "MacOS 7.0"
+
+          - os: windows-2022
+            cmp: vs2022
+            configuration: static
+            base: 7.0
+            name: "Windows 7.0"
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Automatic core dumper analysis
+      uses: mdavidsaver/ci-core-dumper@master
+    - name: "apt-get install"
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install qemu-system-x86 g++-mingw-w64-x86-64 gdb
+      if: runner.os == 'Linux'
+    - name: "apt-get install ${{ matrix.cmp }}"
+      run: |
+        sudo apt-get -y install software-properties-common
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt-get update
+        sudo apt-get -y install ${{ matrix.cmp }}
+      if: matrix.utoolchain
+    - name: Prepare and compile dependencies
+      run: python .ci/cue.py prepare
+    - name: Build main module
+      run: python .ci/cue.py build
+    - name: Run main module tests
+      run: python .ci/cue.py -T 15M test
+    - name: Upload tapfiles Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: tapfiles ${{ matrix.name }}
+        path: '**/O.*/*.tap'
+    - name: Collect and show test results
+      run: python .ci/cue.py test-results
