@@ -48,31 +48,31 @@ jobs:
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            base: 7.0
+            base: "7.0"
             name: "Linux 7.0"
 
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            base: 3.16
+            base: "3.16"
             name: "Linux 3.16"
             
           - os: ubuntu-20.04
             cmp: gcc
             configuration: default
-            base: 3.15
+            base: "3.15"
             name: "Linux 3.15"
                         
           - os: macos-latest
             cmp: clang
             configuration: default
-            base: 7.0
+            base: "7.0"
             name: "MacOS 7.0"
 
           - os: windows-2022
             cmp: vs2022
             configuration: static
-            base: 7.0
+            base: "7.0"
             name: "Windows 7.0"
 
     steps:
