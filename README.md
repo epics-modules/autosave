@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/epics-modules/autosave.svg?branch=master)](https://travis-ci.org/epics-modules/autosave)
+[![AUTOSAVE](https://github.com/epics-modules/autosave/actions/workflows/ci-scripts-build.yml/badge.svg)](https://github.com/epics-modules/autosave/actions/workflows/ci-scripts-build.yml)
 
 # autosave
 APS BCDA synApps module: autosave
