@@ -236,7 +236,9 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
 	case DBF_CHAR:   case DBF_UCHAR:
 	case DBF_SHORT:  case DBF_USHORT:
 	case DBF_LONG:   case DBF_ULONG:
+	#ifdef DBR_INT64
 	case DBF_INT64:  case DBF_UINT64:
+	#endif
 	case DBF_FLOAT:  case DBF_DOUBLE:
 		/*
 		 * check SPC_CALC fields against new (3.13.9) requirement that CALC
@@ -441,8 +443,10 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 		case DBF_SHORT:                                p_short = (short *)p_data;           break;
 		case DBF_ULONG:                                p_ulong = (epicsUInt32 *)p_data;     break;
 		case DBF_LONG:                                 p_long = (epicsInt32 *)p_data;       break;
+		#ifdef DBR_INT64
 		case DBF_INT64:                                p_int64 = (epicsInt64 *)p_data;      break;
 		case DBF_UINT64:                               p_uint64 = (epicsUInt64 *)p_data;    break;
+		#endif
 		case DBF_FLOAT:                                p_float = (float *)p_data;           break;
 		case DBF_DOUBLE:                               p_double = (double *)p_data;         break;
 		case DBF_NOACCESS:
@@ -488,12 +492,14 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			case DBF_ULONG:
 				p_ulong[num_read++] = (epicsUInt32) 0;
 				break;
+			#ifdef DBR_INT64
 			case DBF_INT64:
 				p_int64[num_read++] = (epicsInt64) 0;
 				break;
 			case DBF_UINT64:
 				p_uint64[num_read++] = (epicsUInt64) 0;
 				break;
+			#endif
 			case DBF_FLOAT:
 				p_float[num_read++] = 0;
 				break;
@@ -540,12 +546,14 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 			case DBF_ULONG:
 				p_ulong[num_read++] = (epicsUInt32) strtoul(value_string,NULL,0);
 				break;
+			#ifdef DBR_INT64
 			case DBF_INT64:
 				epicsParseInt64(value_string, &p_int64[num_read++], 10, NULL);
 				break;
 			case DBF_UINT64:
 				epicsParseUInt64(value_string, &p_uint64[num_read++], 10, NULL);
 				break;
+			#endif
 			case DBF_FLOAT:
 				p_float[num_read++] = mySafeDoubleToFloat(atof(value_string));
 				break;
@@ -672,12 +680,14 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 							/*p_ulong[num_read++] = (epicsUInt32) atol(string);*/
 							p_ulong[num_read++] = (epicsUInt32) strtoul(string,NULL,0);
 							break;
+						#ifdef DBR_INT64
 						case DBF_INT64:
-							p_int64[num_read++] = (epicsInt64) strtoll(string,NULL,0);
+							epicsParseInt64(string, &p_int64[num_read++], 10, NULL);
 							break;
 						case DBF_UINT64:
-							p_uint64[num_read++] = (epicsUInt64) strtoull(string,NULL,0);
+							epicsParseUInt64(string, &p_uint64[num_read++], 10, NULL);
 							break;
+						#endif
 						case DBF_FLOAT:
 							p_float[num_read++] = mySafeDoubleToFloat(atof(string));
 							break;
@@ -711,10 +721,12 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
 					errlogPrintf("	%u\n", p_ulong[j]); break;
 				case DBF_LONG:
 					errlogPrintf("	%d\n", p_long[j]); break;
+				#ifdef DBR_INT64
 				case DBF_UINT64:
 					errlogPrintf("	%llu\n", p_uint64[j]); break;
 				case DBF_INT64:
 					errlogPrintf("	%lld\n", p_int64[j]); break;
+				#endif
 				case DBF_FLOAT:
 					errlogPrintf("	%f\n", p_float[j]); break;
 				case DBF_DOUBLE:
