@@ -2,7 +2,7 @@
 
 cd ""
 < ../nfsCommands
-< cdCommands
+< envPaths
 
 ################################################################################
 cd topbin
@@ -18,8 +18,8 @@ cd startup
 ################################################################################
 # Tell EPICS all about the record types, device-support modules, drivers,
 # etc. in the software we just loaded (as.munch)
-dbLoadDatabase("../../dbd/iocas.dbd")
-iocas_registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase("../../dbd/as.dbd")
+as_registerRecordDeviceDriver(pdbbase)
 
 # save_restore setup
 < save_restore.cmd
