@@ -1,0 +1,26 @@
+# auto-compute location of this file.
+# Necessary for dependency resolution
+_@MODULE@ := $(dir $(lastword $(MAKEFILE_LIST)))
+
+# we're appending so must be idempotent
+ifeq (,$(_@MODULE@_CONF_INCLUDED))
+_@MODULE@_CONF_INCLUDED := YES
+
+ifdef T_A
+
+_@MODULE@_DEPENDENT_MODULES := $(shell $(CONVERTRELEASE) -T $(_@MODULE@)/.. releaseTops)
+_@MODULE@_DEPENDENT_MODULES := $(filter-out EPICS_BASE SUPPORT, $(_@MODULE@_DEPENDENT_MODULES))
+
+$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval -include $($(mod))/cfg/CONFIG_MODULE ))
+
+-include $(_@MODULE@)/BUILD_@MODULE@
+
+_@MODULE@_SUBMODULES = $(filter-out $(_@MODULE@)/BUILD_@MODULE@ , $(wildcard $(_@MODULE@)/BUILD_@MODULE@*))
+
+ifneq ($(_@MODULE@_SUBMODULES),)
+	-include $(_@MODULE@_SUBMODULES)
+endif
+
+endif #T_A
+
+endif # included
