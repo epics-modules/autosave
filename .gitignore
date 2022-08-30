@@ -8,6 +8,8 @@ dbd/
 html/
 include/
 lib/
+cfg/
+iocsh/
 templates/
 cdCommands
 envPaths
