@@ -36,11 +36,11 @@ _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.$(EPICS_HOST_ARCH)*), $(_@MODU
 _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.Common*), $(_@MODULE@_SUBMODULES))
 
 
-$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval $(call INCLUDE_DEPEND, $(mod))))
+$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval $(call INCLUDE_DEPEND,$(mod))))
 
-$(eval $(call INCLUDE_ALL, $(_@MODULE@)/@MODULE@ ))
+$(eval $(call INCLUDE_ALL,$(_@MODULE@)/@MODULE@))
 
-$(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL, $(submod))))
+$(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL,$(submod))))
 
 endif #T_A
 
