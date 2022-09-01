@@ -23,19 +23,22 @@ define  INCLUDE_DEPEND
   endif
 endef
   
+@MODULE@_IOC_DBDS = 
+@MODULE@_IOC_LIBS =
 
 ifdef T_A
 
 _@MODULE@_DEPENDENT_MODULES := $(shell $(CONVERTRELEASE) -T $(_@MODULE@)/.. releaseTops)
 _@MODULE@_DEPENDENT_MODULES := $(filter-out EPICS_BASE SUPPORT, $(_@MODULE@_DEPENDENT_MODULES))
 
-$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval -include $($(mod))/cfg/CONFIG_MODULE ))
-
-$(eval $(call INCLUDE_ALL, $(_@MODULE@)/@MODULE@ ))
-
 _@MODULE@_SUBMODULES := $(filter-out $(_@MODULE@)/@MODULE@ , $(wildcard $(_@MODULE@)/@MODULE@_*))
 _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.$(EPICS_HOST_ARCH)*), $(_@MODULE@_SUBMODULES))
 _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.Common*), $(_@MODULE@_SUBMODULES))
+
+
+$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval $(call INCLUDE_DEPEND, $(mod)))
+
+$(eval $(call INCLUDE_ALL, $(_@MODULE@)/@MODULE@ ))
 
 $(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL, $(submod))))
 
