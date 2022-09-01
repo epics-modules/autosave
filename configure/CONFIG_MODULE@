@@ -14,6 +14,16 @@ define  INCLUDE_ALL
   -include $(1).$(EPICS_HOST_ARCH).$(T_A)
 endef
 
+define  INCLUDE_DEPEND
+  -include $($(1))/cfg/CONFIG_MODULE
+
+  ifdef _$(1)
+    ALL_IOC_DBDS += $(1)_IOC_DBDS
+    ALL_IOC_LIBS := $(1)_IOC_LIBS $(ALL_IOC_LIBS)
+  endif
+endef
+  
+
 ifdef T_A
 
 _@MODULE@_DEPENDENT_MODULES := $(shell $(CONVERTRELEASE) -T $(_@MODULE@)/.. releaseTops)
