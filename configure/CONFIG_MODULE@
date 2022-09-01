@@ -14,18 +14,6 @@ define  INCLUDE_ALL
   -include $(1).$(EPICS_HOST_ARCH).$(T_A)
 endef
 
-define  INCLUDE_DEPEND
-  -include $($(1))/cfg/CONFIG_MODULE
-
-  ifdef _$(1)
-    ALL_IOC_DBDS += $($(1)_IOC_DBDS)
-    ALL_IOC_LIBS := $($(1)_IOC_LIBS) $(ALL_IOC_LIBS)
-  endif
-endef
-  
-@MODULE@_IOC_DBDS = 
-@MODULE@_IOC_LIBS =
-
 ifdef T_A
 
 _@MODULE@_DEPENDENT_MODULES := $(shell $(CONVERTRELEASE) -T $(_@MODULE@)/.. releaseTops)
@@ -35,12 +23,14 @@ _@MODULE@_SUBMODULES := $(filter-out $(_@MODULE@)/@MODULE@ , $(wildcard $(_@MODU
 _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.$(EPICS_HOST_ARCH)*), $(_@MODULE@_SUBMODULES))
 _@MODULE@_SUBMODULES := $(filter-out $(wildcard *.Common*), $(_@MODULE@_SUBMODULES))
 
-
-$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval $(call INCLUDE_DEPEND,$(mod))))
+$(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval -include $($(mod))/cfg/CONFIG_MODULE))
 
 $(eval $(call INCLUDE_ALL,$(_@MODULE@)/@MODULE@))
 
 $(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL,$(submod))))
+
+ALL_IOC_DBDS += $(@MODULE@_IOC_DBDS)
+ALL_IOC_LIBS := $(@MODULE@_IOC_LIBS) $(ALL_IOC_LIBS)
 
 endif #T_A
 
