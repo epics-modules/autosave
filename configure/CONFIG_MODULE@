@@ -6,6 +6,14 @@ _@MODULE@ := $(dir $(lastword $(MAKEFILE_LIST)))
 ifeq (,$(_@MODULE@_CONF_INCLUDED))
 _@MODULE@_CONF_INCLUDED := YES
 
+define  INCLUDE_ALL
+  -include $(1)
+  -include $(1).$(EPICS_HOST_ARCH)
+  -include $(1).$(EPICS_HOST_ARCH).Common
+  -include $(1).Common.$(T_A)
+  -include $(1).$(EPICS_HOST_ARCH).$(T_A)
+endef
+
 ifdef T_A
 
 _@MODULE@_DEPENDENT_MODULES := $(shell $(CONVERTRELEASE) -T $(_@MODULE@)/.. releaseTops)
@@ -13,13 +21,13 @@ _@MODULE@_DEPENDENT_MODULES := $(filter-out EPICS_BASE SUPPORT, $(_@MODULE@_DEPE
 
 $(foreach mod, $(_@MODULE@_DEPENDENT_MODULES), $(eval -include $($(mod))/cfg/CONFIG_MODULE ))
 
--include $(_@MODULE@)/BUILD_@MODULE@
+$(eval $(call INCLUDE_ALL, $(_@MODULE@)/@MODULE@ ))
 
-_@MODULE@_SUBMODULES = $(filter-out $(_@MODULE@)/BUILD_@MODULE@ , $(wildcard $(_@MODULE@)/BUILD_@MODULE@*))
+_@MODULE@_SUBMODULES := $(filter-out $(_@MODULE@)/@MODULE@ , $(wildcard $(_@MODULE@)/@MODULE@_*))
+_@MODULE@_SUBMODULES := $(filter-out $(wildcard *.$(EPICS_HOST_ARCH)*), $(_@MODULE@_SUBMODULES))
+_@MODULE@_SUBMODULES := $(filter-out $(wildcard *.Common*), $(_@MODULE@_SUBMODULES))
 
-ifneq ($(_@MODULE@_SUBMODULES),)
-	-include $(_@MODULE@_SUBMODULES)
-endif
+$(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL, $(submod))))
 
 endif #T_A
 

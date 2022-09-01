@@ -5,7 +5,7 @@ include $(TOP)/configure/CONFIG
 #  ADD MACRO DEFINITIONS AFTER THIS LINE
 #=============================
 
-CFG += BUILD_AUTOSAVE
+CFG += AUTOSAVE
 
 USR_CFLAGS += -DUSE_TYPED_RSET
 
