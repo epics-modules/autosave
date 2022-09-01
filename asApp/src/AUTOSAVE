@@ -1,2 +1,2 @@
-PROD_DBD_DEPENDS += asSupport.dbd
-PROD_LIBS_DEPENDS := autosave $(PROD_LIBS_DEPENDS)
+AUTOSAVE_IOC_DBDS = asSupport.dbd
+AUTOSAVE_IOC_LIBS = autosave 
