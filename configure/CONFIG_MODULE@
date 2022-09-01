@@ -18,8 +18,8 @@ define  INCLUDE_DEPEND
   -include $($(1))/cfg/CONFIG_MODULE
 
   ifdef _$(1)
-    ALL_IOC_DBDS += $(1)_IOC_DBDS
-    ALL_IOC_LIBS := $(1)_IOC_LIBS $(ALL_IOC_LIBS)
+    ALL_IOC_DBDS += $($(1)_IOC_DBDS)
+    ALL_IOC_LIBS := $($(1)_IOC_LIBS) $(ALL_IOC_LIBS)
   endif
 endef
   
