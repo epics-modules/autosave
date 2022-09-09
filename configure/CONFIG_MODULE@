@@ -31,6 +31,7 @@ $(foreach submod, $(_@MODULE@_SUBMODULES), $(eval $(call INCLUDE_ALL,$(submod)))
 
 ALL_IOC_DBDS += $(@MODULE@_IOC_DBDS)
 ALL_IOC_LIBS := $(@MODULE@_IOC_LIBS) $(ALL_IOC_LIBS)
+ALL_IOC_SYS_LIBS := $(@MODULE@_IOC_SYS_LIBS) $(ALL_IOC_SYS_LIBS)
 
 endif #T_A
 
