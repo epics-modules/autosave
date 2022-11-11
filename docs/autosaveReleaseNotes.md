@@ -242,8 +242,9 @@ autosave Release Notes
 ### save\_restore v3.3; dbrestore v3.3
 
 - In versions earlier than 3.3, save\_restore's job was simply to save parameters through a reboot. The file server to which save files were written was assumed competent to protect those files, and when the server said a .sav file was safe, save\_restore believed it. Beginning with 3.3, the file server is viewed as the enemy: save\_restore expects it to lie about file status, to suddenly stop recognizing previously valid file handles, and to return error codes that don't make sense. Save\_restore can now defend its NFS mount against a server reboot, defend parameter values against a server power failure, and attempts to defend against a user messing around with the directory into which save files are being written.
-- Save\_restore now allows you to change, at run time, the directory and/or the server to which save files are written. Here's an example: ```
-    
+- Save\_restore now allows you to change, at run time, the directory and/or the server to which save files are written. Here's an example: 
+
+    ```
     	# The normal save_restore directory setup, in st.cmd: 
     	save_restoreSet_NFSHost("oxygen", "164.54.52.4")
     	set_savefile_path(startup, "autosave")
@@ -265,6 +266,7 @@ autosave Release Notes
     
     Save\_restore cannot defend against adverse file permissions, or against the save directory (NFS mount point) disappearing altogether.
 - Several variables and user-callable functions have been renamed, as their meanings have changed. In preparation for 3.14, most user-settable variables can now be set by a function call. Here's a list of variables and functions added, deleted, or changed:  
+
     | OLD | NEW |
     |---|---|
     | sr\_save\_incomplete\_sets\_ok | save\_restoreIncompleteSetsOk |
@@ -302,6 +304,8 @@ autosave Release Notes
     | --no comparable function-- | save\_restoreSet\_NFSHost(host,IPaddress) |
     | --no comparable variable-- | save\_restoreRemountThreshold |
     | NOTE: If save\_restore is managing its own NFS mount (i.e., if calls to save\_restoreSet\_NFSHost() and set\_savefile\_path() succeeded) it will dismount and remount after save\_restoreRemountThreshold consecutive I/O errors (e.g. to fix a stale file handle). |
+    
+    
 - Save\_restore now maintains status PV's for each PV list, and rolled-up status PV's for overall save status and reboot status.
 - fdblist() renamed as save\_restoreShow(), now enhanced with more status information, including rolled-up reboot status.
 - Save\_restore can now maintain up to ten "sequence files" (named \*.savX, where X is a digit in \[0..(save\_restoreNumSeqFiles-1)\]), which are copies of the most recent .sav or .savB file, copied at user-specified intervals. If no valid .sav or .savB file exists, save\_restore will write sequence files directly from its PV list, as though it were writing a .sav file. At boot time, if .sav and .savB are both corrupt or missing, save\_restore will restore from the most recent sequence file.
