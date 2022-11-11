@@ -276,21 +276,18 @@ autosaveBuild (automatic request-file generation)
 Many of the databases in synApps have associated autosave-request files. For example, the calc module contains `editSseq.db` and `editSseq_settings.req`. When adding a new database to an IOC, it's common practice to add the associated request file to `auto_settings.req` and/or `auto_positions.req`. For clarity, `st.cmd` contains this:
 
 > ```
-> 
 > dbLoadRecords("$(CALC)/calcApp/Db/editSseq.db", "P=xxxL:,Q=ES:")
 > ```
 
 and `auto_settings.req` contains this: 
 
 > ```
-> 
 > file editSseq_settings.req P=xxxL:,Q=ES:
 > ```
 
 It's tedious and error prone to have these entries separately maintained, so autosave can do the request-file part for you. To do this, you tell autosave to arrange to be called whenever `dbLoadRecords()` is called (note that `dbLoadTemplate()` calls `dbLoadRecords()`), you tell it how to make a request-file name from a database-file name, and you give it the name of the request file you want it to build. You can do this with the following command:
 
 > ```
-> 
 > autosaveBuild("built_settings.req", "_settings.req", 1)
 > ```
 
@@ -301,7 +298,6 @@ This tells autosave to do the following: 1. Begin building the file `built_setti
 While automated building is enabled, autosave will generate request-file names and search for those files in its request-file path. If it finds a request file, it will add the appropriate line to `built_settings.req`. All this does is get the file `built_settings.req` written. If you want it to be used, you must add the following line to `auto_settings.req`:
 
 > ```
-> 
 > file built_settings.req P=$(P)
 > ```
 
@@ -415,21 +411,18 @@ Note that asVerify cannot read an autosave request file; it will understand any 
 Beginning with autosave R5.6.1, asVerify can be called from the IOC console:
 
 ```
-
 asVerify(char *fileName, int verbose, char *restoreFileName)
 ```
 
 Examples: 
 
 ```
-
 asVerify("auto_settings.sav")
 ```
 
 This will print out differences.
 
 ```
-
 asVerify("auto_settings.sav",0,"junk.sav")
 ```
 
@@ -479,8 +472,8 @@ Suppose we want to configure a set of three sscan records to perform one of many
 
 Here an example of what the user might see: 
 
-| ![](configMenu_small.adl.jpg) | ![](configMenu.adl.jpg) | ![](configMenu_more.adl.jpg) |
-|---|---|---|
+![](configMenu_small.adl.jpg) ![](configMenu.adl.jpg) ![](configMenu_more.adl.jpg)
+
 
 In __configMenu\_small.adl__, the menu of configurations is displayed by and selected from the *enum* PV, `$(P)$(CONFIG)Menu`, (e.g., `xxx:<font color="blue">scan1</font>Menu`). This display cannot cause a configuration to be written. When the menu is repopulated, or a new page is selected, MEDM will not automatically retrieve the new names for display by `$(P)$(CONFIG)Menu`. This must be done manually, by closing and reopening the display, which is what the "Refresh menu choices" button does.
 
@@ -569,8 +562,7 @@ save\_restore.c saves PV values in files on a file server according to preset ru
 
 auto\_settings.req, auto\_positions.req Sample request files save\_restoreStatus.db database containing records save\_restore uses to report status. infoExample.db database containing a record with info nodes specifying fields to be autosaved. SR\_test.db Test database for autosave and asVerify. configMenu.db, configMenu\*.req Support for managing/configuring a collection of PVs. ### asApp/op/adl *(also ../ui, ../edl, ../opi)*
 
-| ![](save_restoreStatus.adl.jpg) | ![](save_restoreStatus_more.adl.jpg) |
-|---|---|
+![](save_restoreStatus.adl.jpg)  ![](save_restoreStatus_more.adl.jpg)
 
 save\_restoreStatus\*.adl, save\_restoreStatusLegend.adl, save\_restoreStatus\_more.adl, save\_restoreStatus\_tiny.adl, SR\_X\_Status.adl MEDM displays of save\_restore status. configMenu\*.adl Support for managing/configuring a collection of PVs. 
 
