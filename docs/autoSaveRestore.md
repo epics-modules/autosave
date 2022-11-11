@@ -87,7 +87,6 @@ to iocxxxInclude.dbd.
 Create "request" files (e.g., auto\_settings.req, auto\_positions.req) specifying the PVs whose values you want to save and restore. The save files corresponding to these request files will have the ".req" suffix replaced by ".sav". Here's a sample request file: 
 
 ```
-
 	xxx:m1.VAL
 	xxx:m2.VAL
 ```
@@ -95,7 +94,6 @@ Create "request" files (e.g., auto\_settings.req, auto\_positions.req) specifyin
 Request files can also contain macro variables, whose values will be defined in the call that causes the request file to be processed. For example, the above request file could also be written as shown below, with the macro `P`defined by the command `create_monitor_set("auto_settings.req", 30,"P=xxx:")`:
 
 ```
-
 	$(P)m1.VAL
 	$(P)m2.VAL
 ```
@@ -103,14 +101,12 @@ Request files can also contain macro variables, whose values will be defined in 
 Request files can include other request files (nested includes are allowed) and macro substitution can be performed on the included files (using William Lupton's macro library), with the following syntax:
 
 ```
-
 	file <request_file> <macro-substitution_string>
 ```
 
 e.g., 
 
 ```
-
 	file motor_settings.req P=xxx:,M=m1
 ```
 
@@ -131,7 +127,6 @@ Beginning with version 4.3, autosave can generate request files from *info* node
 Specify one or more directories to be searched for request files, using one or more invocations of set\_requestfile\_path() For systems using `cdCommands`:
 
 ```
-
 	set_requestfile_path(startup, "")
 	set_requestfile_path(startup, "autosave")
 	set_requestfile_path(area_detector, "ADApp/Db")
@@ -141,7 +136,6 @@ Specify one or more directories to be searched for request files, using one or m
 For systems using `envPaths`:
 
 ```
-
 	set_requestfile_path("$(TOP)/iocBoot/$(IOC)", "")
 	set_requestfile_path("$(TOP)/iocBoot/$(IOC)", "autosave")
 	set_requestfile_path("$(AREA_DETECTOR)", "ADApp/Db")
@@ -153,7 +147,6 @@ For systems using `envPaths`:
 Specify the NFS host from which save files will be read at restore time, and to which they will be written at save time, by calling the function 
 
 ```
-
 	save_restoreSet_NFSHost("oxygen", "164.54.49.4")
 ```
 
@@ -182,7 +175,6 @@ Give the IOC write permission to the directory in which the save files are to be
 Specify which save files are to be restored before record initialization (pass 0) and which are to be restored after record initialization (pass 1), using the commands set\_pass&lt;N&gt;\_restoreFile(), as in this example: 
 
 ```
-
 	set_pass0_restoreFile("auto_settings.sav", "P=xxx:")
 	set_pass1_restoreFile("auto_settings.sav", "P=xxx:")
 ```
@@ -205,12 +197,13 @@ Notes on restore passes:
 
 #### 9. Load initHook routine (required for boot-time restore)
 
-Load a copy of initHooks that calls reboot\_restore() to restore saved PV values. The copy of initHooks included in this distribution is recommended. This will happen automatically if the ioc's executable is built as described above. #### 10. Select save-file options (optional, recommended)
+Load a copy of initHooks that calls reboot\_restore() to restore saved PV values. The copy of initHooks included in this distribution is recommended. This will happen automatically if the ioc's executable is built as described above. 
+
+#### 10. Select save-file options (optional, recommended)
 
 - Tell save\_restore to writed dated backup files. At boot time, the restore software writes a backup copy of the ".sav" file from which it restored PV's. This file can either be named xxx.sav.bu, and be rewritten every reboot, or be named xxx.sav\_YYMMDD-HHMMSS, where "YY..." is a date. Dated backups are not overwritten. If you want dated backup files, put the following line in your st.cmd file before the call to iocInit(): 
 
-    ```
-    
+    ``` 
     	save_restoreSet_DatedBackupFiles(1)
     ```
     
@@ -218,7 +211,6 @@ Load a copy of initHooks that calls reboot\_restore() to restore saved PV values
 - Tell save\_restore to save sequence files. The commands: 
 
     ```
-    
     	save_restoreSet_NumSeqFiles(3)
     	save_restoreSet_SeqPeriodInSeconds(600)
     ```
@@ -227,19 +219,16 @@ Load a copy of initHooks that calls reboot\_restore() to restore saved PV values
 - Specify the time delay between a failed .sav-file write and the retry of that write. The default delay is 60 seconds. If list-PV's change during the delay, the new values will be written. 
 
     ```
-    
     	save_restoreSet_RetrySeconds(60)
     ```
 - Specify whether autosave should periodically retry connecting to PVs whose initial connection attempt failed. Currently, the connection-retry interval is hard-wired at 60 seconds. 
 
     ```
-    
     	save_restoreSet_CAReconnect(1)
     ```
 - Specify the time interval in seconds between forced save-file writes. (-1 means forever). This is intended to get save files written even if the normal trigger mechanism is broken. 
 
-    ```
-    
+    ``` 
     	save_restoreSet_CallbackTimeout(-1)
     ```
 
@@ -248,7 +237,6 @@ Load a copy of initHooks that calls reboot\_restore() to restore saved PV values
 Invoke the "save" part of this software as part of the EPICS startup sequence, by calling create\_XXX\_set() — e.g., adding lines of the form 
 
 ```
-
 	create_monitor_set("auto_positions.req", 5, "P=xxx:")
 	create_monitor_set("auto_settings.req", 30, "P=xxx:")
 ```
@@ -268,7 +256,6 @@ Note that in versions prior to 2.7, `create_monitor_set()` used an argument of t
 If your IOC takes a really long time to boot, it's possible the PVs you want to save will not have the correct values when the save\_restore task first looks at them. (If you are restoring lots of long arrays, this is even more likely.) Under vxWorks, you can avoid this by putting a
 
 ```
-
 	taskDelay(<number_of_60_Hz_clock_ticks>)
 ```
 
@@ -283,7 +270,6 @@ autosaveBuild (automatic request-file generation)
  Note: this facility requires an EPICS base version higher than 3.14.12.5, or a patch to an earlier version of EPICS base 3.14. To enable the code in autosave, you must edit asApp/src/Makefile, and uncomment the line
 
 ```
-
 #USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
 ```
 
@@ -323,8 +309,7 @@ While automated building is enabled, autosave will generate request-file names a
 
 - You can specify more than one request-file suffix by making multiple calls to `autosaveBuild()`: 
 
-    ```
-    
+    ``` 
     autosaveBuild("built_settings.req", "_settings.req", 1)
     autosaveBuild("built_settings.req", ".req", 1)
     ```
@@ -333,14 +318,12 @@ While automated building is enabled, autosave will generate request-file names a
 - You can disable file/suffix combinations separately:
     
     ```
-    
     autosaveBuild("built_settings.req", "_settings.req", 0)
     ```
     
     disables searching for request files ending in "\_settings.req" for `built_settings.req`. 
     
     ```
-    
     autosaveBuild("built_settings.req", "*", 0)
     ```
     
@@ -348,7 +331,6 @@ While automated building is enabled, autosave will generate request-file names a
 - You can also add a line to `built_settings.req` yourself:
     
     ```
-    
     appendToFile("built_settings.req", '$(P)userStringSeqEnable')
     ```
     
@@ -480,21 +462,24 @@ Suppose we want to configure a set of three sscan records to perform one of many
 >     `create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>,CONFIGMENU=1")`
 >     
 >     > This goes after `iocInit`, and is required only if you intend for scan1 config files to be written at run time, or if you need to have macro substitution performed on a scan1 config file to be loaded. The macro `CONFIGMENU` tells autosave to refrain from writing backup (.savB) and sequence (.sav1, .sav2, etc.) files for this save set.
-> 3. Add an MEDM related-display entry to bring up a configMenu\*.adl display. ```
->     
+> 3. Add an MEDM related-display entry to bring up a configMenu\*.adl display. 
+>
+>     ```
 >     label="scan1Menu"
 >     name="configMenu.adl"
 >     args="P=xxx:,CONFIG=<font color="blue">scan1</font>"
 >     ```
-> 4. If all of the PVs in a configuration are being autosaved, and you want the current configuration name and description, and the `enableSave`selection also to be autosaved, add the following line to auto\_settings.req: ```
->      file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font>
+> 4. If all of the PVs in a configuration are being autosaved, and you want the current configuration name and description, and the `enableSave`selection also to be autosaved, add the following line to auto\_settings.req: 
+>
+>     ```
+>     file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font>
 >     ```
 >     
 >     > I'm not sure this is really a great idea, because the autosaved values aren't guaranteed to be the same as the values in the .cfg file. (The user might have loaded a .cfg file and then made some changes, for example.) But it's disconcerting for a user to reboot the ioc and not have everything come back just as it was, so I normally do this.
 
 Here an example of what the user might see: 
 
-| ![](configMenu_small.adl.jpg)   configMenu\_small.adl \| ![](configMenu.adl.jpg)   configMenu.adl \\| ![](configMenu_more.adl.jpg)   configMenu\_more.adl |
+| ![](configMenu_small.adl.jpg) | ![](configMenu.adl.jpg) | ![](configMenu_more.adl.jpg) |
 |---|---|---|
 
 In __configMenu\_small.adl__, the menu of configurations is displayed by and selected from the *enum* PV, `$(P)$(CONFIG)Menu`, (e.g., `xxx:<font color="blue">scan1</font>Menu`). This display cannot cause a configuration to be written. When the menu is repopulated, or a new page is selected, MEDM will not automatically retrieve the new names for display by `$(P)$(CONFIG)Menu`. This must be done manually, by closing and reopening the display, which is what the "Refresh menu choices" button does.
@@ -509,8 +494,9 @@ __configMenu\_more.adl__ also shows description PVs. When the menu is populated 
 
 1. Configuration names in the display, configMenu.adl, will correspond with autosave ".cfg" files whose names are similar, but with non-alphanumeric characters replaced by '\_' (e.g., "scan1\_align\_entrance\_slit.cfg"). A ".cfg" file is exactly like a ".sav" file; the ".cfg" extension is purely to make them easier to find and distinguish from ".sav" files. > You don't want to make two configurations whose names differ only in non-alphanumeric characters; configMenu will gleefully treat them as the same configuration.
 2. configMenu\_small.adl has a problem when the menu of config files changes: MEDM doesn't monitor the menu (enum) strings, so the display must be closed and reopened when they change. That's what the "Refresh menu choices" button is for. (Channel access clients that specify the event-type flag `DBE_PROPERTY` when they subscribe to an enum PV will be notified when the enum strings change.)
-3. Beginning with R5-7, configMenu can save/restore all kinds of PVs from/to other IOCs. If you use configMenu for remote PVs, you should tell autosave to retry connections periodically, by including the following line in save\_restore.cmd: ```
-    
+3. Beginning with R5-7, configMenu can save/restore all kinds of PVs from/to other IOCs. If you use configMenu for remote PVs, you should tell autosave to retry connections periodically, by including the following line in save\_restore.cmd: 
+
+    ```
     save_restoreSet_CAReconnect(1)
     ```
 4. When configMenu overwrites an existing .cfg file, it makes a backup copy of the current version, named *filename*\_YYMMDD-HHMMSS. For example: scan1\_blank.cfg\_130401-140546 was written at 2:05:46 PM on April 1, 2013.
@@ -520,7 +506,6 @@ __configMenu\_more.adl__ also shows description PVs. When the menu is populated 
 6. configMenu needs to get a directory listing to search the autosave directory for .cfg files. At APS, we've encountered a problem using nfs3Drv with vxWorks 5.5.2 to talk to a linux-hosted file server. The source and nature of the problem are not thoroughly understood, but one symptom is that directory listings don't work. For example, typing "ls" at the ioc's console prompt yields the following error message: 
 
     ```
-    
     error reading dir <mydirectoryname> errno: 0x300016
     ```
     
@@ -567,7 +552,6 @@ xxx:SR_ushort_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
 Save files are not intended to be edited manually. If you, nevertheless, do edit a save file, you must end it with the text 
 
 ```
-
 <END>
 ```
 
@@ -585,7 +569,7 @@ save\_restore.c saves PV values in files on a file server according to preset ru
 
 auto\_settings.req, auto\_positions.req Sample request files save\_restoreStatus.db database containing records save\_restore uses to report status. infoExample.db database containing a record with info nodes specifying fields to be autosaved. SR\_test.db Test database for autosave and asVerify. configMenu.db, configMenu\*.req Support for managing/configuring a collection of PVs. ### asApp/op/adl *(also ../ui, ../edl, ../opi)*
 
-| ![](save_restoreStatus.adl.jpg)   save\_restoreStatus.adl \| ![](save_restoreStatus_more.adl.jpg)   save\_restoreStatus\_more.adl |
+| ![](save_restoreStatus.adl.jpg) | ![](save_restoreStatus_more.adl.jpg) |
 |---|---|
 
 save\_restoreStatus\*.adl, save\_restoreStatusLegend.adl, save\_restoreStatus\_more.adl, save\_restoreStatus\_tiny.adl, SR\_X\_Status.adl MEDM displays of save\_restore status. configMenu\*.adl Support for managing/configuring a collection of PVs. 
@@ -620,7 +604,6 @@ This function can be called at any time after iocInit.
 `int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puser)`(version for c-code clients) This function does the same job as the iocsh version above. If `macrostring` is not NULL, the macro definitions it contains will be applied to the contents of `filename`. If `callbackFunction` is not NULL, it specifies a function of type `void f(int status, void *puser)` that will be called when the save operation is done. This is part of the implementation of *configMenu*. `char *getMacroString(char *request_file)`If `create_*_set()` was ever called for `request_file`, then the macro-substitution string supplied in that call was recorded by autosave, and can be recovered with this function. This is part of the implementation of *configMenu*, and it allows .cfg files to include macros. `void makeAutosaveFiles(void)`Search through the EPICS database (that is, all EPICS records loaded into an IOC) for *info* nodes named 'autosaveFields' and 'autosaveFields\_pass0'; construct lists of PV names from the associated info values, and write the PV names to the files 'info\_settings.req' and 'info\_positions.req', respectively. An info node, in an EPICS database, is similar to a field specification, but it has the word `info` instead of `field`; and it has an arbitrary name, instead of the name of a field in the record. Here's an EPICS database containing a single record with two info nodes:
 
 ```
-
 record(ao, "$(P)test1") {
   field(DTYP, "Soft Channel")
   <font color="blue">info(autosaveFields, "PREC EGU DESC")
@@ -631,7 +614,6 @@ record(ao, "$(P)test1") {
 From this information, `makeAutosaveFiles()` will write the following two files:
 
 ```
-
 <b><font color="blue">info_settings.req</font></b>
 $(P)test1.PREC
 $(P)test1.EGU
@@ -790,11 +772,8 @@ create_monitor_set("info_settings.req", 30, "P=xxx:")
 .
 ```
 
----------- end excerpt from st.cmd ---------------------- ```
+---------- end excerpt from st.cmd ----------------------
 
-
-
-```
 
 - - - - - -
 
