@@ -27,8 +27,6 @@ Table of Contents
 Overview
 --------
 
-
-
 Autosave automatically saves the values of EPICS process variables (PVs) to files on a server, and restores those values when the IOC (Input-Output Controller — the business end of EPICS) is rebooted. The original author is Bob Dalesio; I made some improvements; Frank Lenkszus made some more improvements, which I folded into the version I've been maintaining. A bunch of people contributed to getting the software running on PPC hardware, including Ron Sluiter, Andrew Johnson, and Pete Jemian (APS), Markus Janousch and David Maden (SLS), and I'm not sure who else. Zheqiao Geng (SLAC) extended the NFS-mount management to RTEMS, and made other improvements, such as connecting to PVs that weren't live when autosave was initialized. I folded those changes back into a version that preserved the previous API. Michael Davidsaver (BNL) extended support for info nodes to nodes of arbitrary length. Lots of other EPICS developers and users contributed by reporting problems and suggesting solutions. Autosave is a two-part operation: run-time save, and boot-time restore. The run-time part (the save\_restore task or thread) is started by commands in the IOC startup file, and persists while the IOC is running. Its primary job is to save PV values to files on a server, but it also supports manual restore and other management operations. The boot-time part (dbrestore.c) is invoked during iocInit, via an EPICS initHook. It restores PV values from files written by the run-time part, and does not persist after iocInit() returns.
 
 In addition to the autosave software, the autosave module contains a client program, *asVerify*, to compare written autosave files with current PV values. This program can also write an autosave file from which PV values can be restored. Because one use of asVerify is to retrieve PV values from an IOC that is having trouble (the save\_restore task has crashed, for example), asVerify connects with only one PV at a time. This makes asVerify rather slow. In one trial, it took two minutes to verify a .sav file containing 5000 PVs.
@@ -38,7 +36,6 @@ Autosave also contains a facility, called *configMenu*, for creating, saving, fi
 Autosave also contains a facility, called *autosaveBuild*, to generate autosave-request files as part of the operation of the EPICS functions dbLoadRecords() and dbLoadTemplate(). This facility requires EPICS 3.14.12.5 or later, or an earlier version of 3.14 with a patch. <a name="Important nuances"></a>
 
 - - - - - -
-
 
 Important nuances
 -----------------
@@ -53,38 +50,37 @@ Important nuances
 - You can save PVs without also restoring them, and restore PVs without also saving them, but you can't make these choices for individual PVs, only for entire files of PVs.
 - You can enable and disable automated saves for a user specified time. (If the user neglects to re-enable saving, you can arrange for the enable to happen after a specified time.) Manual saves (notably, configMenu) are not disabled when automated saves are disabled. (This is controlled by PVs. See the save\_restore display files.)
 
-
 How to use autosave
 -------------------
 
-This software can be used in many different ways. I'll describe what you have to do to use it as it's commonly used at APS beamlines to save PV values periodically, and restore them on reboot. A complete example of how autosave is used at APS can be found in the synApps xxx module. The relevant files in that module are the following: xxx/configure/RELEASE look for "AUTOSAVE" xxx/xxxApp/src/Makefile look for "autosave" and "asSupport.dbd" xxx/iocBoot/iocvxWorks/save\_restore.cmd the whole file xxx/iocBoot/iocvxWorks/auto\_positions.req the whole file xxx/iocBoot/iocvxWorks/auto\_settings.req the whole file xxx/iocBoot/iocvxWorks/st.cmd look for `save_restore.cmd` and `create_monitor_set`. xxx/iocBoot/iocvxWorks/autosave a directory to hold autosave .sav files 
-Here's a step-by-step program for deploying autosave. Some of the steps are optional: 
+This software can be used in many different ways. I'll describe what you have to do to use it as it's commonly used at APS beamlines to save PV values periodically, and restore them on reboot. A complete example of how autosave is used at APS can be found in the synApps xxx module. The relevant files in that module are the following: xxx/configure/RELEASE look for "AUTOSAVE" xxx/xxxApp/src/Makefile look for "autosave" and "asSupport.dbd" xxx/iocBoot/iocvxWorks/save\_restore.cmd the whole file xxx/iocBoot/iocvxWorks/auto\_positions.req the whole file xxx/iocBoot/iocvxWorks/auto\_settings.req the whole file xxx/iocBoot/iocvxWorks/st.cmd look for `save_restore.cmd` and `create_monitor_set`. xxx/iocBoot/iocvxWorks/autosave a directory to hold autosave .sav files
+Here's a step-by-step program for deploying autosave. Some of the steps are optional:
 
 #### 1. Build (required)
 
-Build the module and include the resulting library, libautosave.a, and database-definition file, asSupport.dbd, in an IOC's build. For example, add 
+Build the module and include the resulting library, libautosave.a, and database-definition file, asSupport.dbd, in an IOC's build. For example, add
 
 ```
 	AUTOSAVE=<path to the autosave module>
 ```
 
-to xxx/configure/RELEASE, add 
+to xxx/configure/RELEASE, add
 
 ```
 	xxx_LIBS += autosave
 ```
 
-to xxxApp/src/Makefile, and add 
+to xxxApp/src/Makefile, and add
 
 ```
 	include "asSupport.dbd"
 ```
 
-to iocxxxInclude.dbd. 
+to iocxxxInclude.dbd.
 
 #### 2. Write request files (optional, though this is the intended and most common use)
 
-Create "request" files (e.g., auto\_settings.req, auto\_positions.req) specifying the PVs whose values you want to save and restore. The save files corresponding to these request files will have the ".req" suffix replaced by ".sav". Here's a sample request file: 
+Create "request" files (e.g., auto\_settings.req, auto\_positions.req) specifying the PVs whose values you want to save and restore. The save files corresponding to these request files will have the ".req" suffix replaced by ".sav". Here's a sample request file:
 
 ```
 	xxx:m1.VAL
@@ -104,7 +100,7 @@ Request files can include other request files (nested includes are allowed) and 
 	file <request_file> <macro-substitution_string>
 ```
 
-e.g., 
+e.g.,
 
 ```
 	file motor_settings.req P=xxx:,M=m1
@@ -158,7 +154,7 @@ Use NFS, preferably as described above, or by including an `nfsMount()` command 
 
 #### 6. Set save/restore file path (optional, though this is the intended and most common use)
 
-Specify the directory in which you want .sav files to be written, by calling the function 
+Specify the directory in which you want .sav files to be written, by calling the function
 
 ```
  set_savefile_path("/full/path") 
@@ -172,7 +168,7 @@ Give the IOC write permission to the directory in which the save files are to be
 
 #### 8. Specify restore files (optional, though this is the intended and most common use)
 
-Specify which save files are to be restored before record initialization (pass 0) and which are to be restored after record initialization (pass 1), using the commands set\_pass&lt;N&gt;\_restoreFile(), as in this example: 
+Specify which save files are to be restored before record initialization (pass 0) and which are to be restored after record initialization (pass 1), using the commands set\_pass&lt;N&gt;\_restoreFile(), as in this example:
 
 ```
 	set_pass0_restoreFile("auto_settings.sav", "P=xxx:")
@@ -197,18 +193,18 @@ Notes on restore passes:
 
 #### 9. Load initHook routine (required for boot-time restore)
 
-Load a copy of initHooks that calls reboot\_restore() to restore saved PV values. The copy of initHooks included in this distribution is recommended. This will happen automatically if the ioc's executable is built as described above. 
+Load a copy of initHooks that calls reboot\_restore() to restore saved PV values. The copy of initHooks included in this distribution is recommended. This will happen automatically if the ioc's executable is built as described above.
 
 #### 10. Select save-file options (optional, recommended)
 
-- Tell save\_restore to writed dated backup files. At boot time, the restore software writes a backup copy of the ".sav" file from which it restored PV's. This file can either be named xxx.sav.bu, and be rewritten every reboot, or be named xxx.sav\_YYMMDD-HHMMSS, where "YY..." is a date. Dated backups are not overwritten. If you want dated backup files, put the following line in your st.cmd file before the call to iocInit(): 
+- Tell save\_restore to writed dated backup files. At boot time, the restore software writes a backup copy of the ".sav" file from which it restored PV's. This file can either be named xxx.sav.bu, and be rewritten every reboot, or be named xxx.sav\_YYMMDD-HHMMSS, where "YY..." is a date. Dated backups are not overwritten. If you want dated backup files, put the following line in your st.cmd file before the call to iocInit():
 
     ``` 
     	save_restoreSet_DatedBackupFiles(1)
     ```
     
     Note: If a save file is restored in both pass 0 and pass 1, the boot-backup file will be written only during pass 0.
-- Tell save\_restore to save sequence files. The commands: 
+- Tell save\_restore to save sequence files. The commands:
 
     ```
     	save_restoreSet_NumSeqFiles(3)
@@ -216,12 +212,12 @@ Load a copy of initHooks that calls reboot\_restore() to restore saved PV values
     ```
     
     will cause save\_restore to maintain three copies of each .sav file, at ten-minute intervals. Note: if autosave fails to write the .sav file, it will stop making sequence copies until it again succeeds.
-- Specify the time delay between a failed .sav-file write and the retry of that write. The default delay is 60 seconds. If list-PV's change during the delay, the new values will be written. 
+- Specify the time delay between a failed .sav-file write and the retry of that write. The default delay is 60 seconds. If list-PV's change during the delay, the new values will be written.
 
     ```
     	save_restoreSet_RetrySeconds(60)
     ```
-- Specify whether autosave should periodically retry connecting to PVs whose initial connection attempt failed. Currently, the connection-retry interval is hard-wired at 60 seconds. 
+- Specify whether autosave should periodically retry connecting to PVs whose initial connection attempt failed. Currently, the connection-retry interval is hard-wired at 60 seconds.
 
     ```
     	save_restoreSet_CAReconnect(1)
@@ -234,7 +230,7 @@ Load a copy of initHooks that calls reboot\_restore() to restore saved PV values
 
 #### 11. Start the save task (required to save files)
 
-Invoke the "save" part of this software as part of the EPICS startup sequence, by calling create\_XXX\_set() — e.g., adding lines of the form 
+Invoke the "save" part of this software as part of the EPICS startup sequence, by calling create\_XXX\_set() — e.g., adding lines of the form
 
 ```
 	create_monitor_set("auto_positions.req", 5, "P=xxx:")
@@ -261,11 +257,10 @@ If your IOC takes a really long time to boot, it's possible the PVs you want to 
 
 before `create_monitor_set()`.
 
-- - - - -
+- - - - - -
 
 autosaveBuild (automatic request-file generation)
 -------------------------------------------------
-
 
  Note: this facility requires an EPICS base version higher than 3.14.12.5, or a patch to an earlier version of EPICS base 3.14. To enable the code in autosave, you must edit asApp/src/Makefile, and uncomment the line
 
@@ -440,7 +435,7 @@ configMenu
 Suppose we want to configure a set of three sscan records to perform one of many different types of scans. Here are the steps needed to implement a menu of scan types, and to give the user a GUI display for creating scan types and loading them. (In the following, scan1 is the name of this instance of configMenu. The files it loads and saves will be named "scan1\_&lt;*config Name*&gt;.cfg".)
 
 > 1. Create an autosave request file, which I'll call "scan1Menu.req", with the following content: ```
->     
+>
 >     file configMenu.req P=$(P),CONFIG=$(CONFIG)
 >     file scan_settings.req P=$(P),S=scan2
 >     file scan_settings.req P=$(P),S=scan1
@@ -449,11 +444,11 @@ Suppose we want to configure a set of three sscan records to perform one of many
 >     
 >     > This is required only if scan1 config files are to be written at run time.
 > 2. Add the following lines to `st.cmd`: `dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=xxx:,CONFIG=<font color="blue">scan1</font>")`
->     
+>
 >     > This goes before `iocInit`. You can disable the saving of scan1 config files by specifying the macro `ENABLE_SAVE=0`.
->     
+>
 >     `create_manual_set("<font color="blue">scan1</font>Menu.req","P=xxx:,CONFIG=<font color="blue">scan1</font>,CONFIGMENU=1")`
->     
+>
 >     > This goes after `iocInit`, and is required only if you intend for scan1 config files to be written at run time, or if you need to have macro substitution performed on a scan1 config file to be loaded. The macro `CONFIGMENU` tells autosave to refrain from writing backup (.savB) and sequence (.sav1, .sav2, etc.) files for this save set.
 > 3. Add an MEDM related-display entry to bring up a configMenu\*.adl display. 
 >
@@ -467,13 +462,12 @@ Suppose we want to configure a set of three sscan records to perform one of many
 >     ```
 >     file configMenu_settings.req P=$(P),CONFIG=<font color="blue">scan1</font>
 >     ```
->     
+>
 >     > I'm not sure this is really a great idea, because the autosaved values aren't guaranteed to be the same as the values in the .cfg file. (The user might have loaded a .cfg file and then made some changes, for example.) But it's disconcerting for a user to reboot the ioc and not have everything come back just as it was, so I normally do this.
 
 Here an example of what the user might see: 
 
 ![](configMenu_small.adl.jpg) ![](configMenu.adl.jpg) ![](configMenu_more.adl.jpg)
-
 
 In __configMenu\_small.adl__, the menu of configurations is displayed by and selected from the *enum* PV, `$(P)$(CONFIG)Menu`, (e.g., `xxx:<font color="blue">scan1</font>Menu`). This display cannot cause a configuration to be written. When the menu is repopulated, or a new page is selected, MEDM will not automatically retrieve the new names for display by `$(P)$(CONFIG)Menu`. This must be done manually, by closing and reopening the display, which is what the "Refresh menu choices" button does.
 
@@ -542,7 +536,7 @@ xxx:SR_ushort_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
 
 ```
 
-Save files are not intended to be edited manually. If you, nevertheless, do edit a save file, you must end it with the text 
+Save files are not intended to be edited manually. If you, nevertheless, do edit a save file, you must end it with the text
 
 ```
 <END>
@@ -555,7 +549,6 @@ followed by one or two arbitrary characters (normally '\\n' or '\\r\\n'). If the
 Module contents
 ---------------
 
-
 ### asApp/src
 
 save\_restore.c saves PV values in files on a file server according to preset rules. dbrestore.c restore PV values at boot time, using dbStaticLib initHooks.c call restore routines at the correct time during boot. fGetDateStr.c Frank Lenkszus' date-string routines save\_restore.h, fGetDateStr.h, configMenuClient.h headers verify.c compare an autosave save file with current values of PVs. Used by asVeryify and configMenu. asVerify.c Client-side tool to compare autosaved file with current PV values. Can also write an autosave file. configMenuSub.c aSub routines for use by the configMenu database. ### asApp/Db
@@ -564,7 +557,7 @@ auto\_settings.req, auto\_positions.req Sample request files save\_restoreStatus
 
 ![](save_restoreStatus.adl.jpg)  ![](save_restoreStatus_more.adl.jpg)
 
-save\_restoreStatus\*.adl, save\_restoreStatusLegend.adl, save\_restoreStatus\_more.adl, save\_restoreStatus\_tiny.adl, SR\_X\_Status.adl MEDM displays of save\_restore status. configMenu\*.adl Support for managing/configuring a collection of PVs. 
+save\_restoreStatus\*.adl, save\_restoreStatusLegend.adl, save\_restoreStatus\_more.adl, save\_restoreStatus\_tiny.adl, SR\_X\_Status.adl MEDM displays of save\_restore status. configMenu\*.adl Support for managing/configuring a collection of PVs.
 
 - - - - - -
 
@@ -681,7 +674,7 @@ See also:
 Example of use
 --------------
 
----------- begin excerpt from st.cmd ---------------------- 
+---------- begin excerpt from st.cmd ----------------------
 
 ```
 
@@ -786,8 +779,7 @@ create_monitor_set("info_settings.req", 30, "P=xxx:")
 
 ---------- end excerpt from st.cmd ----------------------
 
-
 - - - - - -
 
- Suggestions and Comments to:   
- [Tim Mooney ](mailto:mooney@aps.anl.gov): (mooney@aps.anl.gov)
+ Suggestions and Comments to:
+ [Tim Mooney](mailto:mooney@aps.anl.gov): (mooney@aps.anl.gov)
