@@ -33,7 +33,7 @@ In addition to the autosave software, the autosave module contains a client prog
 
 Autosave also contains a facility, called *configMenu*, for creating, saving, finding, restoring, and verifying IOC configurations (that is, sets of PV values). configMenu is roughly comparable to the EPICS Backup and Restore Tool, BURT, but it uses autosave files, and is driven by EPICS PVs, so it can be used manually, by software clients, and by other IOC code.
 
-Autosave also contains a facility, called *autosaveBuild*, to generate autosave-request files as part of the operation of the EPICS functions dbLoadRecords() and dbLoadTemplate(). This facility requires EPICS 3.14.12.5 or later, or an earlier version of 3.14 with a patch. <a name="Important nuances"></a>
+Autosave also contains a facility, called *autosaveBuild*, to generate autosave-request files as part of the operation of the EPICS functions dbLoadRecords() and dbLoadTemplate(). This facility requires EPICS 3.14.12.5 or later, or an earlier version of 3.14 with a patch.
 
 - - - - - -
 
@@ -116,7 +116,7 @@ Beginning with version 4.3, autosave can generate request files from *info* node
 
  *Note: Beginning with synApps version 5.2.1, synApps contains software to generate autosave-request files from information contained in command and database files. See synApps/support/utils/makeAutosaveFiles.py.*
 
- Beginning with autosave version 5.5, autosave contains software to generate autosave-request files from dbLoadRecords() and dbLoadTemplate() calls. See [autosaveBuild](#autosaveBuild).
+ Beginning with autosave version 5.5, autosave contains software to generate autosave-request files from dbLoadRecords() and dbLoadTemplate() calls. See [autosaveBuild](#autosavebuild-automatic-request-file-generation).
 
 #### 3. Set request-file path (optional, recommended)
 
