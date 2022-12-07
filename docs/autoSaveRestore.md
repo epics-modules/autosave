@@ -571,25 +571,25 @@ save\_restoreStatus\*.adl, save\_restoreStatusLegend.adl, save\_restoreStatus\_m
 User-callable functions
 -----------------------
 
-`int asVerify(char *fileName, int verbose, char *restoreFileName)`Compare PV values in the IOC with values written in `filename` (which should be an autosave restore file, or at least look like one). If restoreFileName is not empty, write a new restore file. This function can be called at any time after iocInit.
+`int asVerify(char *fileName, int verbose, char *restoreFileName)` Compare PV values in the IOC with values written in `filename` (which should be an autosave restore file, or at least look like one). If restoreFileName is not empty, write a new restore file. This function can be called at any time after iocInit.
 
-`int create_manual_set(char *request_file, char *macrostring)`Create a save set for the request file. The save file will be written when the function `manual_save()` is called with the same request-file name.  See "Start the save task", above for information about the macro string.
-
-This function can be called at any time after iocInit.
-
-`int create_monitor_set(char *request_file, int period, char *macrostring)`Create a save set for the request file. The save file will be written every `period` seconds, if any PV in the save set was posted (changed value) since the last write.  See "Start the save task", above for information about the macro string.
+`int create_manual_set(char *request_file, char *macrostring)` Create a save set for the request file. The save file will be written when the function `manual_save()` is called with the same request-file name.  See "Start the save task", above for information about the macro string.
 
 This function can be called at any time after iocInit.
 
-`int create_periodic_set(char *request_file, int period, char *macrostring)`Create a save set for the request file. The save file will be written every `period` seconds.  See "Start the save task", above for information about the macro string.
+`int create_monitor_set(char *request_file, int period, char *macrostring)` Create a save set for the request file. The save file will be written every `period` seconds, if any PV in the save set was posted (changed value) since the last write.  See "Start the save task", above for information about the macro string.
 
 This function can be called at any time after iocInit.
 
-`int create_triggered_set(char *request_file, char *trigger_channel, char *macrostring)`Create a save set for the request file. The save file will be written whenever the PV specified by `trigger_channel` is posted. Normally this occurs when the PV's value changes.  See "Start the save task", above for information about the macro string.
+`int create_periodic_set(char *request_file, int period, char *macrostring)` Create a save set for the request file. The save file will be written every `period` seconds.  See "Start the save task", above for information about the macro string.
 
 This function can be called at any time after iocInit.
 
-`int fdbrestore(char *save_file)`If `save_file` refers to a save set that exists in memory, then PV's in the save set will be restored from values in memory. Otherwise, this functions restores the PV's in &lt;saveRestorePath&gt;/&lt;save\_file&gt; and creates a new backup file "&lt;saveRestorePath&gt;/&lt;save\_file&amp;gt.bu". The effect probably will not be the same as a boot-time restore, because caput() calls are used instead of static database access dbPutX() calls. Record processing will result from caput()'s to inherently process- passive fields. This function can be called at any time after one of the create\_\*\_set() functions have been called. If you want to call this function before creating any save sets, you can call create\_\*\_set() with an empty request-file name. Autosave will complain about this, but it won't think you're a bad person.
+`int create_triggered_set(char *request_file, char *trigger_channel, char *macrostring)` Create a save set for the request file. The save file will be written whenever the PV specified by `trigger_channel` is posted. Normally this occurs when the PV's value changes.  See "Start the save task", above for information about the macro string.
+
+This function can be called at any time after iocInit.
+
+`int fdbrestore(char *save_file)` If `save_file` refers to a save set that exists in memory, then PV's in the save set will be restored from values in memory. Otherwise, this functions restores the PV's in &lt;saveRestorePath&gt;/&lt;save\_file&gt; and creates a new backup file "&lt;saveRestorePath&gt;/&lt;save\_file&amp;gt.bu". The effect probably will not be the same as a boot-time restore, because caput() calls are used instead of static database access dbPutX() calls. Record processing will result from caput()'s to inherently process- passive fields. This function can be called at any time after one of the create\_\*\_set() functions have been called. If you want to call this function before creating any save sets, you can call create\_\*\_set() with an empty request-file name. Autosave will complain about this, but it won't think you're a bad person.
 
 `int fdbrestoreX(char *save_file)` (iocsh version) This function restores from the file &lt;saveRestorePath&gt;/&lt;save\_file&amp;gt, which can look just like a save file, but which needn't end with `<END>`. No backup file will be written. The effect probably will not be the same as a boot-time restore, because caput() calls are used instead of static database access dbPut\*() calls. Record processing will result from caput()'s to inherently process-passive fields. This function can be called at any time after one of the create\_\*\_set() functions have been called. If you want to call this function before creating any save sets, you can call create\_\*\_set() with an empty request-file name. Autosave will not hate you for doing this, though it will complain.
 
@@ -630,9 +630,9 @@ See also:
 
 `int manual_save(char *request_file)` (iocsh version) Cause current PV values for the request file to be saved. Any request file named in a create\_xxx\_set() command can be saved manually.
 
-`int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction,void *puser);` (version for c-code clients) Cause current PV values for the request file to be saved. Any request file named in a create\_xxx\_set() command can be saved manually. If `save_file` is not NULL and not empty, it specifies the name of the file that will be written. If `callbackFunction` is not NULL, it specifies a function of type `void f(int status, void *puser)` that will be called when the save operation is done. This is part of the implementation of *configMenu*. 
+`int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction,void *puser);` (version for c-code clients) Cause current PV values for the request file to be saved. Any request file named in a create\_xxx\_set() command can be saved manually. If `save_file` is not NULL and not empty, it specifies the name of the file that will be written. If `callbackFunction` is not NULL, it specifies a function of type `void f(int status, void *puser)` that will be called when the save operation is done. This is part of the implementation of *configMenu*.
 
-`int reboot_restore(char *save_file, initHookState init_state)` This should only be called from initHooks because it can only function correctly if called at particular times during iocInit. 
+`int reboot_restore(char *save_file, initHookState init_state)` This should only be called from initHooks because it can only function correctly if called at particular times during iocInit.
 
 `int reload_manual_set(char * request_file, char *macrostring)` This function allows you to change the PV's associated with a save set created by `create_manual_set()`. Note: Don't get too ambitious with the remove/reload functions. You have to wait for one to finish completely (the save\_restore task must get through its service loop) before executing another. If you call one before the previous function is completely finished, I don't know what will happen.
 
