@@ -11,16 +11,16 @@ autosaveRestore
 Table of Contents
 -----------------
 
-- [Overview](#Overview)
-- [Important nuances](<#Important nuances>)
-- [How to use autosave](<#How to use autosave>)
-- [autosaveBuild (automatic request-file generation)](#autosaveBuild)
-- [asVerify](#asVerify)
-- [configMenu](#configMenu)
-- [About save files](<#About save files>)
-- [Module contents](<#Module contents>)
-- [User-callable functions](<#User-callable functions>)
-- [Example of use](<#Example of use>)
+- [Overview](#overview)
+- [Important nuances](#important-nuances)
+- [How to use autosave](#how-to-use-autosave)
+- [autosaveBuild (automatic request-file generation)](#autosavebuild-automatic-request-file-generation)
+- [asVerify](#asverify)
+- [configMenu](#configmenu)
+- [About save files](#about-save-files)
+- [Module contents](#module-contents)
+- [User-callable functions](#user-callable-functions)
+- [Example of use](#example-of-use)
 
 - - - - - -
 
