@@ -1884,14 +1884,18 @@ STATIC int write_it(char *filename, struct chlist *plist)
 			strNcpy(value_string, pchannel->pArray, BUF_SIZE);
 			value_string[BUF_SIZE-1] = '\0';
 			n = epicsStrPrintEscaped(out_fd, value_string, strlen(value_string));
-			n = fprintf(out_fd, "\n");
+			if (n > 0 || !strlen(value_string)) {
+				n = fprintf(out_fd, "\n");
+			}
 		} else if (pchannel->curr_elements <= 1) {
 			/* treat as scalar */
 			if (pchannel->enum_val >= 0) {
 				n = fprintf(out_fd, "%d\n",pchannel->enum_val);
 			} else {
 				n = epicsStrPrintEscaped(out_fd, pchannel->value, strlen(pchannel->value));
-				n = fprintf(out_fd, "\n");
+				if (n > 0 || !strlen(pchannel->value)) {
+					n = fprintf(out_fd, "\n");
+				}
 			}
 		} else {
 			/* treat as array */
