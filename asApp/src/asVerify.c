@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
+#include <epicsGetopt.h>
 
 #include <ctype.h> /* isalpha */
 #include <math.h> /* fabs */
