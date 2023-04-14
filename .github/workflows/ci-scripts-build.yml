@@ -50,12 +50,6 @@ jobs:
             configuration: default
             base: "7.0"
             name: "Linux 7.0"
-
-          - os: ubuntu-20.04
-            cmp: gcc
-            configuration: default
-            base: "3.16"
-            name: "Linux 3.16"
             
           - os: ubuntu-20.04
             cmp: gcc
