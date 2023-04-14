@@ -181,7 +181,7 @@ If the first argument to set\_pass*n*\_restoreFile() is a string that doesn't be
 
 Beginning with autosave 5.4, if you specify a full path (a string that begins with '/'), autosave will not prepend anything to it. (Also, autosave will not write a restore-time backup of the file in this case.)
 
-To disable boot-time restore completely, delete or comment out all `set_pass<i>n</i>_restoreFile()` calls.
+To disable boot-time restore completely, delete or comment out all `set_pass*n*_restoreFile()` calls.
 
 Notes on restore passes:
 
