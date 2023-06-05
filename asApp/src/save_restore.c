@@ -3378,13 +3378,17 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 			for (pchannel = plist->pchan_list; pchannel !=0; pchannel = pchannel->pnext) {
 				if (pchannel->curr_elements <= 1) {
 					status = ca_put(DBR_STRING, pchannel->chid, pchannel->value);
-					if (status) printf("do_manual_restore:ca_put() to '%s'failed.\n", pchannel->name);
+					if (status!=ECA_NORMAL)
+						printf("do_manual_restore:ca_put() to '%s' failed with %lu.\n",
+							pchannel->name, status);
 				} else {
 					status = SR_put_array_values(pchannel->name, pchannel->pArray, pchannel->curr_elements);
-					if (status) printf("do_manual_restore:SR_put_array_values() to '%s'failed.\n", pchannel->name);
+					if (status!=ECA_NORMAL)
+						printf("do_manual_restore:SR_put_array_values() to '%s' failed with %lu.\n",
+							pchannel->name, status);
 				}
+				if (status!=ECA_NORMAL) num_errs++;
 			}
-			if (status) num_errs++;
 			if (ca_pend_io(1.0) != ECA_NORMAL) {
 				printf("save_restore:do_manual_restore: not all channels restored\n");
 			}
