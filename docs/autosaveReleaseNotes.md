@@ -8,6 +8,16 @@ nav_order: 3
 autosave Release Notes
 ======================
 
+### 5.11
+
+- Resource leak fixes
+- Proper restoration of long strings
+- Int64 Support Added
+- Proper handling of epicsStrPrintEscaped if it doesn't write anything
+- Added version flag (-v) to asVerify
+- Fixed incorrect error checking in fdbrestore
+
+
 ### 5.10.2
 
 - IOC shell files are now installed to the top level iocsh folder from the asApp/iocsh folder
