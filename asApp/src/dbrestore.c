@@ -1420,6 +1420,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
     char *fname, *falloc = NULL, field[MAX_FIELD_SIZE], realfield[MAX_FIELD_SIZE];
     FILE *out_fd;
     int searchRecord, flen;
+    int long_string = 0;
 
     if (!pdbbase) {
         errlogPrintf("autosave:makeAutosaveFileFromDbInfo: No Database Loaded\n");
@@ -1472,9 +1473,23 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
                         memcpy(field, pbegin, flen);
                         field[flen] = '\0';
                         strNcpy(realfield, field, MAX_FIELD_SIZE - 1);
-                        if (realfield[strlen(realfield) - 1] == '$') realfield[strlen(realfield) - 1] = '\0';
+                        if (realfield[strlen(realfield) - 1] == '$') {
+                            realfield[strlen(realfield) - 1] = '\0';
+                            long_string = 1;
+                        }
 
-                        if (dbFindField(pdbentry, realfield) == 0) {
+                        /*
+                         * To be clear: This checks that /if/ something is a long
+                         * string, then we have to match it against a valid field
+                         * type; see dbChannelCreate in dbChannel.c from EPICS
+                         * base.
+                         */
+                        if ((dbFindField(pdbentry, realfield) == 0) &&
+                            (!long_string ||
+                                (pdbentry->pflddes->field_type == DBF_STRING ||
+                                (pdbentry->pflddes->field_type >= DBF_INLINK &&
+                                 pdbentry->pflddes->field_type <= DBF_FWDLINK))))
+                        {
                             fprintf(out_fd, "%s.%s\n", dbGetRecordName(pdbentry), field);
                         } else {
                             printf("makeAutosaveFileFromDbInfo: %s.%s not found\n", dbGetRecordName(pdbentry), field);
