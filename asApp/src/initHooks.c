@@ -1,4 +1,4 @@
-/* initHooks.c	ioc initialization hooks */ 
+/* initHooks.c	ioc initialization hooks */
 /*
  *      Author:		Marty Kraimer
  *      Date:		06-01-91
@@ -32,15 +32,13 @@
  * .04  09-10-92	rcz	bug - moved call to setMasterTimeToSelf later
  *
  */
-
 
-#include	<stdio.h>
-#include	<initHooks.h>
-#include	<epicsPrint.h>
-#include	"save_restore.h"
-#include	<iocsh.h>
-#include	<epicsExport.h>
-
+#include <stdio.h>
+#include <initHooks.h>
+#include <epicsPrint.h>
+#include "save_restore.h"
+#include <iocsh.h>
+#include <epicsExport.h>
 
 /*
  * INITHOOKS
@@ -53,61 +51,47 @@
  * at certain defined points during IOC initialization */
 static void asInitHooks(initHookState state)
 {
-	struct restoreFileListItem *pLI;
+    struct restoreFileListItem *pLI;
 
-	switch (state) {
-	case initHookAtBeginning :
-	    break;
-	case initHookAfterCallbackInit :
-	    break;
-	case initHookAfterCaLinkInit :
-	    break;
-	case initHookAfterInitDrvSup :
-	    break;
-	case initHookAfterInitRecSup :
-	    break;
-	case initHookAfterInitDevSup :
+    switch (state) {
+        case initHookAtBeginning: break;
+        case initHookAfterCallbackInit: break;
+        case initHookAfterCaLinkInit: break;
+        case initHookAfterInitDrvSup: break;
+        case initHookAfterInitRecSup: break;
+        case initHookAfterInitDevSup:
 
-		/* restore fields needed in init_record() */
-		maybeInitRestoreFileLists();
-		pLI = (struct restoreFileListItem *) ellFirst(&pass0List);
-		while (pLI) {
-			reboot_restore(pLI->filename, state);
-			pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
-		}
-	    break;
+            /* restore fields needed in init_record() */
+            maybeInitRestoreFileLists();
+            pLI = (struct restoreFileListItem *)ellFirst(&pass0List);
+            while (pLI) {
+                reboot_restore(pLI->filename, state);
+                pLI = (struct restoreFileListItem *)ellNext(&(pLI->node));
+            }
+            break;
 
-	case initHookAfterInitDatabase :
-		/*
+        case initHookAfterInitDatabase:
+            /*
 		 * restore fields that init_record() would have overwritten with
 		 * info from the dol (desired output location).
-		 */ 
-		maybeInitRestoreFileLists();
-		pLI = (struct restoreFileListItem *) ellFirst(&pass1List);
-		while (pLI) {
-			reboot_restore(pLI->filename, state);
-			pLI = (struct restoreFileListItem *) ellNext(&(pLI->node));
-		}
-	    break;
-	case initHookAfterFinishDevSup :
-	    break;
-	case initHookAfterScanInit :
-	    break;
-	case initHookAfterInitialProcess :
-	    break;
-	case initHookAfterInterruptAccept :
-	    break;
-	case initHookAtEnd :
-	    break;
-	default:
-	    break;
-	}
-	return;
+		 */
+            maybeInitRestoreFileLists();
+            pLI = (struct restoreFileListItem *)ellFirst(&pass1List);
+            while (pLI) {
+                reboot_restore(pLI->filename, state);
+                pLI = (struct restoreFileListItem *)ellNext(&(pLI->node));
+            }
+            break;
+        case initHookAfterFinishDevSup: break;
+        case initHookAfterScanInit: break;
+        case initHookAfterInitialProcess: break;
+        case initHookAfterInterruptAccept: break;
+        case initHookAtEnd: break;
+        default: break;
+    }
+    return;
 }
 
-void asInitHooksRegister(void)
-{
-   initHookRegister(asInitHooks);
-}
+void asInitHooksRegister(void) { initHookRegister(asInitHooks); }
 
 epicsExportRegistrar(asInitHooksRegister);
