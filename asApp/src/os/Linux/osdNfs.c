@@ -29,7 +29,7 @@ int nfsMount(char *uidhost, char *path, char *mntpoint)
 
     /* check inputs */
     if (!uidhost || !path || !mntpoint) {
-        fprintf(stderr,"usage: nfsMount(""[uid.gid@]host"",""path"",""mountpoint"")\n");        
+        fprintf(stderr,"usage: nfsMount(\"[uid.gid@]host\",\"path\",\"mountpoint\")\n");        
         return -1;
     }
 
