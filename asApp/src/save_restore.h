@@ -116,8 +116,9 @@ extern float mySafeDoubleToFloat(double d);
 	int ii;								\
 	char *dd=dest;						\
 	const char *ss=src;					\
-	for (ii=0; *ss && ii < N-1; ii++)	\
-		*dd++ = *ss++;					\
+	if (dd && ss) \
+	  for (ii=0; *ss && ii < N-1; ii++)	\
+		  *dd++ = *ss++;					\
 	*dd = '\0';							\
 }
 
