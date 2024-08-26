@@ -116,7 +116,7 @@ extern int appendToFile(const char *filename, const char *line);
 extern float mySafeDoubleToFloat(double d);
 
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
-#define strNcpy(dest, src, N)
+#define strNcpy(dest, src, N)                                \
     {                                                        \
         int ii;                                              \
         char *dd = dest;                                     \
