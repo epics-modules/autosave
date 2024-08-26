@@ -12,8 +12,9 @@
 /**
  * Global variables
  */
-int save_restoreNFSOK    = 1;  /* for RTEMS, NFS has been mounted before autosave starts */
-int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
+int save_restoreNFSOK = 1; /* for RTEMS, NFS has been mounted before autosave starts */
+int save_restoreIoErrors =
+    0; /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
 extern volatile int save_restoreDebug;
 
 /**
@@ -37,14 +38,14 @@ extern volatile int save_restoreDebug;
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     /* check the input parameters */
-    if (!uidhost || !uidhost[0])   return NFS_INVALID_HOST;
-    if (!path || !path[0])         return NFS_INVALID_PATH;
+    if (!uidhost || !uidhost[0]) return NFS_INVALID_HOST;
+    if (!path || !path[0]) return NFS_INVALID_PATH;
     if (!mntpoint || !mntpoint[0]) return NFS_INVALID_MNTPOINT;
 
     /* mount the file system */
-    if (nfsMount(uidhost, path, mntpoint) == OK) {     /* 0 - succeed; -1 - failed */
-        save_restoreNFSOK    = 1;
-        save_restoreIoErrors = 0;                      /* clean the counter */
+    if (nfsMount(uidhost, path, mntpoint) == OK) { /* 0 - succeed; -1 - failed */
+        save_restoreNFSOK = 1;
+        save_restoreIoErrors = 0; /* clean the counter */
         return NFS_SUCCESS;
     } else {
         save_restoreNFSOK = 0;
@@ -60,20 +61,17 @@ int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
  *
  * Output:
  *    See the definition of NFS operation error codes
- */ 
+ */
 int dismountFileSystem(char *mntpoint)
 {
     /* check the input parameters */
     if (!mntpoint || !mntpoint[0]) return NFS_INVALID_MNTPOINT;
 
     /* unmount the file system */
-    if (unmount(mntpoint) == OK) {                     /* 0 - succeed; -1 - failed */
-        save_restoreNFSOK    = 0;
+    if (unmount(mntpoint) == OK) { /* 0 - succeed; -1 - failed */
+        save_restoreNFSOK = 0;
         return NFS_SUCCESS;
     } else {
         return NFS_FAILURE;
     }
 }
-
-
-

@@ -8,13 +8,14 @@
  * Description: Realize the basic function for NFS mount and dismount
  ***********************************************/
 #include "osdNfs.h"
-extern char saveRestoreFilePath[];              /* path to save files */
+extern char saveRestoreFilePath[]; /* path to save files */
 
 /**
  * Global variables
  */
-int save_restoreNFSOK    = 0;  /* for vxWorks, NFS has not been mounted before autosave starts */
-int save_restoreIoErrors = 0;  /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
+int save_restoreNFSOK = 0; /* for vxWorks, NFS has not been mounted before autosave starts */
+int save_restoreIoErrors =
+    0; /* for accumulate the IO error numbers, when the number larger than threshold, remount NFS */
 extern volatile int save_restoreDebug;
 
 /**
@@ -32,15 +33,15 @@ extern volatile int save_restoreDebug;
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     /* check the input parameters */
-    if (!uidhost || !uidhost[0])   return ERROR;
-    if (!path || !path[0])         return ERROR;
+    if (!uidhost || !uidhost[0]) return ERROR;
+    if (!path || !path[0]) return ERROR;
     if (!mntpoint || !mntpoint[0]) return ERROR;
 
     /* mount the file system */
     if (hostGetByName(uidhost) == ERROR) (void)hostAdd(uidhost, addr);
     if (nfsMount(uidhost, path, mntpoint) == OK) {
-        save_restoreNFSOK    = 1;
-        save_restoreIoErrors = 0;                      /* clean the counter */
+        save_restoreNFSOK = 1;
+        save_restoreIoErrors = 0; /* clean the counter */
         return OK;
     } else {
         save_restoreNFSOK = 0;
@@ -56,21 +57,21 @@ int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
  *
  * Output:
  *    See the definition of NFS operation error codes
- */ 
+ */
 int dismountFileSystem(char *mntpoint)
 {
     /* check the input parameters */
     if (!mntpoint || !mntpoint[0]) {
-		if (saveRestoreFilePath && saveRestoreFilePath[0]) {
-		    strncpy(mntpoint, saveRestoreFilePath, (NFS_PATH_LEN-1));
-			if (save_restoreDebug) printf("save_restore:dismountFileSystem, setting mntpoint tp '%s'\n", mntpoint);
-		} else {
-			return ERROR;
-		}
-	}
+        if (saveRestoreFilePath && saveRestoreFilePath[0]) {
+            strncpy(mntpoint, saveRestoreFilePath, (NFS_PATH_LEN - 1));
+            if (save_restoreDebug) printf("save_restore:dismountFileSystem, setting mntpoint tp '%s'\n", mntpoint);
+        } else {
+            return ERROR;
+        }
+    }
 
     /* unmount the file system */
-    
+
     if (nfsUnmount(mntpoint) == OK) {
         save_restoreNFSOK = 0;
         return OK;
@@ -78,6 +79,3 @@ int dismountFileSystem(char *mntpoint)
         return ERROR;
     }
 }
-
-
-

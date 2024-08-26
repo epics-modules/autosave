@@ -71,12 +71,11 @@ DEVELOPMENT CENTER AT ARGONNE NATIONAL LABORATORY (708-252-2000).
 #include <fGetDateStr.h>
 
 /* get date,time as yymmdd-HHMMSS */
-int	fGetDateStr( char datetime[])
-{ 
-	epicsTimeStamp now;
+int fGetDateStr(char datetime[])
+{
+    epicsTimeStamp now;
 
-	epicsTimeGetCurrent(&now);
-	epicsTimeToStrftime(datetime, 28, "%y%m%d-%H%M%S", &now);
-	return(0);
+    epicsTimeGetCurrent(&now);
+    epicsTimeToStrftime(datetime, 28, "%y%m%d-%H%M%S", &now);
+    return (0);
 }
-

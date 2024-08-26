@@ -9,6 +9,6 @@ extern int findConfigFiles(char *config, ELLLIST *configMenuList);
 
 struct configFileListItem {
     ELLNODE node;
-	char *name;
-	char *description;
+    char *name;
+    char *description;
 };
