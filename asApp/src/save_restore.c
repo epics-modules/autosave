@@ -140,7 +140,7 @@
 #else
 #include <windows.h>
 #include "tr_dirent.h" /* for dirList */
-#include <io.h> /* for _commit */
+#include <io.h>        /* for _commit */
 #endif
 #include <string.h>
 #include <ctype.h>
@@ -168,6 +168,9 @@
 #include <epicsString.h>
 #include <epicsExport.h>
 
+#include "osdNfs.h"
+#include "save_restore_common.h"
+#include "nfs_utils.h"
 #include "save_restore.h"
 #include "fGetDateStr.h"
 #include "osdNfs.h" /* qiao: routine of os dependent code, for NFS */
@@ -383,15 +386,6 @@ epicsExportAddress(int, save_restoreDatedBackupFiles);
 epicsExportAddress(int, save_restoreUseStatusPVs);
 epicsExportAddress(int, save_restoreCAReconnect);     /* qiao: export the new variables */
 epicsExportAddress(int, save_restoreCallbackTimeout); /* qiao: export the new variables */
-
-/* variables for managing NFS mount */
-#define REMOUNT_CHECK_INTERVAL_SECONDS 60
-char save_restoreNFSHostName[NFS_PATH_LEN] = "";
-char save_restoreNFSHostAddr[NFS_PATH_LEN] = "";
-char save_restoreNFSMntPoint[NFS_PATH_LEN] = "";
-int saveRestoreFilePathIsMountPoint = 1;
-volatile int save_restoreRemountThreshold = 10;
-epicsExportAddress(int, save_restoreRemountThreshold);
 
 /* configuration parameters */
 STATIC int MIN_PERIOD = 4; /* save no more frequently than every 4 seconds */
@@ -736,24 +730,6 @@ STATIC void ca_connection_callback(struct connection_handler_args args)
     }
 }
 
-/*** functions to manage NFS mount ***/
-STATIC void do_mount()
-{
-    if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
-        if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                            save_restoreNFSMntPoint) == OK) {
-            printf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
-            strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
-            save_restoreIoErrors = 0;
-            save_restoreNFSOK = 1;
-        } else {
-            printf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
-        }
-    } else {
-        save_restoreNFSOK = 1;
-    }
-}
-
 /* Concatenate s1 and s2, making sure there is a directory separator between them,
  * and copy the result to dest.  Make local copies of s1 and s2 to defend against
  * calls in which one of them is specified also as dest, e.g. makeNfsPath(a,b,a).
@@ -809,35 +785,6 @@ int testMakeNfsPath()
     return (0);
 }
 
-void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
-{
-    /* If file system is mounted (save_restoreNFSOK) and we mounted it (save_restoreNFSMntPoint[0]),
-	 * then dismount, presuming that caller wants us to remount from new information.  If we didn't
-	 * mount it, presume that caller did, and that caller wants us to manage the mount point.
-	 */
-    if (save_restoreNFSOK && save_restoreNFSMntPoint[0]) dismountFileSystem(save_restoreNFSMntPoint);
-
-    /* get the settings */
-    strNcpy(save_restoreNFSHostName, hostname, NFS_PATH_LEN);
-    strNcpy(save_restoreNFSHostAddr, address, NFS_PATH_LEN);
-    if (mntpoint && mntpoint[0]) {
-        saveRestoreFilePathIsMountPoint = 0;
-        strNcpy(save_restoreNFSMntPoint, mntpoint, NFS_PATH_LEN);
-        if (saveRestoreFilePath[0]) {
-            /* If we already have a file path, make sure it begins with the mount point. */
-            if (strstr(saveRestoreFilePath, save_restoreNFSMntPoint) != saveRestoreFilePath) {
-                makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, saveRestoreFilePath);
-            }
-        }
-    } else if (saveRestoreFilePath[0]) {
-        strNcpy(save_restoreNFSMntPoint, saveRestoreFilePath, NFS_PATH_LEN);
-        saveRestoreFilePathIsMountPoint = 1;
-    }
-
-    /* mount the file system */
-    do_mount();
-}
-
 static void save_restoreShutdown(void *arg)
 {
     save_restore_shutdown = 1;
@@ -871,7 +818,13 @@ STATIC int save_restore(void)
 
     ca_context_create(ca_enable_preemptive_callback);
 
-    if ((save_restoreNFSOK == 0) && NFS_managed) do_mount();
+    if ((save_restoreNFSOK == 0) && NFS_managed) {
+        if (do_mount() == OK) {
+            strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
+            save_restoreIoErrors = 0;
+            save_restoreNFSOK = 1;
+        };
+    }
 
     /* Build names for save_restore general status PV's with status_prefix */
     if (save_restoreUseStatusPVs && *status_prefix && (*SR_status_PV == '\0')) {
@@ -972,32 +925,16 @@ STATIC int save_restore(void)
         do_seq_check = (epicsTimeDiffInSeconds(&currTime, &last_seq_check) > save_restoreSeqPeriodInSeconds / 2);
         if (do_seq_check) last_seq_check = currTime; /* struct copy */
 
-        just_remounted = 0;
-
         /* remount NFS if necessary. If the file written failure happens more times than defined threshold,
 		 * we will assume the NFS need to be remounted */
         if ((save_restoreNFSOK == 0) && NFS_managed) {
             /* NFS problem, and we're managing the mount: Try every 60 seconds to remount. */
-            timeDiff = epicsTimeDiffInSeconds(&currTime, &remount_check_time);
-            /* printf("save_restore: save_restoreNFSOK==0 for %f seconds\n", timeDiff); */
-            if (timeDiff > REMOUNT_CHECK_INTERVAL_SECONDS) {
-                remount_check_time = currTime; /* struct copy */
-                printf("save_restore: attempting to remount filesystem\n");
-                dismountFileSystem(save_restoreNFSMntPoint); /* first dismount it */
-                /* We don't care if dismountFileSystem fails.
-				 * It could fail simply because an earlier dismount, succeeded.
-				 */
-                if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                                    save_restoreNFSMntPoint) == OK) {
-                    just_remounted = 1;
-                    printf("save_restore: remounted '%s'\n", save_restoreNFSMntPoint);
-                    SR_status = SR_STATUS_OK;
-                    strcpy(SR_statusStr, "NFS remounted");
-                } else {
-                    printf("save_restore: failed to remount '%s' \n", save_restoreNFSMntPoint);
-                    SR_status = SR_STATUS_FAIL;
-                    strcpy(SR_statusStr, "NFS failed!");
-                }
+            if (restore_mount(remount_check_time, &just_remounted) == OK) {
+                strcpy(SR_statusStr, "NFS remounted");
+                SR_status = SR_STATUS_OK;
+            } else {
+                strcpy(SR_statusStr, "NFS failed!");
+                SR_status = SR_STATUS_FAIL;
             }
         }
 
@@ -2599,8 +2536,7 @@ int set_requestfile_path(char *path, char *pathsub)
         if (reqFilePathList == NULL) {
             reqFilePathList = pnew;
         } else {
-            for (p = reqFilePathList; p->pnext; p = p->pnext)
-                ;
+            for (p = reqFilePathList; p->pnext; p = p->pnext);
             p->pnext = pnew;
         }
         return (OK);
@@ -2625,14 +2561,9 @@ int set_savefile_path(char *path, char *pathsub)
         } else {
             makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
         }
-        if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
-            if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                                save_restoreNFSMntPoint) == OK) {
-                printf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
-                strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
-            } else {
-                printf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
-            }
+        if (NFS_managed && (set_savefile_path_nfs() == OK)) {
+            // TODO: Probably should set SR_status here?
+            strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
         }
         return (OK);
     } else {
@@ -3712,10 +3643,6 @@ int findConfigList(char *configName, char *requestFileName)
 /*-------------------------------------------------------------------------------*/
 /*** ioc-shell command registration (sheesh!) ***/
 
-#define IOCSH_ARG static const iocshArg
-#define IOCSH_ARG_ARRAY static const iocshArg *const
-#define IOCSH_FUNCDEF static const iocshFuncDef
-
 /* int fdbrestore(char *filename); */
 IOCSH_ARG fdbrestore_Arg0 = {"filename", iocshArgString};
 IOCSH_ARG_ARRAY fdbrestore_Args[1] = {&fdbrestore_Arg0};
@@ -3810,18 +3737,6 @@ IOCSH_ARG set_saveTask_priority_Arg0 = {"priority", iocshArgInt};
 IOCSH_ARG_ARRAY set_saveTask_priority_Args[1] = {&set_saveTask_priority_Arg0};
 IOCSH_FUNCDEF set_saveTask_priority_FuncDef = {"set_saveTask_priority", 1, set_saveTask_priority_Args};
 static void set_saveTask_priority_CallFunc(const iocshArgBuf *args) { set_saveTask_priority(args[0].ival); }
-
-/* aqiao: void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint); */
-IOCSH_ARG save_restoreSet_NFSHost_Arg0 = {"hostname", iocshArgString};
-IOCSH_ARG save_restoreSet_NFSHost_Arg1 = {"address", iocshArgString};
-IOCSH_ARG save_restoreSet_NFSHost_Arg2 = {"mntpoint", iocshArgString};
-IOCSH_ARG_ARRAY save_restoreSet_NFSHost_Args[3] = {&save_restoreSet_NFSHost_Arg0, &save_restoreSet_NFSHost_Arg1,
-                                                   &save_restoreSet_NFSHost_Arg2};
-IOCSH_FUNCDEF save_restoreSet_NFSHost_FuncDef = {"save_restoreSet_NFSHost", 3, save_restoreSet_NFSHost_Args};
-static void save_restoreSet_NFSHost_CallFunc(const iocshArgBuf *args)
-{
-    save_restoreSet_NFSHost(args[0].sval, args[1].sval, args[2].sval);
-}
 
 /* int remove_data_set(char *filename); */
 IOCSH_ARG remove_data_set_Arg0 = {"filename", iocshArgString};
@@ -4006,7 +3921,6 @@ void save_restoreRegister(void)
     iocshRegister(&set_requestfile_path_FuncDef, set_requestfile_path_CallFunc);
     iocshRegister(&set_savefile_path_FuncDef, set_savefile_path_CallFunc);
     iocshRegister(&set_saveTask_priority_FuncDef, set_saveTask_priority_CallFunc);
-    iocshRegister(&save_restoreSet_NFSHost_FuncDef, save_restoreSet_NFSHost_CallFunc);
     iocshRegister(&remove_data_set_FuncDef, remove_data_set_CallFunc);
     iocshRegister(&reload_periodic_set_FuncDef, reload_periodic_set_CallFunc);
     iocshRegister(&reload_triggered_set_FuncDef, reload_triggered_set_CallFunc);
