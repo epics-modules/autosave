@@ -652,7 +652,7 @@ int findConfigFiles(char *config, ELLLIST *configMenuList)
                     pLI->name = (char *)calloc(strlen(thisname) + 1, sizeof(char));
                     strNcpy(pLI->name, thisname, strlen(thisname) + 1);
                     if (save_restoreDebug) printf("findConfigFiles: found config file '%s'\n", pLI->name);
-                    makeNfsPath(fullpath, saveRestoreFilePath, filename);
+                    concatenate_paths(fullpath, saveRestoreFilePath, filename);
                     if ((fd = fopen(fullpath, "r"))) {
                         if (save_restoreDebug) printf("findConfigFiles: searching '%s' for description\n", fullpath);
                         found = 0;
@@ -732,9 +732,9 @@ STATIC void ca_connection_callback(struct connection_handler_args args)
 
 /* Concatenate s1 and s2, making sure there is a directory separator between them,
  * and copy the result to dest.  Make local copies of s1 and s2 to defend against
- * calls in which one of them is specified also as dest, e.g. makeNfsPath(a,b,a).
+ * calls in which one of them is specified also as dest, e.g. concatenate_paths(a,b,a).
  */
-void makeNfsPath(char *dest, const char *s1, const char *s2)
+void concatenate_paths(char *dest, const char *s1, const char *s2)
 {
     char tmp1[NFS_PATH_LEN], tmp2[NFS_PATH_LEN];
     if (dest == NULL) return;
@@ -752,36 +752,36 @@ void makeNfsPath(char *dest, const char *s1, const char *s2)
     } else {
         strncat(dest, tmp2, MAX(NFS_PATH_LEN - 1 - strlen(dest), 0));
     }
-    if (save_restoreDebug > 2) { printf("save_restore:makeNfsPath: dest='%s'\n", dest); }
+    if (save_restoreDebug > 2) { printf("save_restore:concatenate_paths: dest='%s'\n", dest); }
 }
 
-int testMakeNfsPath()
+int test_concatenate_path()
 {
     char dest[NFS_PATH_LEN];
 
     dest[0] = '\0';
-    makeNfsPath(dest, "", "");
-    printf("makeNfsPath(dest,\"\",\"\") yields '%s'\n", dest);
+    concatenate_paths(dest, "", "");
+    printf("concatenate_paths(dest,\"\",\"\") yields '%s'\n", dest);
 
     dest[0] = '\0';
-    makeNfsPath(dest, "abc", "");
-    printf("makeNfsPath(dest,\"abc\",\"\") yields '%s'\n", dest);
+    concatenate_paths(dest, "abc", "");
+    printf("concatenate_paths(dest,\"abc\",\"\") yields '%s'\n", dest);
 
     dest[0] = '\0';
-    makeNfsPath(dest, "", "def");
-    printf("makeNfsPath(dest,\"\",\"def\") yields '%s'\n", dest);
+    concatenate_paths(dest, "", "def");
+    printf("concatenate_paths(dest,\"\",\"def\") yields '%s'\n", dest);
 
     dest[0] = '\0';
-    makeNfsPath(dest, "", "/def");
-    printf("makeNfsPath(dest,\"\",\"/def\") yields '%s'\n", dest);
+    concatenate_paths(dest, "", "/def");
+    printf("concatenate_paths(dest,\"\",\"/def\") yields '%s'\n", dest);
 
     dest[0] = '\0';
-    makeNfsPath(dest, "abc/", "def");
-    printf("makeNfsPath(dest,\"abc/\",\"def\") yields '%s'\n", dest);
+    concatenate_paths(dest, "abc/", "def");
+    printf("concatenate_paths(dest,\"abc/\",\"def\") yields '%s'\n", dest);
 
     dest[0] = '\0';
-    makeNfsPath(dest, "abc/", "/def");
-    printf("makeNfsPath(dest,\"abc/\",\"/def\") yields '%s'\n", dest);
+    concatenate_paths(dest, "abc/", "/def");
+    printf("concatenate_paths(dest,\"abc/\",\"/def\") yields '%s'\n", dest);
     return (0);
 }
 
@@ -1167,7 +1167,7 @@ STATIC int save_restore(void)
                                   status ? "Failed" : "Succeeded");
                     if (status == 0) {
                         if (!isAbsolute(msg.filename)) {
-                            makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+                            concatenate_paths(fullPath, saveRestoreFilePath, msg.filename);
                         } else {
                             strNcpy(fullPath, msg.filename, NFS_PATH_LEN);
                         }
@@ -1254,7 +1254,7 @@ STATIC int save_restore(void)
                 case op_asVerify:
                     if (save_restoreDebug) printf("save_restore task: calling do_asVerify('%s')\n", msg.filename);
                     if (!isAbsolute(msg.filename)) {
-                        makeNfsPath(fullPath, saveRestoreFilePath, msg.filename);
+                        concatenate_paths(fullPath, saveRestoreFilePath, msg.filename);
                     } else {
                         strNcpy(fullPath, msg.filename, NFS_PATH_LEN);
                     }
@@ -1961,22 +1961,22 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
         ca_pend_io(1.0);
         if (tmpstr[0] == '\0') return (OK);
         strNcpy(save_file, tmpstr, sizeof(save_file));
-        if (!isAbsolute(save_file)) { makeNfsPath(save_file, saveRestoreFilePath, save_file); }
+        if (!isAbsolute(save_file)) { concatenate_paths(save_file, saveRestoreFilePath, save_file); }
     } else {
         /* Use standard path name. */
         strNcpy(save_file, saveRestoreFilePath, sizeof(save_file));
     }
     if (configName && configName[0]) {
-        makeNfsPath(save_file, save_file, configName);
+        concatenate_paths(save_file, save_file, configName);
     } else if (plist->saveNamePV_chid) {
         /* This list's file name comes from a PV */
         ca_array_get(DBR_STRING, 1, plist->saveNamePV_chid, tmpstr);
         ca_pend_io(1.0);
         if (tmpstr[0] == '\0') return (OK);
-        makeNfsPath(save_file, save_file, tmpstr);
+        concatenate_paths(save_file, save_file, tmpstr);
     } else {
         /* Use file name constructed from the request file name. */
-        makeNfsPath(save_file, save_file, plist->save_file);
+        concatenate_paths(save_file, save_file, plist->save_file);
     }
 
     /* Currently, all lists do backups, unless their file path or file name comes from a PV, or the configName argument. */
@@ -2090,7 +2090,7 @@ STATIC void do_seq(struct chlist *plist)
     fGetDateStr(datetime);
 
     /* Make full file names */
-    makeNfsPath(save_file, saveRestoreFilePath, plist->save_file);
+    concatenate_paths(save_file, saveRestoreFilePath, plist->save_file);
     strNcpy(backup_file, save_file, NFS_PATH_LEN);
     p = &backup_file[strlen(backup_file)];
 
@@ -2160,7 +2160,7 @@ STATIC void doPeriodicDatedBackup(struct chlist *plist)
         ca_pend_io(1.0);
         if (tmpstr[0] == '\0') return;
         strNcpy(save_file, tmpstr, sizeof(save_file));
-        if (!isAbsolute(save_file)) { makeNfsPath(save_file, saveRestoreFilePath, save_file); }
+        if (!isAbsolute(save_file)) { concatenate_paths(save_file, saveRestoreFilePath, save_file); }
     } else {
         /* Use standard path name. */
         strNcpy(save_file, saveRestoreFilePath, sizeof(save_file));
@@ -2171,10 +2171,10 @@ STATIC void doPeriodicDatedBackup(struct chlist *plist)
         ca_array_get(DBR_STRING, 1, plist->saveNamePV_chid, tmpstr);
         ca_pend_io(1.0);
         if (tmpstr[0] == '\0') return;
-        makeNfsPath(save_file, save_file, tmpstr);
+        concatenate_paths(save_file, save_file, tmpstr);
     } else {
         /* Use file name constructed from the request file name. */
-        makeNfsPath(save_file, save_file, plist->save_file);
+        concatenate_paths(save_file, save_file, plist->save_file);
     }
 
     strncat(save_file, "_b_", sizeof(save_file) - strlen(save_file) - 1);
@@ -2377,7 +2377,7 @@ STATIC int create_data_set(char *filename,              /* save set request file
     plist->save_file[inx] = 0; /* truncate if necessary to leave room for ".sav" + null */
     strcat(plist->save_file, ".sav");
     /* make full name, including file path */
-    makeNfsPath(plist->saveFile, saveRestoreFilePath, plist->save_file);
+    concatenate_paths(plist->saveFile, saveRestoreFilePath, plist->save_file);
 
     /* read the request file and populate plist with the PV names */
     if (readReqFile(plist->reqFile, plist, macrostring) == ERROR) {
@@ -2520,7 +2520,7 @@ int set_requestfile_path(char *path, char *pathsub)
         return (ERROR);
     }
 
-    makeNfsPath(fullpath, path, pathsub);
+    concatenate_paths(fullpath, path, pathsub);
 
     if (*fullpath) {
         /* return(set_requestfile_path(fullpath)); */
@@ -2552,14 +2552,14 @@ int set_savefile_path(char *path, char *pathsub)
 
     if (save_restoreNFSOK && NFS_managed) dismountFileSystem(save_restoreNFSMntPoint);
 
-    makeNfsPath(fullpath, path, pathsub);
+    concatenate_paths(fullpath, path, pathsub);
 
     if (*fullpath) {
         if (saveRestoreFilePathIsMountPoint) {
             strNcpy(saveRestoreFilePath, fullpath, NFS_PATH_LEN);
             strNcpy(save_restoreNFSMntPoint, fullpath, NFS_PATH_LEN);
         } else {
-            makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
+            concatenate_paths(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
         }
         if (NFS_managed && (set_savefile_path_nfs() == OK)) {
             // TODO: Probably should set SR_status here?
@@ -3209,7 +3209,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
     if (isAbsolute(filename)) {
         strNcpy(restoreFile, filename, NFS_PATH_LEN);
     } else {
-        makeNfsPath(restoreFile, saveRestoreFilePath, filename);
+        concatenate_paths(restoreFile, saveRestoreFilePath, filename);
     }
 
     if (file_type == FROM_SAVE_FILE) {
@@ -3430,7 +3430,7 @@ int openReqFile(const char *reqFile, FILE **fpp)
     if (reqFilePathList) {
         /* try to find reqFile in every directory specified in reqFilePathList */
         for (p = reqFilePathList; p; p = p->pnext) {
-            makeNfsPath(tmpfile, p->path, reqFile);
+            concatenate_paths(tmpfile, p->path, reqFile);
             trial_fd = fopen(tmpfile, "r");
             if (trial_fd) break;
         }

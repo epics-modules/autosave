@@ -17,7 +17,7 @@
 extern int save_restoreNFSOK;
 extern int save_restoreIoErrors;
 
-extern void makeNfsPath(char *dest, const char *s1, const char *s2);
+extern void concatenate_paths(char *dest, const char *s1, const char *s2);
 
 /* strncpy sucks (may copy extra characters, may not null-terminate) */
 #define strNcpy(dest, src, N)                                    \

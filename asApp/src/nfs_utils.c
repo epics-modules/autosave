@@ -83,7 +83,7 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
         if (saveRestoreFilePath[0]) {
             /* If we already have a file path, make sure it begins with the mount point. */
             if (strstr(saveRestoreFilePath, save_restoreNFSMntPoint) != saveRestoreFilePath) {
-                makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, saveRestoreFilePath);
+                concatenate_paths(saveRestoreFilePath, save_restoreNFSMntPoint, saveRestoreFilePath);
             }
         }
     } else if (saveRestoreFilePath[0]) {
