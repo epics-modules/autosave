@@ -1784,11 +1784,7 @@ STATIC int write_it(char *filename, struct chlist *plist)
     if (filedes < 0) {
         printf("save_restore:write_it - unable to open file '%s' [%s]\n", filename, datetime);
         if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
-        if (++save_restoreIoErrors > save_restoreRemountThreshold) {
-            save_restoreNFSOK = 0;
-            strNcpy(SR_recentlyStr, "Too many I/O errors", STATUS_STR_LEN);
-        }
-        return (ERROR);
+        goto open_error;
     } else {
         if (mustSetPermissions) {
             int status;
@@ -1800,17 +1796,17 @@ STATIC int write_it(char *filename, struct chlist *plist)
                 print_chmod_error(err);
             }
         }
-        out_fd = fdopen(filedes, "w");
+        if (!(out_fd = fdopen(filedes, "w"))) {
+            printf("save_restore:write_it - unable to fdopen file '%s': %s [%s]\n",
+                filename, strerror(errno), datetime);
+            goto open_error;
+        }
     }
 #else
     if ((out_fd = fopen(filename, "w")) == NULL) {
         printf("save_restore:write_it - unable to open file '%s' [%s]\n", filename, datetime);
         if (errno) myPrintErrno("write_it", __FILE__, __LINE__);
-        if (++save_restoreIoErrors > save_restoreRemountThreshold) {
-            save_restoreNFSOK = 0;
-            strNcpy(SR_recentlyStr, "Too many I/O errors", STATUS_STR_LEN);
-        }
-        return (ERROR);
+        goto open_error;
     }
 #endif
 
@@ -1993,6 +1989,13 @@ trouble:
     }
 
     return (problem ? ERROR : OK);
+
+open_error:
+    if (++save_restoreIoErrors > save_restoreRemountThreshold) {
+        save_restoreNFSOK = 0;
+        strNcpy(SR_recentlyStr, "Too many I/O errors", STATUS_STR_LEN);
+    }
+    return ERROR;
 }
 
 /*
