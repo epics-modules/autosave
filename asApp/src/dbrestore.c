@@ -180,9 +180,9 @@ STATIC int myFileCopy(const char *source, const char *dest)
     }
     errno = 0;
     /* Note: under vxWorks, the following fopen() frequently will set errno
-	 * to S_nfsLib_NFSERR_NOENT even though it succeeds.  Probably this means
-	 * a failed attempt was retried. (System calls never set errno to zero.)
-	 */
+     * to S_nfsLib_NFSERR_NOENT even though it succeeds.  Probably this means
+     * a failed attempt was retried. (System calls never set errno to zero.)
+     */
     if ((dest_fd = fopen(dest, "wb")) == NULL) {
         errlogPrintf("save_restore:myFileCopy: Can't open file '%s'\n", dest);
         /* if (errno) myPrintErrno("myFileCopy", __FILE__, __LINE__); */
@@ -221,11 +221,11 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
     dbfType field_type = pdbentry->pflddes->field_type;
     short special = pdbentry->pflddes->special;
     /* The buffer holding the string value must be at least one byte longer than
-	   the actual value (due to the terminating null byte). */
+       the actual value (due to the terminating null byte). */
     size_t value_string_len = strlen(value_string) + 1;
 
     /* We do know the length of the buffer for sure, because this depends on the
-	   calling code, so we limit to the actual string size. */
+       calling code, so we limit to the actual string size. */
     epicsStrnRawFromEscaped(value_string, value_string_len, value_string, value_string_len);
 
     if (save_restoreDebug >= 5)
@@ -246,9 +246,9 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
         case DBF_FLOAT:
         case DBF_DOUBLE:
             /*
-		 * check SPC_CALC fields against new (3.13.9) requirement that CALC
-		 * fields not be empty.
-		 */
+             * check SPC_CALC fields against new (3.13.9) requirement that CALC
+             * fields not be empty.
+             */
             if ((field_type == DBF_STRING) && (special == SPC_CALC)) {
                 if (*value_string == 0) strcpy(value_string, "0");
             }
@@ -496,9 +496,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
         /* doesn't look like array data.  just restore what we have */
         if (p_data) {
             /* We do know the length of the buffer for sure, because this
-			   depends on the calling code, so we limit to the actual string
-			   size. The buffer must be one byte longer, due to the terminating
-			   null byte. */
+               depends on the calling code, so we limit to the actual string
+               size. The buffer must be one byte longer, due to the terminating
+               null byte. */
             size_t value_string_len = strlen(value_string) + 1;
             epicsStrnRawFromEscaped(value_string, value_string_len, value_string, value_string_len);
             switch (field_type) {
@@ -533,7 +533,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
                 errlogPrintf("dbrestore:SR_array_restore: looking for element[%ld] \n", num_read);
             }
             /* If truncated-file detector (checkFile) fails, test for end of file before
-			 * using *bp */
+             * using *bp */
             while (!end_mark_found && !end_of_file && (*bp != ELEMENT_BEGIN)) {
                 if (save_restoreDebug >= 12) {
                     errlogPrintf("dbrestore:SR_array_restore: ...buffer contains '%s'\n", bp);
@@ -550,9 +550,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
                 }
             }
             /*
-			 * Read one element: Accumulate characters of element value into string[],
-			 * ignoring any nonzero control characters, and append the value to the local array.
-			 */
+             * Read one element: Accumulate characters of element value into string[],
+             * ignoring any nonzero control characters, and append the value to the local array.
+             */
             if (bp && !end_mark_found && !end_of_file) {
                 /* *bp == ELEMENT_BEGIN */
                 if (save_restoreDebug >= 11) {
@@ -585,9 +585,9 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
                         errlogPrintf("dbrestore:SR_array_restore: look for element-end: buffer contains '%s'\n", bp);
                 }
                 /*
-				 * We've accumulated all the characters, or all we can handle in string[].
-				 * If there are more characters than we can handle, just pretend we read them.
-				 */
+                 * We've accumulated all the characters, or all we can handle in string[].
+                 * If there are more characters than we can handle, just pretend we read them.
+                 */
                 /* *bp == ELEMENT_END ,*/
                 for (found = 0; (found == 0) && !end_of_file;) {
                     while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
@@ -860,17 +860,17 @@ int reboot_restore(char *filename, initHookState init_state)
         }
 
         /*
-		 * get PV_name, one space character, value
-		 * (value may be a string with leading whitespace; it may be
-		 * entirely whitespace; the number of spaces may be crucial;
-		 * it might consist of zero characters; and it might be an array.)
-		 * If the value is an array, it has the form @array@ { "val1" "val2" .. }
-		 * the array of values may be broken at any point by '\n', or other
-		 * character for which isprint() is false.
-		 * sample input lines:
-		 * xxx:interp.E 100
-		 * xxx:interp.C @array@ { "1" "0.99" }
-		 */
+         * get PV_name, one space character, value
+         * (value may be a string with leading whitespace; it may be
+         * entirely whitespace; the number of spaces may be crucial;
+         * it might consist of zero characters; and it might be an array.)
+         * If the value is an array, it has the form @array@ { "val1" "val2" .. }
+         * the array of values may be broken at any point by '\n', or other
+         * character for which isprint() is false.
+         * sample input lines:
+         * xxx:interp.E 100
+         * xxx:interp.C @array@ { "1" "0.99" }
+         */
         PVname[0] = '\0';
         value_string[0] = '\0';
         n = sscanf(bp, "%80s%c%[^\n\r]", PVname, &c, value_string);
@@ -971,16 +971,16 @@ int reboot_restore(char *filename, initHookState init_state)
             } else {
                 if (!is_scalar) {
                     /* Parse and gobble up the whole array.  We don't have  PV to restore to,
-					 * but we don't want to trip over the unused array data.
-					 */
+                     * but we don't want to trip over the unused array data.
+                     */
                     status = SR_array_restore(pass, inp_fd, PVname, value_string, 1);
                 }
             } /* if (found_field) {} else {... */
         } else if (PVname[0] == '!') {
             /*
-			* string is an error message -- something like:
-			* '! 7 channel(s) not connected - or not all gets were successful'
-			*/
+             * string is an error message -- something like:
+             * '! 7 channel(s) not connected - or not all gets were successful'
+             */
             n = (int)atol(&bp[1]);
             errlogPrintf("%d %s had no saved value.\n", n, n == 1 ? "PV" : "PVs");
             if (pStatusVal) *pStatusVal = SR_STATUS_WARN;
@@ -1223,11 +1223,11 @@ FILE *fopen_and_check(const char *fname, long *status)
 
         if (stat(file, &fileStat) == 0) {
             /*
-			 * Clocks might be unsynchronized, so it's possible
-			 * the most recent file has a time in the future.
-			 * For now, just choose the file whose date/time is
-			 * closest to the current date/time.
-			 */
+             * Clocks might be unsynchronized, so it's possible
+             * the most recent file has a time in the future.
+             * For now, just choose the file whose date/time is
+             * closest to the current date/time.
+             */
             dTime = fabs(difftime(currTime, fileStat.st_mtime));
             if (save_restoreDebug >= 5) {
                 errlogPrintf("'%s' modified at %s\n", file, ctime(&fileStat.st_mtime));
@@ -1300,10 +1300,10 @@ long SR_get_array(char *PVname, void *pArray, long *pnum_elements)
     dbScanLock((dbCommon *)paddr->precord);
     request_field_type = paddr->field_type;
     /*
-	 * Not clear what we should do if someone has an array of enums
-	 * or menu items.  For now, just do something that will work
-	 * in the simplest case.
-	 */
+     * Not clear what we should do if someone has an array of enums
+     * or menu items.  For now, just do something that will work
+     * in the simplest case.
+     */
     if ((request_field_type == DBF_ENUM) || (request_field_type == DBF_MENU)) {
         errlogPrintf("save_restore:SR_get_array: field_type %s array read as DBF_USHORT\n",
                      pamapdbfType[request_field_type].strvalue);
