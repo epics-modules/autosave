@@ -1,5 +1,6 @@
 #include <iocsh.h>
 #include <epicsExport.h>
+#include <epicsStdio.h>
 
 #include "osdNfs.h"
 #include "save_restore_common.h"
@@ -93,6 +94,18 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
 
     /* mount the file system */
     do_mount();
+}
+
+int nfs_managed()
+{
+    return save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
+}
+
+void save_restore_nfs_show()
+{
+    printf("  NFS host: '%s'; address:'%s'\n", save_restoreNFSHostName, save_restoreNFSHostAddr);
+    printf("  NFS mount point:\n    '%s'\n", save_restoreNFSMntPoint);
+    printf("  NFS mount status: %s\n", save_restoreNFSOK ? "Ok" : "Failed");
 }
 
 IOCSH_ARG save_restoreSet_NFSHost_Arg0 = {"hostname", iocshArgString};

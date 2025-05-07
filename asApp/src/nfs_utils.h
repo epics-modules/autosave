@@ -22,4 +22,6 @@ int set_savefile_path_nfs();
 
 void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint);
 
+int nfs_managed();
+
 #endif

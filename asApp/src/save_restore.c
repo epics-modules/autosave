@@ -806,7 +806,7 @@ STATIC int save_restore(void)
     epicsTimeStamp lastPeriodicDatedBackup;
     char datetime[32];
     double timeDiff;
-    int NFS_managed = save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
+    int NFS_managed = nfs_managed();
     op_msg msg;
     struct restoreFileListItem *pLI;
 
@@ -2419,7 +2419,6 @@ void save_restoreShow(int verbose)
     struct pathListElement *p = reqFilePathList;
     char tmpstr[50];
     char datetime[32];
-    int NFS_managed = save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
 
     fGetDateStr(datetime);
     printf("BEGIN save_restoreShow\n");
@@ -2434,10 +2433,9 @@ void save_restoreShow(int verbose)
     printf("  Number of sequence files to maintain: %d\n", save_restoreNumSeqFiles);
     printf("  Time interval between sequence files: %d seconds\n", save_restoreSeqPeriodInSeconds);
     printf("  Time interval between .sav-file write failure and retry: %d seconds\n", save_restoreRetrySeconds);
-    printf("  NFS host: '%s'; address:'%s'\n", save_restoreNFSHostName, save_restoreNFSHostAddr);
-    printf("  NFS mount point:\n    '%s'\n", save_restoreNFSMntPoint);
-    printf("  NFS mount status: %s\n",
-           NFS_managed ? (save_restoreNFSOK ? "Ok" : "Failed") : "not managed by save_restore");
+    if (nfs_managed()) {
+        save_restore_nfs_show();
+    }
     printf("  I/O errors: %d\n", save_restoreIoErrors);
     printf("  request file path list:\n");
     while (p) {
@@ -2548,7 +2546,7 @@ int set_requestfile_path(char *path, char *pathsub)
 int set_savefile_path(char *path, char *pathsub)
 {
     char fullpath[NFS_PATH_LEN] = "";
-    int NFS_managed = save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0];
+    int NFS_managed = nfs_managed();
 
     if (save_restoreNFSOK && NFS_managed) dismountFileSystem(save_restoreNFSMntPoint);
 
