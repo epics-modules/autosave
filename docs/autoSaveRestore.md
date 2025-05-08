@@ -797,8 +797,3 @@ create_monitor_set("info_settings.req", 30, "P=xxx:")
 ```
 
 ---------- end excerpt from st.cmd ----------------------
-
-- - - - - -
-
- Suggestions and Comments to:
- [Tim Mooney](mailto:mooney@aps.anl.gov): (mooney@aps.anl.gov)
