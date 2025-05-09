@@ -1,6 +1,8 @@
 #ifndef SR_COMMON_H
 #define SR_COMMON_H
 
+#include "osdNfs.h"
+
 #define STATIC_VARS 0
 #define DEBUG 1
 
@@ -9,6 +11,8 @@
 #else
 #define STATIC
 #endif
+
+#define MAX_PATH_LEN NFS_PATH_LEN
 
 #define IOCSH_ARG static const iocshArg
 #define IOCSH_ARG_ARRAY static const iocshArg *const

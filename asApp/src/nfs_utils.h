@@ -1,7 +1,6 @@
 #ifndef NFS_UTILS_H
 #define NFS_UTILS_H
 
-#include "osdNfs.h"
 #include "save_restore_common.h"
 #include <epicsTime.h>
 
