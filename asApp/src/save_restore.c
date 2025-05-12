@@ -2545,23 +2545,10 @@ int set_requestfile_path(char *path, char *pathsub)
 int set_savefile_path(char *path, char *pathsub)
 {
     char fullpath[MAX_PATH_LEN] = "";
-    int NFS_managed = nfs_managed();
-
-    if (save_restoreNFSOK && NFS_managed) dismountFileSystem(save_restoreNFSMntPoint);
-
     concatenate_paths(fullpath, path, pathsub);
 
     if (*fullpath) {
-        if (saveRestoreFilePathIsMountPoint) {
-            strNcpy(saveRestoreFilePath, fullpath, MAX_PATH_LEN);
-            strNcpy(save_restoreNFSMntPoint, fullpath, MAX_PATH_LEN);
-        } else {
-            concatenate_paths(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
-        }
-        if (NFS_managed && (set_savefile_path_nfs() == OK)) {
-            // TODO: Probably should set SR_status here?
-            strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
-        }
+		strNcpy(saveRestoreFilePath, fullpath, MAX_PATH_LEN);
         return (OK);
     } else {
         return (ERROR);

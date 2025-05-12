@@ -9,7 +9,6 @@
 char save_restoreNFSHostName[NFS_PATH_LEN] = "";
 char save_restoreNFSHostAddr[NFS_PATH_LEN] = "";
 char save_restoreNFSMntPoint[NFS_PATH_LEN] = "";
-int saveRestoreFilePathIsMountPoint = 1;
 volatile int save_restoreRemountThreshold = 10;
 
 epicsExportAddress(int, save_restoreRemountThreshold);
@@ -67,7 +66,7 @@ int set_savefile_path_nfs()
     return ERROR;
 }
 
-void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
+int save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
 {
     /* If file system is mounted (save_restoreNFSOK) and we mounted it (save_restoreNFSMntPoint[0]),
      * then dismount, presuming that caller wants us to remount from new information.  If we didn't
@@ -79,7 +78,6 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
     strNcpy(save_restoreNFSHostName, hostname, NFS_PATH_LEN);
     strNcpy(save_restoreNFSHostAddr, address, NFS_PATH_LEN);
     if (mntpoint && mntpoint[0]) {
-        saveRestoreFilePathIsMountPoint = 0;
         strNcpy(save_restoreNFSMntPoint, mntpoint, NFS_PATH_LEN);
         if (saveRestoreFilePath[0]) {
             /* If we already have a file path, make sure it begins with the mount point. */
@@ -89,11 +87,12 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
         }
     } else if (saveRestoreFilePath[0]) {
         strNcpy(save_restoreNFSMntPoint, saveRestoreFilePath, NFS_PATH_LEN);
-        saveRestoreFilePathIsMountPoint = 1;
+    } else {
+        printf("save_restore: Mount point not specified, cannot mount NFS.\n");
+        return (ERROR);
     }
 
-    /* mount the file system */
-    do_mount();
+    return do_mount();
 }
 
 int nfs_managed()
@@ -116,7 +115,7 @@ IOCSH_ARG_ARRAY save_restoreSet_NFSHost_Args[3] = {&save_restoreSet_NFSHost_Arg0
 IOCSH_FUNCDEF save_restoreSet_NFSHost_FuncDef = {"save_restoreSet_NFSHost", 3, save_restoreSet_NFSHost_Args};
 static void save_restoreSet_NFSHost_CallFunc(const iocshArgBuf *args)
 {
-    save_restoreSet_NFSHost(args[0].sval, args[1].sval, args[2].sval);
+    iocshSetError(save_restoreSet_NFSHost(args[0].sval, args[1].sval, args[2].sval));
 }
 
 void save_restoreNFSRegister(void)
