@@ -754,36 +754,6 @@ void concatenate_paths(char *dest, const char *s1, const char *s2)
     if (save_restoreDebug > 2) { printf("save_restore:concatenate_paths: dest='%s'\n", dest); }
 }
 
-int test_concatenate_path()
-{
-    char dest[MAX_PATH_LEN];
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "", "");
-    printf("concatenate_paths(dest,\"\",\"\") yields '%s'\n", dest);
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "abc", "");
-    printf("concatenate_paths(dest,\"abc\",\"\") yields '%s'\n", dest);
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "", "def");
-    printf("concatenate_paths(dest,\"\",\"def\") yields '%s'\n", dest);
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "", "/def");
-    printf("concatenate_paths(dest,\"\",\"/def\") yields '%s'\n", dest);
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "abc/", "def");
-    printf("concatenate_paths(dest,\"abc/\",\"def\") yields '%s'\n", dest);
-
-    dest[0] = '\0';
-    concatenate_paths(dest, "abc/", "/def");
-    printf("concatenate_paths(dest,\"abc/\",\"/def\") yields '%s'\n", dest);
-    return (0);
-}
-
 static void save_restoreShutdown(void *arg)
 {
     save_restore_shutdown = 1;
