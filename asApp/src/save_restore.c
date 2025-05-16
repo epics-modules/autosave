@@ -1958,9 +1958,8 @@ STATIC int write_it(char *filename, struct chlist *plist)
 
     delta_time = difftime(time(NULL), fileStat.st_mtime);
     if (delta_time > 10.0) {
-        printf("save_restore:write_it: file time is different from IOC time [%s], difference=%fs\n", datetime,
+        printf("Warning: save_restore:write_it: file time is different from IOC time [%s], difference=%fs\n", datetime,
                delta_time);
-        return (ERROR);
     }
 
     /* qiao: up to now, the file is successfully saved, which means the NFS is OK. So here clean up
