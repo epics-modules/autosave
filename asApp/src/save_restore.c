@@ -2257,6 +2257,10 @@ int set_savefile_name(char *filename, char *save_filename)
 {
     struct chlist *plist;
 
+    if (!sr_mutex) {
+        printf("  The save_restore task apparently is not running.\n");
+        return (ERROR);
+    }
     if (waitForListLock(5) == 0) {
         printf("set_savefile_name:failed to lock resource.  Try later.\n");
         return (ERROR);
