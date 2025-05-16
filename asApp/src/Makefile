@@ -23,6 +23,7 @@ asVerify_LIBS	+= Com
 USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
 
 DBD += asSupport.dbd
+DBD += asSupportNfs.dbd
 
 #include files
 INC += osdNfs.h
@@ -33,7 +34,7 @@ INC += autosave_release.h
 LIBRARY_IOC += autosave
 
 #os independent code
-autosave_SRCS += dbrestore.c save_restore.c
+autosave_SRCS += dbrestore.c save_restore.c nfs_utils.c
 autosave_SRCS += initHooks.c fGetDateStr.c
 autosave_SRCS += configMenuSub.c verify.c
 

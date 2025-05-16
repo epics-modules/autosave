@@ -810,7 +810,7 @@ int reboot_restore(char *filename, initHookState init_state)
     if (isAbsolute(filename)) {
         strNcpy(fname, filename, PATH_SIZE);
     } else {
-        makeNfsPath(fname, saveRestoreFilePath, filename);
+        concatenate_paths(fname, saveRestoreFilePath, filename);
     }
     if (save_restoreDebug)
         errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n", fname,
