@@ -1298,16 +1298,15 @@ long SR_get_array(char *PVname, void *pArray, long *pnum_elements)
     status = dbNameToAddr(PVname, paddr);
     if (status) return (status);
     dbScanLock((dbCommon *)paddr->precord);
-    request_field_type = paddr->field_type;
+    request_field_type = paddr->dbr_field_type;
     /*
 	 * Not clear what we should do if someone has an array of enums
 	 * or menu items.  For now, just do something that will work
 	 * in the simplest case.
 	 */
-    if ((request_field_type == DBF_ENUM) || (request_field_type == DBF_MENU)) {
-        errlogPrintf("save_restore:SR_get_array: field_type %s array read as DBF_USHORT\n",
-                     pamapdbfType[request_field_type].strvalue);
-        request_field_type = DBF_USHORT;
+    if (request_field_type == DBR_ENUM) {
+        errlogPrintf("save_restore:SR_get_array: field_type DBR_ENUM array read as DBR_USHORT\n");
+        request_field_type = DBR_USHORT;
     }
     status = dbGet(paddr, request_field_type, pArray, NULL, pnum_elements, NULL);
     if (save_restoreDebug >= 10) {
