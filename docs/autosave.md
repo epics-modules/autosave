@@ -10,12 +10,12 @@ autosave
 synApps: autosave
 =================
 
-Module Owner: APS/XSD/BCDA: Tim Mooney
+Module Owner: APS/XSD/BCDA: Keenan Lang
 
 This page is the home of the synApps __autosave__ module. This module contains software to preserve PV values through an ioc reboot.  
 See also: [Mike Zelazney's Channel Watcher](http://www.slac.stanford.edu/comp/unix/package/epics/extensions/ChannelWatcher/)
 
-Please email any comments and bug reports to [Tim Mooney](mailto:mooney_at_aps.anl.gov), who is responsible for coordinating development and releases.
+Please email any comments and bug reports to [Keenan Lang](mailto:klang_at_anl.gov), who is responsible for coordinating development and releases.
 
 Where to find it
 ----------------

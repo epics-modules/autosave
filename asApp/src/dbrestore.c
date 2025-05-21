@@ -810,7 +810,7 @@ int reboot_restore(char *filename, initHookState init_state)
     if (isAbsolute(filename)) {
         strNcpy(fname, filename, PATH_SIZE);
     } else {
-        makeNfsPath(fname, saveRestoreFilePath, filename);
+        concatenate_paths(fname, saveRestoreFilePath, filename);
     }
     if (save_restoreDebug)
         errlogPrintf("*** restoring from '%s' at initHookState %d (%s record/device init) ***\n", fname,
@@ -1298,7 +1298,7 @@ long SR_get_array(char *PVname, void *pArray, long *pnum_elements)
     status = dbNameToAddr(PVname, paddr);
     if (status) return (status);
     dbScanLock((dbCommon *)paddr->precord);
-    request_field_type = paddr->field_type;
+    request_field_type = paddr->dbr_field_type;
     /*
      * Not clear what we should do if someone has an array of enums
      * or menu items.  For now, just do something that will work
