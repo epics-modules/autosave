@@ -2,15 +2,7 @@
 
 #include <ellLib.h> /* pass0List, pass1List */
 #include <initHooks.h>
-
-#define STATIC_VARS 0
-#define DEBUG 1
-
-#if STATIC_VARS
-#define STATIC static
-#else
-#define STATIC
-#endif
+#include "save_restore_common.h"
 
 #define TATTLE(CA_ERROR_CODE, FMT, ARG)                                           \
     {                                                                             \
@@ -37,14 +29,14 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+/* Make sure to leave room for trailing null */
+static char SR_STATUS_STR[5][10] = {"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
+
 #define SR_STATUS_OK 4
 #define SR_STATUS_SEQ_WARN 3
 #define SR_STATUS_WARN 2
 #define SR_STATUS_FAIL 1
 #define SR_STATUS_INIT 0
-
-/* Make sure to leave room for trailing null */
-static char SR_STATUS_STR[5][10] = {"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
 
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"
@@ -97,11 +89,8 @@ extern volatile int save_restoreDatedBackupFiles;
 extern struct restoreList restoreFileList;
 extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
-extern void makeNfsPath(char *dest, const char *s1, const char *s2);
 extern int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
-extern int save_restoreNFSOK;
-extern int save_restoreIoErrors;
 extern volatile int save_restoreRemountThreshold;
 
 extern int reboot_restore(char *filename, initHookState init_state);
@@ -114,14 +103,3 @@ extern int openReqFile(const char *reqFile, FILE **fpp);
 extern int eraseFile(const char *filename);
 extern int appendToFile(const char *filename, const char *line);
 extern float mySafeDoubleToFloat(double d);
-
-/* strncpy sucks (may copy extra characters, may not null-terminate) */
-#define strNcpy(dest, src, N)                                    \
-    {                                                            \
-        int ii;                                                  \
-        char *dd = dest;                                         \
-        const char *ss = src;                                    \
-        if (dd && ss)                                            \
-            for (ii = 0; *ss && ii < N - 1; ii++) *dd++ = *ss++; \
-        *dd = '\0';                                              \
-    }
