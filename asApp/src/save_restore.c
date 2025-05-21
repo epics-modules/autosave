@@ -389,6 +389,7 @@ epicsExportAddress(int, save_restoreCallbackTimeout); /* qiao: export the new va
 char save_restoreNFSHostName[NFS_PATH_LEN] = "";
 char save_restoreNFSHostAddr[NFS_PATH_LEN] = "";
 char save_restoreNFSMntPoint[NFS_PATH_LEN] = "";
+char save_restoreNFSHostMntPoint[NFS_PATH_LEN] = "";
 int saveRestoreFilePathIsMountPoint = 1;
 volatile int save_restoreRemountThreshold = 10;
 epicsExportAddress(int, save_restoreRemountThreshold);
@@ -737,21 +738,26 @@ STATIC void ca_connection_callback(struct connection_handler_args args)
 }
 
 /*** functions to manage NFS mount ***/
-STATIC void do_mount()
+STATIC int do_mount()
 {
     if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
-        if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                            save_restoreNFSMntPoint) == OK) {
+        int needsSplit = !!save_restoreNFSHostMntPoint[0];
+        if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, 
+                    needsSplit ? save_restoreNFSHostMntPoint : save_restoreNFSMntPoint,
+                    save_restoreNFSMntPoint) == OK) {
             printf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
             strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
             save_restoreIoErrors = 0;
             save_restoreNFSOK = 1;
-        } else {
+        }
+        else {
             printf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
+            return ERROR;
         }
     } else {
         save_restoreNFSOK = 1;
     }
+    return OK;
 }
 
 /* Concatenate s1 and s2, making sure there is a directory separator between them,
@@ -820,9 +826,31 @@ void save_restoreSet_NFSHost(char *hostname, char *address, char *mntpoint)
     /* get the settings */
     strNcpy(save_restoreNFSHostName, hostname, NFS_PATH_LEN);
     strNcpy(save_restoreNFSHostAddr, address, NFS_PATH_LEN);
-    if (mntpoint && mntpoint[0]) {
-        saveRestoreFilePathIsMountPoint = 0;
+
+    /* Copy in the new mntpoint */
+    if (mntpoint && *mntpoint) {
         strNcpy(save_restoreNFSMntPoint, mntpoint, NFS_PATH_LEN);
+    }
+    else if (saveRestoreFilePath[0]) {
+        strNcpy(save_restoreNFSMntPoint, saveRestoreFilePath, NFS_PATH_LEN);
+    }
+
+    /* Do we have a path in the /host:/mntpoint format? */
+    if (strstr(save_restoreNFSMntPoint, ":")) {
+        char fullPath[NFS_PATH_LEN];
+        strNcpy(fullPath, save_restoreNFSMntPoint, sizeof(fullPath));
+        /* Split along the ':' boundary, copy into our locations */
+        strNcpy(save_restoreNFSHostMntPoint, strtok(fullPath, ":"), NFS_PATH_LEN);
+        strNcpy(save_restoreNFSMntPoint, strtok(NULL, ":"), NFS_PATH_LEN);
+    }
+    /* Host path and mountpoint match */
+    else {
+        strNcpy(save_restoreNFSMntPoint, mntpoint, NFS_PATH_LEN);
+        save_restoreNFSHostMntPoint[0] = 0;
+    }
+
+    if (mntpoint && mntpoint[0]) {
+	    saveRestoreFilePathIsMountPoint = 0;
         if (saveRestoreFilePath[0]) {
             /* If we already have a file path, make sure it begins with the mount point. */
             if (strstr(saveRestoreFilePath, save_restoreNFSMntPoint) != saveRestoreFilePath) {
@@ -987,8 +1015,7 @@ STATIC int save_restore(void)
                 /* We don't care if dismountFileSystem fails.
 				 * It could fail simply because an earlier dismount, succeeded.
 				 */
-                if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                                    save_restoreNFSMntPoint) == OK) {
+                if (do_mount() == OK) {
                     just_remounted = 1;
                     printf("save_restore: remounted '%s'\n", save_restoreNFSMntPoint);
                     SR_status = SR_STATUS_OK;
@@ -2632,17 +2659,11 @@ int set_savefile_path(char *path, char *pathsub)
             makeNfsPath(saveRestoreFilePath, save_restoreNFSMntPoint, fullpath);
         }
         if (save_restoreNFSHostName[0] && save_restoreNFSHostAddr[0] && save_restoreNFSMntPoint[0]) {
-            if (mountFileSystem(save_restoreNFSHostName, save_restoreNFSHostAddr, save_restoreNFSMntPoint,
-                                save_restoreNFSMntPoint) == OK) {
-                printf("save_restore:mountFileSystem:successfully mounted '%s'\n", save_restoreNFSMntPoint);
-                strNcpy(SR_recentlyStr, "mountFileSystem succeeded", STATUS_STR_LEN);
-            } else {
-                printf("save_restore: Can't mount '%s'\n", save_restoreNFSMntPoint);
-            }
+            do_mount();
         }
-        return (OK);
+        return(OK);
     } else {
-        return (ERROR);
+        return(ERROR);
     }
 }
 
