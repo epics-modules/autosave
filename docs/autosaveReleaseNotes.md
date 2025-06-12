@@ -10,9 +10,18 @@ autosave Release Notes
 
 ### Unreleased
 
+#### Breaking changes
+
+- Changes to `set_savefile_path` handling:
+  - No longer mounts NFS
+  - If the mountpoint (third argument) is not specified by `save_restoreSet_NFSHost`,
+    then you must call `set_savefile_path` before `save_restoreSet_NFSHost`.
+
 #### Fixes
 
+- Fix segmentation faults that can occur when saving long strings
 - Improve error handling for file copy operations 
+
 
 ### 5.11
 
