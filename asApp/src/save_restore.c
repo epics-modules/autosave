@@ -1204,10 +1204,12 @@ STATIC int save_restore(void)
                         num_errs += plist->not_connected;
 
                         /* write the data to disk */
-                        if ((plist->not_connected == 0) || (save_restoreIncompleteSetsOk))
+                        if ((plist->not_connected == 0) || (save_restoreIncompleteSetsOk)) {
                             status = write_save_file(plist, msg.filename, fullPath);
-                        if (save_restoreDebug > 1)
-                            printf("save_restore: op_SaveFile: write_save_file() returned %d\n", status);
+                            if (status != 0) {
+                                printf("save_restore: write_save_file() failed for %s\n", plist->save_file);
+                            }
+                        }
                     }
                     unlockList();
                     if (status == 0) { status = do_asVerify(fullPath, -1, save_restoreDebug, 0, ""); }
@@ -1968,7 +1970,10 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
                     strncat(tmpstr, datetime, TMPSTRLEN - 1 - strlen(tmpstr));
                     epicsSnprintf(SR_recentlyStr, STATUS_STR_LEN - 1, "Bad file: '%sB'", plist->save_file);
                 }
-                (void)myFileCopy(backup_file, tmpstr);
+                status = myFileCopy(backup_file, tmpstr);
+                if (status != 0) {
+                    printf("save_restore:write_save_file: myFileCopy() failed for '%s' -> '%s'\n", backup_file, tmpstr);
+                }
             }
             if (write_it(backup_file, plist) == ERROR) {
                 printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
@@ -2087,7 +2092,13 @@ STATIC void do_seq(struct chlist *plist)
 
     if (check_file(save_file) == BS_NONE) {
         printf("save_restore:do_seq - '%s' not found.  Writing a new one. [%s]\n", save_file, datetime);
-        (void)write_save_file(plist, NULL, NULL);
+        status = write_save_file(plist, NULL, NULL);
+        if (status != 0) {
+            printf("save_restore:do_seq - write_save_file() failed for '%s' [%s]\n", save_file, datetime);
+            plist->status = SR_STATUS_SEQ_WARN;
+            strNcpy(plist->statusStr, "Can't write sequence file", STATUS_STR_LEN);
+            TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
+        }
     }
     epicsSnprintf(p, MAX_PATH_LEN - 1 - strlen(backup_file), "%1d", plist->backup_sequence_num);
     if (myFileCopy(save_file, backup_file) != OK) {
@@ -2155,6 +2166,9 @@ STATIC void doPeriodicDatedBackup(struct chlist *plist)
         printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
         printf("save_restore:doPeriodicDatedBackup: Can't write file. [%s]\n", save_file);
         printf("*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***\n");
+        plist->status = SR_STATUS_FAIL;
+        strNcpy(plist->statusStr, "Can't write dated backup file", STATUS_STR_LEN);
+        TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
     }
 }
 
@@ -3340,7 +3354,10 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
         /* make  backup */
         strNcpy(bu_filename, restoreFile, MAX_PATH_LEN);
         strncat(bu_filename, ".bu", MAX_PATH_LEN - 1 - strlen(bu_filename));
-        (void)myFileCopy(restoreFile, bu_filename);
+        status = myFileCopy(restoreFile, bu_filename);
+        if (status != 0) {
+            printf("save_restore:do_manual_restore: myFileCopy() failed for '%s' -> '%s'\n", restoreFile, bu_filename);
+        }
     }
     strNcpy(SR_recentlyStr, "Manual restore succeeded", STATUS_STR_LEN);
 

@@ -20,6 +20,8 @@ autosave Release Notes
 #### Fixes
 
 - Fix segmentation faults that can occur when saving long strings
+- Improve error handling for file copy operations 
+
 
 ### 5.11
 
