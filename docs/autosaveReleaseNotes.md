@@ -8,6 +8,12 @@ nav_order: 3
 autosave Release Notes
 ======================
 
+### Unreleased
+
+#### Fixes
+
+- Improve error handling for file copy operations 
+
 ### 5.11
 
 - Resource leak fixes
