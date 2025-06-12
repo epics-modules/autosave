@@ -1036,7 +1036,7 @@ int reboot_restore(char *filename, initHookState init_state)
         }
         status = (long)myFileCopy(fname, bu_filename);
         if (status) {
-            errlogPrintf("save_restore: Can't write backup file.\n");
+            errlogPrintf("save_restore: Can't write backup file. myFileCopy() failed for '%s' -> '%s'\n", fname, bu_filename);
             if (pStatusVal) *pStatusVal = SR_STATUS_WARN;
             if (statusStr) strNcpy(statusStr, "Can't write backup file", STATUS_STR_LEN - 1);
             return (OK);
@@ -1184,7 +1184,10 @@ FILE *checkFile(const char *file)
         fGetDateStr(datetime);
         strncat(tmpstr, datetime, PATH_SIZE + 49 - strlen(tmpstr));
     }
-    (void)myFileCopy(file, tmpstr);
+    status = myFileCopy(file, tmpstr);
+    if (status != 0) {
+        errlogPrintf("save_restore: myFileCopy() failed for '%s' -> '%s'\n", file, tmpstr);
+    }
     return (0);
 }
 
