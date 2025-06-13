@@ -21,6 +21,7 @@ autosave Release Notes
 
 - Fix segmentation faults that can occur when saving long strings
 - Improve error handling for file copy operations 
+- Improve fgets error handling
 
 
 ### 5.11

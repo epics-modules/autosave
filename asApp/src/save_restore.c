@@ -3199,7 +3199,13 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
         return (ERROR);
     }
 
-    if (file_type == FROM_SAVE_FILE) { (void)fgets(buffer, BUF_SIZE, inp_fd); /* discard header line */ }
+    /* discard header line */
+    if (file_type == FROM_SAVE_FILE) {
+        if (fgets(buffer, BUF_SIZE, inp_fd) == NULL && ferror(inp_fd)) {
+            printf("save_restore:do_manual_restore: Error reading from file\n");
+            return ERROR;
+        }
+    }
 
     /* Prepare to use macro substitution */
     if (macrostring && macrostring[0]) {
@@ -3257,7 +3263,16 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
             if (is_scalar || is_long_string) {
                 if (!is_long_string) {
                     /* Discard additional characters until end of line */
-                    while (bp[strlen(bp) - 1] != '\n') fgets(buffer, BUF_SIZE, inp_fd);
+                    while (bp[strlen(bp) - 1] != '\n') {
+                        if (fgets(buffer, BUF_SIZE, inp_fd) == NULL) {
+                            if (ferror(inp_fd)) {
+                                printf("save_restore:do_manual_restore: Error reading from file\n");
+                                return ERROR;
+                            }
+                            break;  /* EOF is fine, just stop reading */
+                        }
+                        bp = buffer;
+                    }
                     epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
                     value_string[40] = '\0';
                     if (ca_search(realName, &chanid) != ECA_NORMAL) {
