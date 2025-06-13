@@ -841,7 +841,11 @@ int reboot_restore(char *filename, initHookState init_state)
         }
     }
 
-    (void)fgets(buffer, BUF_SIZE, inp_fd); /* discard header line */
+    /* Skip header line if it exists */
+    if (fgets(buffer, BUF_SIZE, inp_fd) == NULL && ferror(inp_fd)) {
+        printf("save_restore:reboot_restore: Error reading from file\n");
+        return ERROR;
+    }
     if (save_restoreDebug >= 1) { errlogPrintf("dbrestore:reboot_restore: header line '%s'\n", buffer); }
     status = fseek(inp_fd, 0, SEEK_SET); /* go to beginning */
     if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
@@ -1135,7 +1139,16 @@ FILE *checkFile(const char *file)
     }
 
     /* Get the version number of the code that wrote the file */
-    fgets(tmpstr, 29, inp_fd);
+    if (fgets(tmpstr, sizeof(tmpstr), inp_fd) == NULL) {
+        if (ferror(inp_fd)) {
+            printf("save_restore:checkFile: Error reading from file\n");
+            fclose(inp_fd);
+            return (0);
+        }
+        /* EOF - file is empty */
+        fclose(inp_fd);
+        return (0);
+    }
     versionstr = strchr(tmpstr, (int)'R');
     if (!versionstr) versionstr = strchr(tmpstr, (int)'V');
     if (!versionstr) {
@@ -1157,7 +1170,16 @@ FILE *checkFile(const char *file)
     /* check out "successfully written" marker */
     status = fseek(inp_fd, -6, SEEK_END);
     if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
-    fgets(tmpstr, 6, inp_fd);
+    if (fgets(tmpstr, 6, inp_fd) == NULL) {
+        if (ferror(inp_fd)) {
+            printf("save_restore:checkFile: Error reading end marker\n");
+            fclose(inp_fd);
+            return (0);
+        }
+        /* EOF - file is too short */
+        fclose(inp_fd);
+        return (0);
+    }
     if (save_restoreDebug >= 5) printf("checkFile: files ends with '%s'\n", tmpstr);
     if (strncmp(tmpstr, "<END>", 5) == 0) {
         status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
@@ -1167,7 +1189,16 @@ FILE *checkFile(const char *file)
 
     status = fseek(inp_fd, -7, SEEK_END);
     if (status) myPrintErrno("checkFile: fseek error ", __FILE__, __LINE__);
-    fgets(tmpstr, 7, inp_fd);
+    if (fgets(tmpstr, 7, inp_fd) == NULL) {
+        if (ferror(inp_fd)) {
+            printf("save_restore:checkFile: Error reading end marker\n");
+            fclose(inp_fd);
+            return (0);
+        }
+        /* EOF - file is too short */
+        fclose(inp_fd);
+        return (0);
+    }
     if (save_restoreDebug >= 5) printf("checkFile: files ends with '%s'\n", tmpstr);
     if (strncmp(tmpstr, "<END>", 5) == 0) {
         status = fseek(inp_fd, 0, SEEK_SET); /* file is ok.  go to beginning */
