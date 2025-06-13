@@ -1920,6 +1920,7 @@ STATIC int write_save_file(struct chlist *plist, const char *configName, char *r
     char tmpstr[TMPSTRLEN];
     int backup_state = BS_OK;
     char datetime[32];
+	int status;
 
     fGetDateStr(datetime);
     plist->status = SR_STATUS_OK;
@@ -2062,6 +2063,7 @@ STATIC void do_seq(struct chlist *plist)
     int i;
     struct stat fileStat;
     char datetime[32];
+	int status;
 
     fGetDateStr(datetime);
 
