@@ -696,6 +696,11 @@ int manual_save(char *request_file, char *save_file, callbackFunc callbackFuncti
 {
     op_msg msg;
 
+    if ((request_file == NULL) || (strlen(request_file) < 1) || (strlen(request_file) >= OP_MSG_FILENAME_SIZE - 1)) {
+        printf("manual_save: bad filename\n");
+        return (-1);
+    }
+
     if (save_restoreDebug)
         printf("manual_save: request_file='%s', save_file='%s', callbackFunction=%p, puserPvt=%p\n", request_file,
                save_file, callbackFunction, puserPvt);
