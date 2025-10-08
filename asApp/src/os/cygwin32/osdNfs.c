@@ -17,11 +17,11 @@ extern volatile int save_restoreDebug;
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     printf("mountFileSytem not supported on this OS\n");
-    return (0);
+    return (ERROR);
 }
 
 int dismountFileSystem(char *mntpoint)
 {
     printf("dismountFileSytem not supported on this OS\n");
-    return (0);
+    return (ERROR);
 }
