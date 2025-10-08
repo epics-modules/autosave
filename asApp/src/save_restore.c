@@ -715,6 +715,11 @@ int manual_save(char *request_file, char *save_file, callbackFunc callbackFuncti
     }
     msg.puserPvt = puserPvt;
     msg.callbackFunction = callbackFunction;
+
+    if (opMsgQueue == NULL) {
+        printf("manual_save: message queue not initialized (no restore set has been created?)\n");
+        return (-1);
+    }
     epicsMessageQueueSend(opMsgQueue, (void *)&msg, OP_MSG_SIZE);
     return (0);
 }
