@@ -1535,7 +1535,7 @@ STATIC int get_channel_values(struct chlist *plist)
         }
     }
     if (ca_pend_io(MIN(10.0, .1 * num_channels)) != ECA_NORMAL) {
-        printf("save_restore:get_channel_values: not all gets completed");
+        printf("save_restore:get_channel_values: not all gets completed\n");
         not_connected++;
     }
 
@@ -2248,18 +2248,18 @@ STATIC int create_data_set(char *filename,              /* save set request file
     /* initialize save_restore routines */
     if (!save_restore_init) {
         if ((sr_mutex = epicsMutexCreate()) == 0) {
-            printf("save_restore:create_data_set: could not create list header mutex");
+            printf("save_restore:create_data_set: could not create list header mutex\n");
             return (ERROR);
         }
         opMsgQueue = epicsMessageQueueCreate(OP_MSG_QUEUE_SIZE, OP_MSG_SIZE);
         if (opMsgQueue == NULL) {
-            printf("save_restore:create_data_set: could not create message queue");
+            printf("save_restore:create_data_set: could not create message queue\n");
             return (ERROR);
         }
         taskID = epicsThreadCreate("save_restore", taskPriority, epicsThreadGetStackSize(epicsThreadStackBig),
                                    (EPICSTHREADFUNC)save_restore, 0);
         if (taskID == NULL) {
-            printf("save_restore:create_data_set: could not create save_restore task");
+            printf("save_restore:create_data_set: could not create save_restore task\n");
             return (ERROR);
         }
         save_restore_init = 1;
@@ -2283,7 +2283,7 @@ STATIC int create_data_set(char *filename,              /* save set request file
     while (plist != 0) {
         if (!strcmp(plist->reqFile, filename)) {
             if (plist->save_method & save_method) {
-                printf("save_restore:create_data_set: '%s' already in %x mode", filename, save_method);
+                printf("save_restore:create_data_set: '%s' already in %x mode\n", filename, save_method);
                 unlockList();
                 return (ERROR);
             } else {
@@ -2292,7 +2292,7 @@ STATIC int create_data_set(char *filename,              /* save set request file
                     if (trigger_channel) {
                         strNcpy(plist->trigger_channel, trigger_channel, PV_NAME_LEN);
                     } else {
-                        printf("save_restore:create_data_set: no trigger channel");
+                        printf("save_restore:create_data_set: no trigger channel\n");
                         unlockList();
                         return (ERROR);
                     }
@@ -2319,7 +2319,7 @@ STATIC int create_data_set(char *filename,              /* save set request file
 
     /* create a new channel list */
     if ((plist = (struct chlist *)calloc(1, sizeof(struct chlist))) == (struct chlist *)0) {
-        printf("save_restore:create_data_set: channel list calloc failed");
+        printf("save_restore:create_data_set: channel list calloc failed\n");
         return (ERROR);
     }
     if (macrostring && (strlen(macrostring) > 0)) {
@@ -3194,7 +3194,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
         inp_fd = fopen(restoreFile, "r");
     }
     if (inp_fd == NULL) {
-        printf("save_restore:do_manual_restore: Can't open save file.");
+        printf("save_restore:do_manual_restore: Can't open save file.\n");
         strNcpy(SR_recentlyStr, "Manual restore failed", STATUS_STR_LEN);
         return (ERROR);
     }
@@ -3567,7 +3567,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
                 plist->status = SR_STATUS_WARN;
                 strNcpy(plist->statusStr, "Can't alloc channel memory", EBUF_SIZE);
                 TRY_TO_PUT_AND_FLUSH(DBR_STRING, plist->statusStr_chid, &plist->statusStr);
-                printf("save_restore:readReqFile: channel calloc failed");
+                printf("save_restore:readReqFile: channel calloc failed\n");
             } else {
                 /* add new element to the list */
 #if BACKWARDS_LIST
