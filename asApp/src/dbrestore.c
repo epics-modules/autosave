@@ -843,7 +843,7 @@ int reboot_restore(char *filename, initHookState init_state)
 
     /* Skip header line if it exists */
     if (fgets(buffer, BUF_SIZE, inp_fd) == NULL && ferror(inp_fd)) {
-        printf("save_restore:reboot_restore: Error reading from file\n");
+        errlogPrintf("save_restore:reboot_restore: Error reading from file\n");
         return ERROR;
     }
     if (save_restoreDebug >= 1) { errlogPrintf("dbrestore:reboot_restore: header line '%s'\n", buffer); }
@@ -1550,7 +1550,7 @@ int eraseFile(const char *filename)
 
     fname = macEnvExpand(filename);
     if (fname == NULL) {
-        printf("save_restore:eraseFile: macEnvExpand('%s') returned NULL\n", filename);
+        errlogPrintf("save_restore:eraseFile: macEnvExpand('%s') returned NULL\n", filename);
         return (ERROR);
     }
     if ((fd = fopen(fname, "w")) != NULL) { fclose(fd); }
@@ -1566,7 +1566,7 @@ int appendToFile(const char *filename, const char *line)
 
     fname = macEnvExpand(filename);
     if (fname == NULL) {
-        printf("save_restore:appendToFile: macEnvExpand('%s') returned NULL\n", filename);
+        errlogPrintf("save_restore:appendToFile: macEnvExpand('%s') returned NULL\n", filename);
         return (ERROR);
     }
     if ((fd = fopen(fname, "a")) != NULL) {
