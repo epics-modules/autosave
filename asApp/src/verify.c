@@ -536,7 +536,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 				 * If there are more characters than we can handle, just pretend we read them.
 				 */
                 /* *bp == ELEMENT_END ,*/
-                if (debug > 1) printf("array_read: looking for element-end: '%s'\n", bp);
+                if (debug > 1) printf("array_read: looking for element-end: '%s'\n", bp ? bp : "(null)");
                 for (found = 0; (found == 0) && !end_of_file;) {
                     while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
                     switch (*bp) {
@@ -613,7 +613,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
             if ((bp = fgets(buffer, BUF_SIZE, fp)) == NULL) end_of_file = 1;
         }
     }
-    if (debug > 1) printf("array_read: positioned for next PV '%s'\n", bp);
+    if (debug > 1) printf("array_read: positioned for next PV '%s'\n", bp ? bp : "(null)");
     if (!status && end_of_file) status = end_of_file;
 
     return (status);
