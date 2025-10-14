@@ -74,11 +74,11 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
     }
     /* check that (copy of) .sav file is good */
     status = fseek(fp, -6, SEEK_END);
-    fgets(s, 6, fp);
+    if (fgets(s, 6, fp) == NULL) file_ok = 0;
     if (strncmp(s, "<END>", 5) == 0) file_ok = 1;
     if (!file_ok) {
         status = fseek(fp, -7, SEEK_END);
-        fgets(s, 7, fp);
+        if (fgets(s, 7, fp) == NULL) file_ok = 0;
         if (strncmp(s, "<END>", 5) == 0) file_ok = 1;
     }
     if (status || !file_ok) {
@@ -334,7 +334,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
                                 value_string[strlen(value_string) - 1] = '\0';
                         }
                         /* Discard additional characters until end of line */
-                        while (bp[strlen(bp) - 1] != '\n') fgets(s, BUF_SIZE, fp);
+                        while (bp[strlen(bp) - 1] != '\n' && fgets(s, BUF_SIZE, fp) != NULL);
 
                         status = ca_array_get(DBR_CHAR, element_count, chid, (void *)svalue);
                     } else {
