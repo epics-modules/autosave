@@ -90,6 +90,7 @@ extern struct restoreList restoreFileList;
 extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
 extern int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName);
+extern int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
 extern volatile int save_restoreRemountThreshold;
 

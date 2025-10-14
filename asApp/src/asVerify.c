@@ -47,7 +47,6 @@ int main(int argc, char **argv)
 {
     FILE *fp = NULL, *ftmp = NULL;
     char s[BUF_SIZE], filename[PATH_SIZE], restoreFileName[PATH_SIZE];
-    char *tempname;
     int n;
     int numDifferences;
     int status;
@@ -86,8 +85,7 @@ int main(int argc, char **argv)
         printf("Can't open %s\n", filename);
         return (-1);
     }
-    tempname = tmpnam(NULL);
-    ftmp = fopen(tempname, "w");
+    ftmp = tmpfile();
     if (ftmp == NULL) {
         printf("Can't open temp file.\n");
         fclose(fp);
@@ -96,8 +94,6 @@ int main(int argc, char **argv)
     while (!feof(fp) && (n = fread(s, 1, BUF_SIZE, fp))) { fwrite(s, 1, n, ftmp); }
     fclose(fp);
     fp = NULL;
-    fclose(ftmp);
-    ftmp = NULL;
 
     if (write_restore_file) {
         strcpy(restoreFileName, filename);
@@ -105,9 +101,8 @@ int main(int argc, char **argv)
     } else {
         strcpy(restoreFileName, "");
     }
-    numDifferences = do_asVerify(tempname, verbose, debug, write_restore_file, restoreFileName);
+    numDifferences = do_asVerify_fp(ftmp, verbose, debug, write_restore_file, restoreFileName);
 
-    remove(tempname);
     ca_context_destroy();
     return (numDifferences);
 }

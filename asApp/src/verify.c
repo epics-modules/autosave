@@ -35,16 +35,28 @@
 
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count, char *read_buffer,
                 int debug);
+int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
 /* verbose==-1 means don't say anything unless there's a problem. */
 int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName)
+{
+    FILE *fp = NULL;
+    fp = fopen(fileName, "r");
+    if (fp == NULL) {
+        printf("asVerify: Can't open '%s'.\n", fileName);
+        return (-1);
+    }
+    return do_asVerify_fp(fp, verbose, debug, write_restore_file, restoreFileName);
+}
+
+int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName)
 {
     float *pfvalue, *pf_read;
     double *pdvalue, *pd_read, diff, max_diff = 0.;
     short *penum_value, *penum_value_read;
     char *svalue, *svalue_read;
     chid chid;
-    FILE *fp = NULL, *fr = NULL, *fr1 = NULL;
+    FILE *fr = NULL, *fr1 = NULL;
     char c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN + 1], value_string[BUF_SIZE];
     char trial_restoreFileName[PATH_SIZE];
     char *CA_buffer = NULL, *read_buffer = NULL, *pc = NULL;
@@ -53,12 +65,6 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
     int numPVs, numDifferences, numPVsNotConnected, nspace;
     int different, wrote_head = 0, status, file_ok = 0;
     long element_count = 0, storageBytes = 0, alloc_CA_buffer = 0;
-
-    fp = fopen(fileName, "r");
-    if (fp == NULL) {
-        printf("asVerify: Can't open '%s'.\n", fileName);
-        return (-1);
-    }
 
     if (write_restore_file) {
         strcpy(trial_restoreFileName, restoreFileName);
