@@ -397,11 +397,15 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
     char *p_char = NULL;
     short *p_short = NULL;
     epicsInt32 *p_long = NULL;
+#ifdef DBR_INT64
     epicsInt64 *p_int64 = NULL;
+#endif
     unsigned char *p_uchar = NULL;
     unsigned short *p_ushort = NULL;
     epicsUInt32 *p_ulong = NULL;
+#ifdef DBR_INT64
     epicsUInt64 *p_uint64 = NULL;
+#endif
     float *p_float = NULL;
     double *p_double = NULL;
 
