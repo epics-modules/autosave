@@ -343,6 +343,9 @@ STATIC epicsThreadId taskID = 0; /* save_restore task ID */
 /*** stuff for reporting status to EPICS client ***/
 STATIC char status_prefix[30] = "";
 
+/* Make sure to leave room for trailing null */
+char SR_STATUS_STR[5][10] = {"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
+
 STATIC long SR_status = SR_STATUS_INIT;
 STATIC unsigned short SR_heartbeat = 0;
 STATIC char SR_statusStr[STATUS_STR_LEN] = "", SR_recentlyStr[STATUS_STR_LEN] = "";

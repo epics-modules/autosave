@@ -29,9 +29,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-/* Make sure to leave room for trailing null */
-static char SR_STATUS_STR[5][10] = {"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
-
 #define SR_STATUS_OK 4
 #define SR_STATUS_SEQ_WARN 3
 #define SR_STATUS_WARN 2
