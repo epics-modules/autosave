@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         fclose(fp);
         return (-1);
     }
-    while (!feof(fp) && (n = fread(s, 1, BUF_SIZE, fp))) { fwrite(s, 1, n, ftmp); }
+    while (!feof(fp) && (n = (int)fread(s, 1, BUF_SIZE, fp))) { fwrite(s, 1, n, ftmp); }
     fclose(fp);
     fp = NULL;
 

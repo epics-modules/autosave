@@ -178,6 +178,7 @@
 #define SET_FILE_PERMISSIONS 1
 
 #ifdef _WIN32
+#undef SET_FILE_PERMISSIONS
 #define SET_FILE_PERMISSIONS 0
 #endif
 
@@ -598,7 +599,7 @@ STATIC void on_change_timer(CALLBACK *pcallback)
 STATIC void on_change_save(struct event_handler_args event)
 {
     struct chlist *plist;
-    if (save_restoreDebug >= 10) { logMsg("on_change_save: event.usr=0x%lx\n", (unsigned long)event.usr); }
+    if (save_restoreDebug >= 10) { logMsg("on_change_save: event.usr=0x%llx\n", (unsigned long long)event.usr); }
     plist = (struct chlist *)event.usr;
 
     if (plist) {
@@ -2362,7 +2363,7 @@ STATIC int create_data_set(char *filename,              /* save set request file
 	while ((plist->save_file[inx] != 0) && (plist->save_file[inx] != '.') && (inx < (FN_LEN-6))) inx++;
 #else
     /* fix bfr 2007-10-01: need to search for last '.', not first */
-    inx = strlen(plist->save_file) - 1;
+    inx = (int)strlen(plist->save_file) - 1;
     while (inx > 0 && plist->save_file[inx] != '.') inx--;
 #endif
     plist->save_file[inx] = 0; /* truncate if necessary to leave room for ".sav" + null */
@@ -2502,8 +2503,8 @@ int set_requestfile_path(char *path, char *pathsub)
     char fullpath[MAX_PATH_LEN + 1] = "";
     int path_len = 0, pathsub_len = 0;
 
-    if (path && *path) path_len = strlen(path);
-    if (pathsub && *pathsub) pathsub_len = strlen(pathsub);
+    if (path && *path) path_len = (int)strlen(path);
+    if (pathsub && *pathsub) pathsub_len = (int)strlen(pathsub);
     if (path_len + pathsub_len > (MAX_PATH_LEN - 1)) { /* may have to add '/' */
         printf("save_restore:set_requestfile_path: 'path'+'pathsub' is too long\n");
         return (ERROR);
@@ -3294,7 +3295,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
                     if (bp[strlen(bp) - 1] != '\n') {
                         /* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
                         bp = fgets(buffer, BUF_SIZE, inp_fd);
-                        n = BUF_SIZE - strlen(value_string) - 1;
+                        n = BUF_SIZE - (int)strlen(value_string) - 1;
                         strncat(value_string, bp, n);
                         if (value_string[strlen(value_string) - 1] == '\n')
                             value_string[strlen(value_string) - 1] = '\0';
@@ -3308,7 +3309,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
                     } else if (ca_pend_io(0.5) != ECA_NORMAL) {
                         num_errs++;
                         /* Don't forget trailing null character: "strlen(value_string)+1" below */
-                    } else if (ca_array_put(DBR_CHAR, strlen(value_string) + 1, chanid, value_string) != ECA_NORMAL) {
+                    } else if (ca_array_put(DBR_CHAR, (unsigned long)strlen(value_string) + 1, chanid, value_string) != ECA_NORMAL) {
                         printf("save_restore:do_manual_restore: ca_array_put of '%s' to '%s' failed\n", value_string,
                                PVname);
                         num_errs++;

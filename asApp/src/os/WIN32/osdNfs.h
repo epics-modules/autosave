@@ -15,6 +15,7 @@
 
 /* definition except for vxWorks */
 #define OK 0
+#undef ERROR /* ERROR is defined by Windows in wingdi.h */
 #define ERROR -1
 #define logMsg errlogPrintf
 

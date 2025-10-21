@@ -334,7 +334,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                             /* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
                             if (debug > 3) printf("did not reach end of line for long-string PV\n");
                             bp = fgets(s, BUF_SIZE, fp);
-                            n = BUF_SIZE - strlen(value_string) - 1;
+                            n = BUF_SIZE - (int)strlen(value_string) - 1;
                             strncat(value_string, bp, n);
                             if (value_string[strlen(value_string) - 1] == '\n')
                                 value_string[strlen(value_string) - 1] = '\0';
@@ -376,7 +376,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                         if (different || (verbose > 0)) {
                             WRITE_HEADER;
                             if (is_scalar || is_long_string) {
-                                nspace = 24 - strlen(value_string);
+                                nspace = 24 - (int)strlen(value_string);
                                 if (nspace < 1) nspace = 1;
                                 printf("%s%-24s '%s'%*s'%s'\n", different ? "*** " : "    ", PVname, value_string,
                                        nspace, "", svalue);
@@ -461,7 +461,7 @@ static float safeDoubleToFloat(double d)
         if (d > 0.0) f = FLT_MIN;
         else f = -FLT_MIN;
     } else {
-        f = d;
+        f = (float)d;
     }
     return (f);
 }

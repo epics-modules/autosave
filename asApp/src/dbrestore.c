@@ -124,7 +124,7 @@ float mySafeDoubleToFloat(double d)
         if (d > 0.0) f = FLT_MIN;
         else f = -FLT_MIN;
     } else {
-        f = d;
+        f = (float)d;
     }
     return (f);
 }
@@ -290,7 +290,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
                 status = dbNameToAddr(PVname, paddr);
                 if (!status) {
                     if (is_long_string && paddr->field_type == DBF_CHAR) {
-                        status = dbPut(paddr, DBF_CHAR, value_string, strlen(value_string) + 1);
+                        status = dbPut(paddr, DBF_CHAR, value_string, (long)strlen(value_string) + 1);
                     } else {
                         status = dbPut(paddr, DBF_STRING, value_string, 1);
                     }
@@ -947,7 +947,7 @@ int reboot_restore(char *filename, initHookState init_state)
                             printf("                         ebuffer='%s'\n", ebuffer);
                         }
                     }
-                    n = BUF_SIZE - strlen(value_string) - 1;
+                    n = BUF_SIZE - (int)strlen(value_string) - 1;
                     strncat(value_string, bp, n);
                     /* make sure value_string is properly null-terminated */
                     value_string[BUF_SIZE - 1] = '\0';
@@ -1508,7 +1508,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
                         for (pend = pbegin; *pend && !isspace((int)*pend); pend++) {}
                         /* pend points to whitespace or \0 */
 
-                        flen = pend - pbegin;
+                        flen = (int)(pend - pbegin);
                         if (flen >= sizeof(field) - 1) flen = sizeof(field) - 1;
                         memcpy(field, pbegin, flen);
                         field[flen] = '\0';
