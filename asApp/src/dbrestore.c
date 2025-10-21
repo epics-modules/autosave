@@ -949,6 +949,8 @@ int reboot_restore(char *filename, initHookState init_state)
                     }
                     n = BUF_SIZE - strlen(value_string) - 1;
                     strncat(value_string, bp, n);
+                    /* make sure value_string is properly null-terminated */
+                    value_string[BUF_SIZE - 1] = '\0';
                     /* we don't want that '\n' in the string */
                     if (value_string[strlen(value_string) - 1] == '\n') value_string[strlen(value_string) - 1] = '\0';
                 }
