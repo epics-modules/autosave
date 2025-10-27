@@ -21,12 +21,12 @@ extern volatile int save_restoreDebug;
 int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
 {
     printf("NFS mounting for solaris is managed by OS\n");
-    return (OK);
+    return (ERROR);
 }
 
 /* Note: file system mounting is managed by Linux */
 int dismountFileSystem(char *mntpoint)
 {
     printf("Not allowed to dismount for solaris\n");
-    return (OK);
+    return (ERROR);
 }

@@ -117,7 +117,7 @@ int mountFileSystem(char *uidhost, char *addr, char *path, char *mntpoint)
     }
 #else
     printf("Autosave is not configured to manage the file-system mount point.\n");
-    return (OK);
+    return (ERROR);
 #endif
 }
 
@@ -139,7 +139,7 @@ int dismountFileSystem(char *mntpoint)
 #else
 
     printf("Autosave is not configured to manage the file-system mount point.\n");
-    return (OK);
+    return (ERROR);
 
 #endif
 }
