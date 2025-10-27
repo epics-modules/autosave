@@ -696,6 +696,11 @@ int manual_save(char *request_file, char *save_file, callbackFunc callbackFuncti
 {
     op_msg msg;
 
+    if ((request_file == NULL) || (strlen(request_file) < 1) || (strlen(request_file) >= OP_MSG_FILENAME_SIZE - 1)) {
+        printf("manual_save: bad filename\n");
+        return (-1);
+    }
+
     if (save_restoreDebug)
         printf("manual_save: request_file='%s', save_file='%s', callbackFunction=%p, puserPvt=%p\n", request_file,
                save_file, callbackFunction, puserPvt);
@@ -710,6 +715,11 @@ int manual_save(char *request_file, char *save_file, callbackFunc callbackFuncti
     }
     msg.puserPvt = puserPvt;
     msg.callbackFunction = callbackFunction;
+
+    if (opMsgQueue == NULL) {
+        printf("manual_save: message queue not initialized (no restore set has been created?)\n");
+        return (-1);
+    }
     epicsMessageQueueSend(opMsgQueue, (void *)&msg, OP_MSG_SIZE);
     return (0);
 }
