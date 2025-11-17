@@ -81,7 +81,26 @@ record(stringout, "$(P)SR_0_Name") {
 }
 
 record(longout, "$(P)SR_0_State") {
+  field(DESC, "Save method for pass 0")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_0_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_0_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_0_Status") {
@@ -117,7 +136,26 @@ record(stringout, "$(P)SR_1_Name") {
 }
 
 record(longout, "$(P)SR_1_State") {
+  field(DESC, "Save method for pass 1")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_1_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_1_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_1_Status") {
@@ -153,7 +191,26 @@ record(stringout, "$(P)SR_2_Name") {
 }
 
 record(longout, "$(P)SR_2_State") {
+  field(DESC, "Save method for pass 2")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_2_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_2_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_2_Status") {
@@ -189,7 +246,26 @@ record(stringout, "$(P)SR_3_Name") {
 }
 
 record(longout, "$(P)SR_3_State") {
+  field(DESC, "Save method for pass 3")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_3_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_3_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_3_Status") {
@@ -225,7 +301,26 @@ record(stringout, "$(P)SR_4_Name") {
 }
 
 record(longout, "$(P)SR_4_State") {
+  field(DESC, "Save method for pass 4")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_4_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_4_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_4_Status") {
@@ -261,7 +356,26 @@ record(stringout, "$(P)SR_5_Name") {
 }
 
 record(longout, "$(P)SR_5_State") {
+  field(DESC, "Save method for pass 5")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_5_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_5_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_5_Status") {
@@ -297,7 +411,26 @@ record(stringout, "$(P)SR_6_Name") {
 }
 
 record(longout, "$(P)SR_6_State") {
+  field(DESC, "Save method for pass 6")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_6_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_6_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_6_Status") {
@@ -333,7 +466,26 @@ record(stringout, "$(P)SR_7_Name") {
 }
 
 record(longout, "$(P)SR_7_State") {
+  field(DESC, "Save method for pass 7")
   field(DTYP, "Soft Channel")
+}
+
+record(mbbi, "$(P)SR_7_StateEnum") {
+  field(DESC, "Save method (enumerated)")
+  field(INP, "$(P)SR_7_State CP")
+  field(DTYP, "Raw Soft Channel")
+  field(ZRVL, "0")
+  field(ONVL, "1")
+  field(TWVL, "2")
+  field(THVL, "4")
+  field(FRVL, "12")
+  field(FVVL, "16")
+  field(ZRST, "None")
+  field(ONST, "Periodic")
+  field(TWST, "Triggered")
+  field(THST, "Timer")
+  field(FRST, "Monitored")
+  field(FVST, "Manual")
 }
 
 record(mbbo, "$(P)SR_7_Status") {
