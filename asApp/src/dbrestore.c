@@ -106,6 +106,8 @@ int restoreFileListsInitialized = 0;
 ELLLIST pass0List;
 ELLLIST pass1List;
 
+extern char SR_STATUS_STR[5][10];
+
 void myPrintErrno(char *s, char *file, int line)
 {
     errlogPrintf("%s(%d): [0x%x]=%s:%s\n", file, line, errno, s, strerror(errno));
@@ -124,7 +126,7 @@ float mySafeDoubleToFloat(double d)
         if (d > 0.0) f = FLT_MIN;
         else f = -FLT_MIN;
     } else {
-        f = d;
+        f = (float)d;
     }
     return (f);
 }
@@ -290,7 +292,7 @@ STATIC long scalar_restore(int pass, DBENTRY *pdbentry, char *PVname, char *valu
                 status = dbNameToAddr(PVname, paddr);
                 if (!status) {
                     if (is_long_string && paddr->field_type == DBF_CHAR) {
-                        status = dbPut(paddr, DBF_CHAR, value_string, strlen(value_string) + 1);
+                        status = dbPut(paddr, DBF_CHAR, value_string, (long)strlen(value_string) + 1);
                     } else {
                         status = dbPut(paddr, DBF_STRING, value_string, 1);
                     }
@@ -397,11 +399,15 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
     char *p_char = NULL;
     short *p_short = NULL;
     epicsInt32 *p_long = NULL;
+#ifdef DBR_INT64
     epicsInt64 *p_int64 = NULL;
+#endif
     unsigned char *p_uchar = NULL;
     unsigned short *p_ushort = NULL;
     epicsUInt32 *p_ulong = NULL;
+#ifdef DBR_INT64
     epicsUInt64 *p_uint64 = NULL;
+#endif
     float *p_float = NULL;
     double *p_double = NULL;
 
@@ -942,8 +948,10 @@ int reboot_restore(char *filename, initHookState init_state)
                             printf("                         ebuffer='%s'\n", ebuffer);
                         }
                     }
-                    n = BUF_SIZE - strlen(value_string) - 1;
+                    n = BUF_SIZE - (int)strlen(value_string) - 1;
                     strncat(value_string, bp, n);
+                    /* make sure value_string is properly null-terminated */
+                    value_string[BUF_SIZE - 1] = '\0';
                     /* we don't want that '\n' in the string */
                     if (value_string[strlen(value_string) - 1] == '\n') value_string[strlen(value_string) - 1] = '\0';
                 }
@@ -1501,7 +1509,7 @@ void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
                         for (pend = pbegin; *pend && !isspace((int)*pend); pend++) {}
                         /* pend points to whitespace or \0 */
 
-                        flen = pend - pbegin;
+                        flen = (int)(pend - pbegin);
                         if (flen >= sizeof(field) - 1) flen = sizeof(field) - 1;
                         memcpy(field, pbegin, flen);
                         field[flen] = '\0';

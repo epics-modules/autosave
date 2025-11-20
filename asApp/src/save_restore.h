@@ -29,9 +29,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-/* Make sure to leave room for trailing null */
-static char SR_STATUS_STR[5][10] = {"No Status", " Failure ", " Warning ", " Warning ", "    Ok   "};
-
 #define SR_STATUS_OK 4
 #define SR_STATUS_SEQ_WARN 3
 #define SR_STATUS_WARN 2
@@ -90,6 +87,7 @@ extern struct restoreList restoreFileList;
 extern int myFileCopy(const char *source, const char *dest);
 extern void dbrestoreShow(void);
 extern int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName);
+extern int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
 extern volatile int save_restoreRemountThreshold;
 

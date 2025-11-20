@@ -35,16 +35,28 @@
 
 long read_array(FILE *fp, char *PVname, char *value_string, short field_type, long element_count, char *read_buffer,
                 int debug);
+int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName);
 
 /* verbose==-1 means don't say anything unless there's a problem. */
 int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, char *restoreFileName)
+{
+    FILE *fp = NULL;
+    fp = fopen(fileName, "r");
+    if (fp == NULL) {
+        printf("asVerify: Can't open '%s'.\n", fileName);
+        return (-1);
+    }
+    return do_asVerify_fp(fp, verbose, debug, write_restore_file, restoreFileName);
+}
+
+int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, char *restoreFileName)
 {
     float *pfvalue, *pf_read;
     double *pdvalue, *pd_read, diff, max_diff = 0.;
     short *penum_value, *penum_value_read;
     char *svalue, *svalue_read;
     chid chid;
-    FILE *fp = NULL, *fr = NULL, *fr1 = NULL;
+    FILE *fr = NULL, *fr1 = NULL;
     char c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN + 1], value_string[BUF_SIZE];
     char trial_restoreFileName[PATH_SIZE];
     char *CA_buffer = NULL, *read_buffer = NULL, *pc = NULL;
@@ -53,12 +65,6 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
     int numPVs, numDifferences, numPVsNotConnected, nspace;
     int different, wrote_head = 0, status, file_ok = 0;
     long element_count = 0, storageBytes = 0, alloc_CA_buffer = 0;
-
-    fp = fopen(fileName, "r");
-    if (fp == NULL) {
-        printf("asVerify: Can't open '%s'.\n", fileName);
-        return (-1);
-    }
 
     if (write_restore_file) {
         strcpy(trial_restoreFileName, restoreFileName);
@@ -74,11 +80,11 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
     }
     /* check that (copy of) .sav file is good */
     status = fseek(fp, -6, SEEK_END);
-    fgets(s, 6, fp);
+    if (fgets(s, 6, fp) == NULL) file_ok = 0;
     if (strncmp(s, "<END>", 5) == 0) file_ok = 1;
     if (!file_ok) {
         status = fseek(fp, -7, SEEK_END);
-        fgets(s, 7, fp);
+        if (fgets(s, 7, fp) == NULL) file_ok = 0;
         if (strncmp(s, "<END>", 5) == 0) file_ok = 1;
     }
     if (status || !file_ok) {
@@ -328,13 +334,13 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
                             /* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
                             if (debug > 3) printf("did not reach end of line for long-string PV\n");
                             bp = fgets(s, BUF_SIZE, fp);
-                            n = BUF_SIZE - strlen(value_string) - 1;
+                            n = BUF_SIZE - (int)strlen(value_string) - 1;
                             strncat(value_string, bp, n);
                             if (value_string[strlen(value_string) - 1] == '\n')
                                 value_string[strlen(value_string) - 1] = '\0';
                         }
                         /* Discard additional characters until end of line */
-                        while (bp[strlen(bp) - 1] != '\n') fgets(s, BUF_SIZE, fp);
+                        while (bp[strlen(bp) - 1] != '\n' && fgets(s, BUF_SIZE, fp) != NULL);
 
                         status = ca_array_get(DBR_CHAR, element_count, chid, (void *)svalue);
                     } else {
@@ -370,7 +376,7 @@ int do_asVerify(char *fileName, int verbose, int debug, int write_restore_file, 
                         if (different || (verbose > 0)) {
                             WRITE_HEADER;
                             if (is_scalar || is_long_string) {
-                                nspace = 24 - strlen(value_string);
+                                nspace = 24 - (int)strlen(value_string);
                                 if (nspace < 1) nspace = 1;
                                 printf("%s%-24s '%s'%*s'%s'\n", different ? "*** " : "    ", PVname, value_string,
                                        nspace, "", svalue);
@@ -455,7 +461,7 @@ static float safeDoubleToFloat(double d)
         if (d > 0.0) f = FLT_MIN;
         else f = -FLT_MIN;
     } else {
-        f = d;
+        f = (float)d;
     }
     return (f);
 }
@@ -536,7 +542,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
 				 * If there are more characters than we can handle, just pretend we read them.
 				 */
                 /* *bp == ELEMENT_END ,*/
-                if (debug > 1) printf("array_read: looking for element-end: '%s'\n", bp);
+                if (debug > 1) printf("array_read: looking for element-end: '%s'\n", bp ? bp : "(null)");
                 for (found = 0; (found == 0) && !end_of_file;) {
                     while (*bp && (*bp != ELEMENT_END) && (*bp != ESCAPE)) bp++;
                     switch (*bp) {
@@ -613,7 +619,7 @@ long read_array(FILE *fp, char *PVname, char *value_string, short field_type, lo
             if ((bp = fgets(buffer, BUF_SIZE, fp)) == NULL) end_of_file = 1;
         }
     }
-    if (debug > 1) printf("array_read: positioned for next PV '%s'\n", bp);
+    if (debug > 1) printf("array_read: positioned for next PV '%s'\n", bp ? bp : "(null)");
     if (!status && end_of_file) status = end_of_file;
 
     return (status);
