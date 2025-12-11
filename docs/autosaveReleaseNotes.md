@@ -10,6 +10,8 @@ autosave Release Notes
 
 ### Unreleased
 
+### 6.0
+
 #### Breaking changes
 
 - Changes to `set_savefile_path` handling:
