@@ -17,9 +17,6 @@
 
 #include "save_restore.h"
 
-#ifndef PVNAME_STRINGSZ
-#define PVNAME_STRINGSZ 61 /* includes terminating null */
-#endif
 #define PEND_TIME 5.0
 
 #define FSMALL 1.e-6
@@ -143,7 +140,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
         if (debug > 3)
             printf("\nasVerify: PVname='%s', value_string[%d]='%s'\n", PVname, (int)strlen(value_string), value_string);
         if (n < 2) *value_string = 0;
-        if (strlen(PVname) >= PVNAME_STRINGSZ) {
+        if (strlen(PVname) >= PV_NAME_LEN + 1) {
             /* Impossible PV name */
             if (write_restore_file) fprintf(fr, "#? %s", bp);
             continue;
