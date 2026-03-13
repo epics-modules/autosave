@@ -1,94 +1,387 @@
 ---
 layout: default
-title: Overview
-nav_order: 3
+title: Autosave
+nav_order: 2
 ---
 
+# Autosave Restore
 
-autosave
+## Table of Contents
 
-synApps: autosave
-=================
+- [Overview](#overview)
+- [Important Nuances](#important-nuances)
+- [How to Use Autosave](#how-to-use-autosave)
+- [autosaveBuild (Automatic Request-File Generation)](#autosavebuild-automatic-request-file-generation)
+- [asVerify](#asverify)
+- [configMenu](#configmenu)
+- [About Save Files](#about-save-files)
+- [Module Contents](#module-contents)
+- [User-Callable Functions](#user-callable-functions)
+- [Example of Use](#example-of-use)
 
-Module Owner: APS/XSD/BCDA: Keenan Lang
+---
 
-This page is the home of the synApps __autosave__ module. This module contains software to preserve PV values through an ioc reboot.  
-See also: [Mike Zelazney's Channel Watcher](http://www.slac.stanford.edu/comp/unix/package/epics/extensions/ChannelWatcher/)
+## Overview
 
-Please email any comments and bug reports to [Keenan Lang](mailto:klang_at_anl.gov), who is responsible for coordinating development and releases.
+Autosave automatically saves the values of EPICS process variables (PVs) to files on a server and restores those values when the IOC (Input-Output Controller — the business end of EPICS) is rebooted. The original author is Bob Dalesio; improvements were made by various contributors including Frank Lenkszus, Ron Sluiter, Andrew Johnson, Pete Jemian, Markus Janousch, David Maden, Zheqiao Geng, and Michael Davidsaver.
 
-Where to find it
-----------------
+Autosave is a two-part operation:
+1. **Run-time save**: Started by commands in the IOC startup file and persists while the IOC is running. It saves PV values to files and supports manual restore operations.
+2. **Boot-time restore**: Invoked during iocInit via an EPICS initHook. It restores PV values from files and does not persist after iocInit() returns.
 
-You can download the software from the links in the table below:
+The autosave module also contains:
+- **asVerify**: A client program to compare written autosave files with current PV values
+- **configMenu**: A facility for creating, saving, finding, restoring, and verifying IOC configurations
+- **autosaveBuild**: A facility to generate autosave-request files as part of dbLoadRecords() and dbLoadTemplate()
 
-| __Module Version__ | __Release date__ | __EPICS Release tested with__ | __Filename__ |
-|---|---|---|---|
-| R5-10-2| 10/4/2020  | 7.0.3 and 7.0.4.1   | [autosave\_R5-10-2.tar.gz](https://github.com/epics-modules/autosave/archive/R5-10-2.tar.gz) |
-| R5-10-1| 4/17/2020  | 3.15.6              | [autosave\_R5-10-1.tar.gz](https://github.com/epics-modules/autosave/archive/R5-10-1.tar.gz) |
-| R5-10  | 7/30/2019  | 3.15.6              | [autosave\_R5-10.tar.gz](https://github.com/epics-modules/autosave/archive/R5-10.tar.gz) |
-| R5-9   | 12/5/2017  | 3.15.6              | [autosave\_R5-9.tar.gz](https://github.com/epics-modules/autosave/archive/R5-9.tar.gz) |
-| R5-8   | 7/21/2017  | 3.14.12.5 or 3.15   | [autosave\_R5-8.tar.gz](https://github.com/epics-modules/autosave/archive/R5-8.tar.gz) |
-| R5-7-1 | 8/12/2015  | 3.14.12.5 or 3.15.2 | [autosave\_R5-7-1.tar.gz](https://github.com/epics-modules/autosave/archive/R5-7-1.tar.gz) | 
-| R5-7   | 5/13/2015  | 3.14.12.5 or 3.15.2 | [autosave\_R5-7.tar.gz](https://github.com/epics-modules/autosave/archive/R5-7.tar.gz) | 
-| R5-6-2 | 4/27/2015  | 3.14.12.5 or 3.15.2 | [autosave\_R5-6-2.tar.gz](https://github.com/epics-modules/autosave/archive/R5-6-2.tar.gz) | 
-| R5-6-1 | 3/23/2015  | 3.14.12.5 or 3.15.2 | [autosave\_R5-6-1.tar.gz](https://github.com/epics-modules/autosave/archive/R5-6-1.tar.gz) | 
-| R5-5   | 11/4/2014  | 3.14.12.4           | [autosave\_R5-5.tar.gz](https://github.com/epics-modules/autosave/archive/R5-5.tar.gz) | 
-| R5-4-2 | 10/9/2014  | 3.14.12.4           | [autosave\_R5-4-2.tar.gz](https://github.com/epics-modules/autosave/archive/R5-4-2.tar.gz) | 
-| R5-4   | 6/30/2014  | 3.14.12.3           | [autosave\_R5-4.tar.gz](https://github.com/epics-modules/autosave/archive/R5-4.tar.gz) | 
-| R5-3   | 4/7/2014   | 3.14.12.3           | [autosave\_R5-3.tar.gz](https://github.com/epics-modules/autosave/archive/R5-3.tar.gz) | 
-| R5-1   | 5/23/2013  | 3.14.12.3           | [autosave\_R5-1.tar.gz](https://github.com/epics-modules/autosave/archive/R5-1.tar.gz) | 
-| R5-0   | 9/12/2012  | 3.14.12 or 3.15.0   | [autosave\_R5-0.tar.gz](https://github.com/epics-modules/autosave/archive/R5-0.tar.gz) | 
-| R4-8   | 10/11/2011 | 3.14.12.1           | [autosave\_R4-8.tar.gz](https://github.com/epics-modules/autosave/archive/R4-8.tar.gz) | 
-| R4-7   | 5/12/2010  | 3.14.11             | [autosave\_R4-7.tar.gz](https://github.com/epics-modules/autosave/archive/R4-7.tar.gz) | 
-| R4-6   | 4/27/2010  | 3.14.11             | [autosave\_R4-6.tar.gz](https://github.com/epics-modules/autosave/archive/R4-6.tar.gz) | 
-| R4-5   | 11/20/2009 | 3.14.10             | [autosave\_R4-5.tar.gz](https://github.com/epics-modules/autosave/archive/R4-5.tar.gz) | 
-| R4-4   | 05/29/2008 | 3.14.8.2            | [autosave\_R4-4.tar.gz](https://github.com/epics-modules/autosave/archive/R4-4.tar.gz) | 
-| R4-2-1 | 01/08/2007 | 3.14.8              | [autosave\_R4-2-1.tar.gz](https://github.com/epics-modules/autosave/archive/R4-2-1.tar.gz) | 
-| R4-2   | 7/25/2006  | 3.14.8              | [autosave\_R4-2.tar.gz](https://github.com/epics-modules/autosave/archive/R4-2.tar.gz) | 
-| R4-1-3 | 4/7/2006   | 3.14.8              | [autosave\_R4-1-3.tar.gz](https://github.com/epics-modules/autosave/archive/R4-1-3.tar.gz) | 
-| R4-1   | 2/16/2005  | 3.14.7              | [autosave\_R4-1.tar.gz](https://github.com/epics-modules/autosave/archive/R4-1.tar.gz) | 
-| R2-3   | 3/9/2004   | 3.14.5              | [autosave\_R2-3.tar.gz](https://github.com/epics-modules/autosave/archive/R2-3.tar.gz) |
+---
 
+## Important Nuances
 
-[Release Notes](autosaveReleaseNotes.md)  
-[Known Issues](bugs.md)  
+- **Boot-time restore**:
+  - Uses dbStaticLib to write PVs (like dbLoadRecords())
+  - Does not cause record processing to occur
+  - Does not set UDF to 0 (except for arrays)
+  - Arrays are written using database access
 
+- **Run-time restore**:
+  - Uses channel-access for reading and writing
+  - May cause record processing to occur
+  - Prior to autosave 5.6, arrays were read/written using database access
+  - From autosave 5.6, arrays use channel access
 
-Required Modules
-----------------
+- **Restore timing**:
+  - Can occur at two times: before record initialization ("pass 0") and after ("pass 1")
+  - Choice applies to entire files, not individual PVs
+  - Motor-record positions should only be restored during pass 0
+  - Arrays cannot be restored during pass 0
 
-Autosave does not require any other modules.
+- **Save/Restore options**:
+  - You can save PVs without restoring them and restore without saving
+  - These choices apply to entire files, not individual PVs
+  - Automated saves can be enabled/disabled for specified time periods
 
-Installation and Building
--------------------------
+---
 
-After obtaining a copy of the distribution, it must be installed and built for use at your site. These steps only need to be performed once for the site (unless versions of the module running under different releases of EPICS and/or the other required modules are needed).
+## How to Use Autosave
 
-1. Unzip and untar the distribution, e.g. on Unix:  
-    ```
-    gunzip autosave_R4-2.tar.gz<br></br>
-    tar xvf autosave_R4-2.tar
-    ```
-    
-    Usually this is done in an EPICS 'support' directory. It will produce the subdirectory 
-    ```
-    autosave_R4-2
-    ```
-2. Edit the config/RELEASE file of the application that will use __autosave__ to point to this directory.
-3. Edit __autosave__'s configure/RELEASE file and set the paths to your installation of EPICS base.
-4. Run gnumake in the top level directory and check for any compilation errors.
-5. Please email [Tim Mooney](mailto:mooney_at_aps.anl.gov) so that a record can be kept of which sites are using this software.
+### 1. Build (required)
+Build the module and include the resulting library and database-definition file in your IOC:
 
-Documentation
--------------
+```
+# In configure/RELEASE
+AUTOSAVE=<path to the autosave module>
 
-The following documentation is available:  
-- Release Specific Documentation
-- Additional docs in autosave's documentation directory.
+# In xxxApp/src/Makefile
+xxx_LIBS += autosave
+xxx_DBD += asSupport.dbd
+```
 
-In Use
-------
+### 2. Write Request Files (optional but common)
+Create files specifying PVs to save and restore:
 
-This software was originally developed by Bob Dalesio. It has been improved significantly over the years by the APS BCDA group, other APS-affiliated developers, and *many* members of the EPICS Collaboration.   
-- ANL/APS : In use by most of the x-ray beamlines and accelerator
+```
+# Example auto_settings.req
+xxx:m1.VAL
+xxx:m2.VAL
+```
+
+Request files can use macro variables:
+```
+$(P)m1.VAL
+$(P)m2.VAL
+```
+
+And can include other request files:
+```
+file motor_settings.req P=xxx:,M=m1
+```
+
+### 3. Set Request-File Path (optional, recommended)
+Specify directories to search for request files:
+
+```
+# For systems using cdCommands
+set_requestfile_path(startup, "")
+set_requestfile_path(startup, "autosave")
+set_requestfile_path(area_detector, "ADApp/Db")
+
+# For systems using envPaths
+set_requestfile_path("$(TOP)/iocBoot/$(IOC)", "")
+set_requestfile_path("$(TOP)/iocBoot/$(IOC)", "autosave")
+set_requestfile_path("$(AREA_DETECTOR)", "ADApp/Db")
+```
+
+### 4. Set NFS Host (optional, only for vxWorks and RTEMS)
+```
+save_restoreSet_NFSHost("oxygen", "164.54.49.4")
+```
+
+### 5. Use NFS (required on vxWorks)
+Use NFS for file operations. Autosave is tested with NFS and may not work with vxWorks' netDrv.
+
+### 6. Set Save/Restore File Path (optional but common)
+```
+set_savefile_path("/full/path")
+```
+
+### 7. Give Write Permission (required)
+Ensure the IOC has write permission to the autosave directory.
+
+### 8. Specify Restore Files (optional but common)
+```
+set_pass0_restoreFile("auto_settings.sav", "P=xxx:")
+set_pass1_restoreFile("auto_settings.sav", "P=xxx:")
+```
+
+Notes on restore passes:
+- Link fields can only be restored in pass 0
+- Motor record DVAL is only used if hardware value is zero
+- Arrays cannot be restored during pass 0
+- Scalar PVs with DBF_NOACCESS type cannot be restored in pass 0
+
+### 9. Load initHook Routine (required for boot-time restore)
+This happens automatically if the IOC is built as described.
+
+### 10. Select Save-File Options (optional, recommended)
+```
+# Enable dated backup files
+save_restoreSet_DatedBackupFiles(1)
+
+# Configure sequence files
+save_restoreSet_NumSeqFiles(3)
+save_restoreSet_SeqPeriodInSeconds(600)
+
+# Set retry delay
+save_restoreSet_RetrySeconds(60)
+
+# Enable reconnection attempts
+save_restoreSet_CAReconnect(1)
+
+# Set forced save interval
+save_restoreSet_CallbackTimeout(-1)
+```
+
+### 11. Start the Save Task (required to save files)
+```
+create_monitor_set("auto_positions.req", 5, "P=xxx:")
+create_monitor_set("auto_settings.req", 30, "P=xxx:")
+```
+
+---
+
+## autosaveBuild (Automatic Request-File Generation)
+
+This facility generates request files from dbLoadRecords() and dbLoadTemplate() calls. It requires EPICS 3.14.12.5+ or a patched earlier version.
+
+To enable:
+1. Edit asApp/src/Makefile and uncomment:
+   ```
+   #USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER
+   ```
+
+2. Use autosaveBuild() in your startup script:
+   ```
+   autosaveBuild("built_settings.req", "_settings.req", 1)
+   ```
+
+This tells autosave to:
+1. Build the file "built_settings.req"
+2. Generate request-file names by replacing ".db"/".vdb"/".template" with "_settings.req"
+3. Enable automated building
+
+Options:
+- Specify multiple suffixes:
+  ```
+  autosaveBuild("built_settings.req", "_settings.req", 1)
+  autosaveBuild("built_settings.req", ".req", 1)
+  ```
+
+- Disable specific combinations:
+  ```
+  autosaveBuild("built_settings.req", "_settings.req", 0)
+  autosaveBuild("built_settings.req", "*", 0)
+  ```
+
+- Add lines manually:
+  ```
+  appendToFile("built_settings.req", '$(P)userStringSeqEnable')
+  ```
+
+---
+
+## asVerify
+
+asVerify compares autosave files with current PV values and can write new save files.
+
+Command line:
+```
+usage: asVerify [-vrd] <autosave_file>
+         -v (verbose) causes all PV's to be printed out
+         -r (restore_file) writes a restore file named '<autosave_file>.asVerify'
+         -d (debug) increment debug level by one.
+```
+
+Examples:
+```
+asVerify auto_settings.sav
+asVerify -v auto_settings.sav
+asVerify -vr auto_settings.sav
+```
+
+From IOC console (R5.6.1+):
+```
+asVerify("auto_settings.sav")
+asVerify("auto_settings.sav",0,"junk.sav")
+```
+
+---
+
+## configMenu
+
+configMenu manages sets of EPICS PVs ("configurations") on a running IOC. It can create, save, find, restore, and verify configurations. Full information can be found [here](configMenu.md).
+
+### Example Setup
+
+1. Create a request file "scan1Menu.req":
+   ```
+   file configMenu.req P=$(P),CONFIG=$(CONFIG)
+   file scan_settings.req P=$(P),S=scan2
+   file scan_settings.req P=$(P),S=scan1
+   file scan_settings.req P=$(P),S=scanH
+   ```
+
+2. Add to st.cmd:
+   ```
+   # Before iocInit
+   dbLoadRecords("$(AUTOSAVE)/asApp/Db/configMenu.db","P=xxx:,CONFIG=scan1")
+
+   # After iocInit
+   create_manual_set("scan1Menu.req","P=xxx:,CONFIG=scan1,CONFIGMENU=1")
+   ```
+
+3. Add to auto_settings.req (optional):
+   ```
+   file configMenu_settings.req P=$(P),CONFIG=scan1
+   ```
+
+---
+
+## About Save Files
+
+PV values in save files are converted to strings. Special handling applies to:
+- **double**: Converted with "%.14g" format
+- **float**: Converted with "%.7g" format
+- **menu and enum**: Saved as integers
+- **arrays**: Read using database access
+
+Sample save file:
+```
+# save/restore V4.9	Automatically generated - DO NOT MODIFY - 060720-154526
+! 1 channel(s) not connected - or not all gets were successful
+xxx:SR_ao.DISP 0 (uchar)
+xxx:SR_ao.PREC 1 (short)
+xxx:SR_bo.IVOV 2 (ushort)
+xxx:SR_ao.SCAN 3 (enum - saved/restored as a short)
+xxx:SR_ao.VAL 4.1234567890123 (double, printed with format "%.14g")
+xxx:SR_scaler.RATE 1.234568 (float, printed with format "%.7g")
+xxx:SR_ao.DESC description (string)
+xxx:myCalc.CALC$ 123456789+123456789+123456789+123456789+123456789 (long string)
+xxx:SR_ao.OUT xxx:SR_bo.VAL NPP NMS (link)
+xxx:SR_ao.RVAL 4 (long)
+xxx:SR_bi.SVAL 2 (ulong)
+#i_dont_exist.VAL Search Issued (no such PV)
+xxx:SR_char_array @array@ { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+<END>
+```
+
+Save files must end with `<END>` followed by one or two characters. Lines can be commented with '#'.
+
+---
+
+## Module Contents
+
+### asApp/src
+- **save_restore.c**: Saves PV values according to preset rules
+- **dbrestore.c**: Restores PV values at boot time
+- **initHooks.c**: Calls restore routines at correct boot time
+- **verify.c**: Compares autosave files with current values
+- **asVerify.c**: Client-side verification tool
+- **configMenuSub.c**: aSub routines for configMenu
+
+### asApp/Db
+- **save_restoreStatus.db**: Reports status
+- **infoExample.db**: Example with info nodes
+- **SR_test.db**: Test database
+- **configMenu.db**: Configuration management support
+
+### asApp/op/adl (also ../ui, ../edl, ../opi)
+- **save_restoreStatus\*.adl**: Status displays
+- **configMenu\*.adl**: Configuration management displays
+
+---
+
+## User-Callable Functions
+
+Below are listed some common IOC shell functions. Full information on them can be found [here](userFunctions.md)
+
+- **asVerify**: Compare PV values with saved values
+- **create_manual_set**: Create a save set for manual saving
+- **create_monitor_set**: Create a save set with periodic saving
+- **create_periodic_set**: Create a save set with time-based saving
+- **create_triggered_set**: Create a save set with trigger-based saving
+- **fdbrestore**: Restore PVs from a save file
+- **makeAutosaveFiles**: Generate request files from info nodes
+- **manual_save**: Manually save current PV values
+- **reload_manual_set**: Change PVs in a manual save set
+- **remove_data_set**: Delete a save set
+- **save_restoreSet_DatedBackupFiles**: Configure backup file naming
+- **save_restoreSet_Debug**: Set debug level
+- **save_restoreSet_NFSHost**: Specify NFS host
+- **set_requestfile_path**: Set path for request files
+- **set_pass0_restoreFile**: Specify files for pass 0 restore
+- **set_pass1_restoreFile**: Specify files for pass 1 restore
+- **set_savefile_path**: Set path for save files
+
+---
+
+## Example of Use
+
+```
+# Load database
+dbLoadDatabase("$(TOP)/dbd/iocxxxVX.dbd")
+iocxxxVX_registerRecordDeviceDriver(pdbbase)
+
+### autoSaveRestore setup
+save_restoreSet_Debug(0)
+save_restoreSet_status_prefix("xxx:")
+save_restoreSet_IncompleteSetsOk(1)
+save_restoreSet_DatedBackupFiles(1)
+
+# Specify paths
+set_savefile_path(startup, "autosave")
+set_requestfile_path(startup, "")
+set_requestfile_path(std, "stdApp/Db")
+set_requestfile_path(motor, "motorApp/Db")
+
+# Specify restore files
+set_pass0_restoreFile("auto_positions.sav")
+set_pass0_restoreFile("auto_settings.sav")
+set_pass1_restoreFile("auto_settings.sav")
+
+# Configure options
+save_restoreSet_NumSeqFiles(3)
+save_restoreSet_SeqPeriodInSeconds(600)
+save_restoreSet_RetrySeconds(60)
+save_restoreSet_CAReconnect(1)
+save_restoreSet_CallbackTimeout(-1)
+save_restoreSet_NFSHost("oxygen", "164.54.49.4")
+
+# Load status database
+dbLoadRecords("$(AUTOSAVE)/asApp/Db/save_restoreStatus.db", "P=xxx:")
+
+# After iocInit
+create_monitor_set("auto_positions.req", 5, "P=xxx:")
+create_monitor_set("auto_settings.req", 30, "P=xxx:")
+makeAutosaveFiles()
+```
