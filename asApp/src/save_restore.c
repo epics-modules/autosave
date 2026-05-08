@@ -1256,7 +1256,7 @@ STATIC int save_restore(void)
         /* Make sure MIN_DELAY has elapsed before we make next pass through the list */
         epicsTimeGetCurrent(&currTime);
         timeDiff = epicsTimeDiffInSeconds(&currTime, &delayStart);
-        if (timeDiff < MIN_DELAY) ca_pend_event(timeDiff - MIN_DELAY);
+        if (timeDiff < MIN_DELAY) ca_pend_event(MIN_DELAY - timeDiff);
     }
     /* before exit, clear all CA channels */
 shutdown:
