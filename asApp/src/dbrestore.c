@@ -98,8 +98,12 @@
 #endif
 
 /* EPICS base version tests.*/
-#define LT_EPICSBASE(v, r, l) ((EPICS_VERSION <= (v)) && (EPICS_REVISION <= (r)) && (EPICS_MODIFICATION < (l)))
-#define GE_EPICSBASE(v, r, l) ((EPICS_VERSION >= (v)) && (EPICS_REVISION >= (r)) && (EPICS_MODIFICATION >= (l)))
+#define LT_EPICSBASE(v, r, l) \
+    ((EPICS_VERSION < (v)) || (EPICS_VERSION == (v) && \
+        ((EPICS_REVISION < (r)) || (EPICS_REVISION == (r) && EPICS_MODIFICATION < (l)))))
+#define GE_EPICSBASE(v, r, l) \
+    ((EPICS_VERSION > (v)) || (EPICS_VERSION == (v) && \
+        ((EPICS_REVISION > (r)) || (EPICS_REVISION == (r) && EPICS_MODIFICATION >= (l)))))
 
 int restoreFileListsInitialized = 0;
 
