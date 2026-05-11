@@ -119,8 +119,9 @@ static long configMenu_do(aSubRecord *pasub)
 
 void makeLegal(char *name)
 {
-    int i;
-    for (i = 0; i < strlen(name); i++) {
+    int i, len;
+    len = strlen(name);
+    for (i = 0; i < len; i++) {
         if (isalnum((int)name[i])) continue;
         name[i] = '_';
     }
