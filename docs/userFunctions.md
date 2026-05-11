@@ -35,9 +35,9 @@ This document provides detailed information about all user-callable functions in
 - If a save file is restored in both pass 0 and pass 1, the backup file is written only during pass 0
 
 **Example**:
-```c
-// void save_restoreSet_DatedBackupFiles(int ok)
-save_restoreSet_DatedBackupFiles(1);  // Enable dated backup files
+```
+# void save_restoreSet_DatedBackupFiles(int ok)
+save_restoreSet_DatedBackupFiles(1);  # Enable dated backup files
 ```
 
 ---
@@ -54,9 +54,9 @@ save_restoreSet_DatedBackupFiles(1);  // Enable dated backup files
 - Useful for maintaining a time-series of backup files without relying solely on reboot-triggered backups
 
 **Example**:
-```c
-// void save_restoreSet_periodicDatedBackups(int periodInMinutes)
-save_restoreSet_periodicDatedBackups(60);  // Create a dated backup every hour
+```
+# void save_restoreSet_periodicDatedBackups(int periodInMinutes)
+save_restoreSet_periodicDatedBackups(60);  # Create a dated backup every hour
 ```
 
 ---
@@ -71,9 +71,9 @@ save_restoreSet_periodicDatedBackups(60);  // Create a dated backup every hour
 **Notes**: Sequence files are named `xxx.sav0`, `xxx.sav1`, etc.
 
 **Example**:
-```c
-// void save_restoreSet_NumSeqFiles(int numSeqFiles)
-save_restoreSet_NumSeqFiles(3);  // Maintain 3 sequence files
+```
+# void save_restoreSet_NumSeqFiles(int numSeqFiles)
+save_restoreSet_NumSeqFiles(3);  # Maintain 3 sequence files
 ```
 
 ---
@@ -86,9 +86,9 @@ save_restoreSet_NumSeqFiles(3);  // Maintain 3 sequence files
 - `period`: Time in seconds (minimum 10)
 
 **Example**:
-```c
-// void save_restoreSet_SeqPeriodInSeconds(int period)
-save_restoreSet_SeqPeriodInSeconds(600);  // 10 minutes between sequence files
+```
+# void save_restoreSet_SeqPeriodInSeconds(int period)
+save_restoreSet_SeqPeriodInSeconds(600);  # 10 minutes between sequence files
 ```
 
 ---
@@ -101,9 +101,9 @@ save_restoreSet_SeqPeriodInSeconds(600);  // 10 minutes between sequence files
 - `seconds`: Time in seconds (minimum 10, default 60)
 
 **Example**:
-```c
-// void save_restoreSet_RetrySeconds(int seconds)
-save_restoreSet_RetrySeconds(60);  // Retry failed writes after 60 seconds
+```
+# void save_restoreSet_RetrySeconds(int seconds)
+save_restoreSet_RetrySeconds(60);  # Retry failed writes after 60 seconds
 ```
 
 ---
@@ -118,9 +118,9 @@ save_restoreSet_RetrySeconds(60);  // Retry failed writes after 60 seconds
 **Notes**: This ensures files are written even if the normal trigger mechanism fails.
 
 **Example**:
-```c
-// void save_restoreSet_CallbackTimeout(int timeout)
-save_restoreSet_CallbackTimeout(-1);  // Disable forced writes
+```
+# void save_restoreSet_CallbackTimeout(int timeout)
+save_restoreSet_CallbackTimeout(-1);  # Disable forced writes
 ```
 
 ---
@@ -133,9 +133,9 @@ save_restoreSet_CallbackTimeout(-1);  // Disable forced writes
 - `ok`: If non-zero, autosave will retry connecting to PVs every 60 seconds
 
 **Example**:
-```c
-// void save_restoreSet_CAReconnect(int ok)
-save_restoreSet_CAReconnect(1);  // Enable reconnection attempts
+```
+# void save_restoreSet_CAReconnect(int ok)
+save_restoreSet_CAReconnect(1);  # Enable reconnection attempts
 ```
 
 ---
@@ -148,9 +148,9 @@ save_restoreSet_CAReconnect(1);  // Enable reconnection attempts
 - `ok`: If non-zero (default), save files will be restored even if incomplete, and will be overwritten even if some PVs are disconnected
 
 **Example**:
-```c
-// void save_restoreSet_IncompleteSetsOk(int ok)
-save_restoreSet_IncompleteSetsOk(1);  // Allow incomplete sets
+```
+# void save_restoreSet_IncompleteSetsOk(int ok)
+save_restoreSet_IncompleteSetsOk(1);  # Allow incomplete sets
 ```
 
 ---
@@ -165,9 +165,9 @@ save_restoreSet_IncompleteSetsOk(1);  // Allow incomplete sets
 **Notes**: This value is passed directly to `open()` and `fchmod()`
 
 **Example**:
-```c
-// void save_restoreSet_FilePermissions(int permissions)
-save_restoreSet_FilePermissions(0640);  // rw-r-----
+```
+# void save_restoreSet_FilePermissions(int permissions)
+save_restoreSet_FilePermissions(0640);  # rw-r-----
 ```
 
 ---
@@ -186,8 +186,8 @@ save_restoreSet_FilePermissions(0640);  // rw-r-----
 - Enables recovery from stale file handles
 
 **Example**:
-```c
-// void save_restoreSet_NFSHost(char *hostname, char *address)
+```
+# void save_restoreSet_NFSHost(char *hostname, char *address)
 save_restoreSet_NFSHost("oxygen", "164.54.49.4");
 ```
 
@@ -205,8 +205,8 @@ save_restoreSet_NFSHost("oxygen", "164.54.49.4");
 - Requires loading `save_restoreStatus.db` with the same prefix
 
 **Example**:
-```c
-// void save_restoreSet_status_prefix(char *prefix)
+```
+# void save_restoreSet_status_prefix(char *prefix)
 save_restoreSet_status_prefix("xxx:");
 ```
 
@@ -222,9 +222,9 @@ save_restoreSet_status_prefix("xxx:");
 **Notes**: Should be called before the first `create_xxx_set()`
 
 **Example**:
-```c
-// void save_restoreSet_UseStatusPVs(int ok)
-save_restoreSet_UseStatusPVs(1);  // Enable status PVs
+```
+# void save_restoreSet_UseStatusPVs(int ok)
+save_restoreSet_UseStatusPVs(1);  # Enable status PVs
 ```
 
 ---
@@ -239,8 +239,8 @@ save_restoreSet_UseStatusPVs(1);  // Enable status PVs
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int set_saveTask_priority(int priority)
+```
+# int set_saveTask_priority(int priority)
 set_saveTask_priority(50);
 ```
 
@@ -265,8 +265,8 @@ set_saveTask_priority(50);
 - The macro string can include SAVEPATHPV and SAVENAMEPV to override default paths/names
 
 **Example**:
-```c
-// int create_monitor_set(char *request_file, int period, char *macrostring)
+```
+# int create_monitor_set(char *request_file, int period, char *macrostring)
 create_monitor_set("auto_settings.req", 30, "P=xxx:");
 ```
 
@@ -284,9 +284,9 @@ create_monitor_set("auto_settings.req", 30, "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int create_periodic_set(char *request_file, int period, char *macrostring)
-create_periodic_set("auto_settings.req", 300, "P=xxx:");  // Save every 5 minutes
+```
+# int create_periodic_set(char *request_file, int period, char *macrostring)
+create_periodic_set("auto_settings.req", 300, "P=xxx:");  # Save every 5 minutes
 ```
 
 ---
@@ -303,8 +303,8 @@ create_periodic_set("auto_settings.req", 300, "P=xxx:");  // Save every 5 minute
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int create_triggered_set(char *request_file, char *trigger_channel, char *macrostring)
+```
+# int create_triggered_set(char *request_file, char *trigger_channel, char *macrostring)
 create_triggered_set("auto_settings.req", "xxx:saveTrigger", "P=xxx:");
 ```
 
@@ -321,8 +321,8 @@ create_triggered_set("auto_settings.req", "xxx:saveTrigger", "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int create_manual_set(char *request_file, char *macrostring)
+```
+# int create_manual_set(char *request_file, char *macrostring)
 create_manual_set("auto_settings.req", "P=xxx:");
 ```
 
@@ -338,8 +338,8 @@ create_manual_set("auto_settings.req", "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int manual_save(char *request_file)
+```
+# int manual_save(char *request_file)
 manual_save("auto_settings.req");
 ```
 
@@ -357,7 +357,13 @@ manual_save("auto_settings.req");
 
 **Returns**: Status (0 for success)
 
-**Notes**: Used by configMenu implementation
+**Notes**: Used by configMenu implementation. This is a C API function, not an iocsh command.
+
+**Example**:
+```c
+// int manual_save(char *request_file, char *save_file, callbackFunc callbackFunction, void *puser)
+manual_save("scan1Menu.req", "scan1_myConfig.cfg", myCallback, myUserArg);
+```
 
 ---
 
@@ -372,8 +378,8 @@ manual_save("auto_settings.req");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int reload_manual_set(char *request_file, char *macrostring)
+```
+# int reload_manual_set(char *request_file, char *macrostring)
 reload_manual_set("auto_settings.req", "P=xxx:");
 ```
 
@@ -391,8 +397,8 @@ reload_manual_set("auto_settings.req", "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int reload_monitor_set(char *request_file, int period, char *macrostring)
+```
+# int reload_monitor_set(char *request_file, int period, char *macrostring)
 reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 ```
 
@@ -409,6 +415,12 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 
 **Returns**: Status (0 for success)
 
+**Example**:
+```
+# int reload_periodic_set(char *request_file, int period, char *macrostring)
+reload_periodic_set("auto_settings.req", 120, "P=xxx:")
+```
+
 ---
 
 ### reload_triggered_set
@@ -422,6 +434,12 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 
 **Returns**: Status (0 for success)
 
+**Example**:
+```
+# int reload_triggered_set(char *request_file, char *trigger_channel, char *macrostring)
+reload_triggered_set("auto_settings.req", "xxx:newTrigger", "P=xxx:")
+```
+
 ---
 
 ### remove_data_set
@@ -434,8 +452,8 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int remove_data_set(char *request_file)
+```
+# int remove_data_set(char *request_file)
 remove_data_set("auto_settings.req");
 ```
 
@@ -452,8 +470,8 @@ remove_data_set("auto_settings.req");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int set_savefile_name(char *request_file, char *save_file)
+```
+# int set_savefile_name(char *request_file, char *save_file)
 set_savefile_name("auto_settings.req", "custom_settings.sav");
 ```
 
@@ -477,8 +495,8 @@ set_savefile_name("auto_settings.req", "custom_settings.sav");
 - If never called, the current working directory is searched
 
 **Example**:
-```c
-// int set_requestfile_path(char *path, char *pathsub)
+```
+# int set_requestfile_path(char *path, char *pathsub)
 set_requestfile_path(startup, "");
 set_requestfile_path(startup, "autosave");
 ```
@@ -500,8 +518,8 @@ set_requestfile_path(startup, "autosave");
 - Can be called at any time
 
 **Example**:
-```c
-// int set_savefile_path(char *path, char *pathsub)
+```
+# int set_savefile_path(char *path, char *pathsub)
 set_savefile_path(startup, "autosave");
 ```
 
@@ -525,8 +543,8 @@ set_savefile_path(startup, "autosave");
 - Otherwise, the path from `set_savefile_path()` is prepended
 
 **Example**:
-```c
-// int set_pass0_restoreFile(char *save_file, char *macroSubstitutions)
+```
+# int set_pass0_restoreFile(char *save_file, char *macroSubstitutions)
 set_pass0_restoreFile("auto_positions.sav", "P=xxx:");
 ```
 
@@ -543,8 +561,8 @@ set_pass0_restoreFile("auto_positions.sav", "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Example**:
-```c
-// int set_pass1_restoreFile(char *save_file, char *macroSubstitutions)
+```
+# int set_pass1_restoreFile(char *save_file, char *macroSubstitutions)
 set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 ```
 
@@ -560,7 +578,7 @@ set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 
 **Returns**: Status (0 for success)
 
-**Notes**: Should only be called from initHooks
+**Notes**: This is a C API function called automatically by the autosave initHook handler. It should not be called directly from st.cmd.
 
 ---
 
@@ -578,8 +596,8 @@ set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 - Creates a backup file with ".bu" suffix
 
 **Example**:
-```c
-// int fdbrestore(char *save_file)
+```
+# int fdbrestore(char *save_file)
 fdbrestore("auto_settings.sav");
 ```
 
@@ -599,8 +617,8 @@ fdbrestore("auto_settings.sav");
 - No backup file is written
 
 **Example**:
-```c
-// int fdbrestoreX(char *save_file)
+```
+# int fdbrestoreX(char *save_file)
 fdbrestoreX("custom_settings.dat");
 ```
 
@@ -618,7 +636,13 @@ fdbrestoreX("custom_settings.dat");
 
 **Returns**: Status (0 for success)
 
-**Notes**: Used by configMenu implementation
+**Notes**: Used by configMenu implementation. This is a C API function, not an iocsh command.
+
+**Example**:
+```c
+// int fdbrestoreX(char *filename, char *macrostring, callbackFunc callbackFunction, void *puser)
+fdbrestoreX("scan1_myConfig.cfg", "P=xxx:", myCallback, myUserArg);
+```
 
 ---
 
@@ -632,9 +656,9 @@ fdbrestoreX("custom_settings.dat");
 - `debug_level`: Debug level (0 = minimal output)
 
 **Example**:
-```c
-// void save_restoreSet_Debug(int debug_level)
-save_restoreSet_Debug(2);  // Verbose debugging
+```
+# void save_restoreSet_Debug(int debug_level)
+save_restoreSet_Debug(2);  # Verbose debugging
 ```
 
 ---
@@ -647,9 +671,9 @@ save_restoreSet_Debug(2);  // Verbose debugging
 - `verbose`: If non-zero, lists PVs as well
 
 **Example**:
-```c
-// void save_restoreShow(int verbose)
-save_restoreShow(1);  // Show all save sets and their PVs
+```
+# void save_restoreShow(int verbose)
+save_restoreShow(1);  # Show all save sets and their PVs
 ```
 
 ---
@@ -663,7 +687,7 @@ save_restoreShow(1);  // Show all save sets and their PVs
 
 **Returns**: Macro string or NULL
 
-**Notes**: Used by configMenu to allow .cfg files to include macros
+**Notes**: Used by configMenu to allow .cfg files to include macros. This is a C API function, not an iocsh command.
 
 **Example**:
 ```c
@@ -689,8 +713,8 @@ char *macros = getMacroString("auto_settings.req");
 - Requires uncommenting `USR_CFLAGS += -DDBLOADRECORDSHOOKREGISTER` in Makefile
 
 **Example**:
-```c
-// void autosaveBuild(char *requestFileName, char *suffix, int enable)
+```
+# void autosaveBuild(char *requestFileName, char *suffix, int enable)
 autosaveBuild("built_settings.req", "_settings.req", 1);
 ```
 
@@ -710,8 +734,8 @@ autosaveBuild("built_settings.req", "_settings.req", 1);
 - The file is truncated to zero length but not deleted
 
 **Example**:
-```c
-// int eraseFile(char *filename)
+```
+# int eraseFile(char *filename)
 eraseFile("built_settings.req");
 ```
 
@@ -726,8 +750,8 @@ eraseFile("built_settings.req");
 - `line`: Line to add
 
 **Example**:
-```c
-// void appendToFile(char *filename, char *line)
+```
+# void appendToFile(char *filename, char *line)
 appendToFile("built_settings.req", '$(P)userStringSeqEnable');
 ```
 
@@ -747,9 +771,9 @@ appendToFile("built_settings.req", '$(P)userStringSeqEnable');
 **Returns**: Number of differences found
 
 **Example**:
-```c
-// int asVerify(char *fileName, int verbose, char *restoreFileName)
-asVerify("auto_settings.sav", 1, "");  // Verbose verification
+```
+# int asVerify(char *fileName, int verbose, char *restoreFileName)
+asVerify("auto_settings.sav", 1, "");  # Verbose verification
 ```
 
 ---
@@ -766,8 +790,8 @@ asVerify("auto_settings.sav", 1, "");  // Verbose verification
 - Can be called any time after iocInit
 
 **Example**:
-```c
-// void makeAutosaveFiles(void)
+```
+# void makeAutosaveFiles(void)
 makeAutosaveFiles();
 ```
 
@@ -784,7 +808,7 @@ makeAutosaveFiles();
 **Notes**: Can be called any time after iocInit
 
 **Example**:
-```c
-// void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
+```
+# void makeAutosaveFileFromDbInfo(char *fileBaseName, char *info_name)
 makeAutosaveFileFromDbInfo("custom_settings", "customFields");
 ```
