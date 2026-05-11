@@ -26,8 +26,12 @@
         }                                         \
     }
 
+#ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 #define SR_STATUS_OK 4
 #define SR_STATUS_SEQ_WARN 3
