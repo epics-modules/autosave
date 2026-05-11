@@ -1787,6 +1787,12 @@ STATIC int write_it(char *filename, struct chlist *plist)
             value_string[BUF_SIZE - 1] = '\0';
             n = epicsStrPrintEscaped(out_fd, value_string, strlen(value_string));
             if (n > 0 || !strlen(value_string)) { n = fprintf(out_fd, "\n"); }
+        } else if (pchannel->field_type == DBF_CHAR && pchannel->max_elements > 1) {
+            /* DBF_CHAR waveform used as a string -- write string content from array data */
+            strNcpy(value_string, pchannel->pArray, BUF_SIZE);
+            value_string[BUF_SIZE - 1] = '\0';
+            n = epicsStrPrintEscaped(out_fd, value_string, strlen(value_string));
+            if (n > 0 || !strlen(value_string)) { n = fprintf(out_fd, "\n"); }
         } else if (pchannel->curr_elements <= 1) {
             /* treat as scalar */
             if (pchannel->enum_val >= 0) {

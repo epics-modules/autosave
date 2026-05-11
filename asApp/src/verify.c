@@ -60,8 +60,8 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
     char c, s[BUF_SIZE], *bp, PVname[PV_NAME_LEN + 1], value_string[BUF_SIZE];
     char trial_restoreFileName[PATH_SIZE];
     char *CA_buffer = NULL, *read_buffer = NULL, *pc = NULL;
-    short field_type;
-    int i, j, n, is_scalar, is_scalar_in_file, is_long_string;
+    short field_type, native_field_type;
+    int i, j, n, is_scalar, is_scalar_in_file, is_long_string, is_string_waveform;
     int numPVs, numDifferences, numPVsNotConnected, nspace;
     int different, wrote_head = 0, status, file_ok = 0;
     long element_count = 0, storageBytes = 0, alloc_CA_buffer = 0;
@@ -150,7 +150,8 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                 continue;
             }
             numPVs++;
-            field_type = ca_field_type(chid);
+            native_field_type = ca_field_type(chid);
+            field_type = native_field_type;
             if (debug > 3) printf("'%s' native field_type=%d\n", PVname, field_type);
             is_long_string = (field_type == DBF_CHAR) && (PVname[strlen(PVname) - 1] == '$');
             /* If DBF_STRING will work, use it. */
@@ -161,13 +162,15 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
             is_scalar_in_file = strncmp(value_string, ARRAY_MARKER, ARRAY_MARKER_LEN) != 0;
             is_scalar = is_scalar_in_file;
             if (element_count > 1) is_scalar = 0;
+            /* A waveform of DBF_CHAR used as a string (e.g., areaDetector string PVs) */
+            is_string_waveform = (native_field_type == DBF_CHAR) && (element_count > 1) && !is_long_string;
             if (debug > 3)
-                printf("asVerify: is_scalar=%d, is_scalar_in_file=%d, is_long_string=%d\n", is_scalar,
-                       is_scalar_in_file, is_long_string);
+                printf("asVerify: is_scalar=%d, is_scalar_in_file=%d, is_long_string=%d, is_string_waveform=%d\n",
+                       is_scalar, is_scalar_in_file, is_long_string, is_string_waveform);
 
             /* allocate storage for CA and for reading the file */
             storageBytes = dbr_size_n(field_type, element_count);
-            if (is_long_string) storageBytes = dbr_size_n(DBF_CHAR, element_count);
+            if (is_long_string || is_string_waveform) storageBytes = dbr_size_n(DBF_CHAR, element_count);
             if (debug > 3)
                 printf("asVerify:type=%d,elements=%ld, storageBytes=%ld\n", field_type, element_count, storageBytes);
             if (alloc_CA_buffer < storageBytes) {
@@ -328,7 +331,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                     break;
                 case DBF_STRING:
                     svalue = (char *)CA_buffer;
-                    if (is_long_string) {
+                    if (is_long_string || is_string_waveform) {
                         /* See if we got the whole line */
                         if (bp[strlen(bp) - 1] != '\n') {
                             /* No, we didn't.  One more read will certainly accumulate a value string of length BUF_SIZE */
@@ -349,11 +352,11 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                     if (status & CA_M_SUCCESS) status = ca_pend_io(PEND_TIME);
                     if (!(status & CA_M_SUCCESS)) printf("Can't get value from '%s'.\n", PVname);
 
-                    if ((is_scalar != is_scalar_in_file) && !is_long_string) {
+                    if ((is_scalar != is_scalar_in_file) && !is_long_string && !is_string_waveform) {
                         printf("*** %-25s is %s in file, but %s in ioc.\n", PVname,
                                is_scalar_in_file ? "scalar" : "array", is_scalar ? "scalar" : "array");
                     } else {
-                        if (is_long_string) {
+                        if (is_long_string || is_string_waveform) {
                             epicsStrnRawFromEscaped(value_string, BUF_SIZE, value_string, BUF_SIZE);
                             different = strncmp(value_string, svalue, BUF_SIZE);
                         } else if (is_scalar) {
@@ -375,7 +378,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                         if (different) numDifferences++;
                         if (different || (verbose > 0)) {
                             WRITE_HEADER;
-                            if (is_scalar || is_long_string) {
+                            if (is_scalar || is_long_string || is_string_waveform) {
                                 nspace = 24 - (int)strlen(value_string);
                                 if (nspace < 1) nspace = 1;
                                 printf("%s%-24s '%s'%*s'%s'\n", different ? "*** " : "    ", PVname, value_string,
@@ -387,7 +390,7 @@ int do_asVerify_fp(FILE *fp, int verbose, int debug, int write_restore_file, cha
                         }
                     }
                     if (write_restore_file) {
-                        if (is_long_string) {
+                        if (is_long_string || is_string_waveform) {
                             svalue[BUF_SIZE - 1] = '\0';
                             fprintf(fr, "%s ", PVname);
                             epicsStrPrintEscaped(fr, svalue, strlen(svalue));
