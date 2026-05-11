@@ -5,7 +5,11 @@ nav_order: 6
 ---
 
 
-autosave
+# Known Issues
+
+Issues from R5-5 onward are tracked on [GitHub Issues](https://github.com/epics-modules/autosave/issues).
+
+The following are known issues in older releases:
 
 - R5-4, R5-4-1, R5-4-2: Array restore can fail to parse correctly lines longer than 120 characters.
 - R5-4, R5-4-1: set\_pass1\_restoreFile() is wrongly defined for iocsh. Here's how to fix it:

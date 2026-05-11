@@ -4,22 +4,20 @@ title: Home
 nav_order: 1
 ---
 
-synApps: autosave
-=================
+# synApps: autosave
 
 Module Owner: APS/XSD/BCDA: Keenan Lang
 
-This page is the home of the synApps __autosave__ module. This module contains software to preserve PV values through an ioc reboot.
+This page is the home of the synApps **autosave** module. This module contains software to preserve PV values through an ioc reboot.
 
 Please submit any comments or bug reports as issues in the [github repository](https://github.com/epics-modules/autosave/)
 
 
-Where to find it
-----------------
+## Where to find it
 
 You can download the software from the links in the table below:
 
-| __Module Version__ | __Release date__ | __EPICS Release tested with__ | __Filename__ |
+| **Module Version** | **Release date** | **EPICS Release tested with** | **Filename** |
 |---|---|---|---|
 | R6-0   | 12/12/2025 | 7.0.8               | [autosave\_R6-0.tar.gz](https://github.com/epics-modules/autosave/archive/refs/tags/R6-0.tar.gz) |
 | R5-11  | 9/20/2023  | 7.0.8               | [autosave\_R5-11.tar.gz](https://github.com/epics-modules/autosave/archive/refs/tags/R5-11.tar.gz) |
@@ -50,32 +48,25 @@ You can download the software from the links in the table below:
 | R2-3   | 3/9/2004   | 3.14.5              | [autosave\_R2-3.tar.gz](https://github.com/epics-modules/autosave/archive/R2-3.tar.gz) |
 
 
-[Release Notes](autosaveReleaseNotes.md)
-[Known Issues](bugs.md)
-
-
-Required Modules
-----------------
+## Required Modules
 
 Autosave does not require any other modules.
 
-Installation and Building
--------------------------
+## Installation and Building
 
 After obtaining a copy of the distribution, it must be installed and built for use at your site. These steps only need to be performed once for the site (unless versions of the module running under different releases of EPICS and/or the other required modules are needed).
 
 1. Unzip and untar the distribution, e.g. on Unix:
     ```
-    gunzip autosave_R4-2.tar.gz<br></br>
-    tar xvf autosave_R4-2.tar
+    tar xzf autosave_R6-0.tar.gz
     ```
 
     Usually this is done in an EPICS 'support' directory. It will produce the subdirectory
     ```
-    autosave_R4-2
+    autosave_R6-0
     ```
-2. Edit the config/RELEASE file of the application that will use __autosave__ to point to this directory.
-3. Edit __autosave__'s configure/RELEASE file and set the paths to your installation of EPICS base.
+2. Edit the configure/RELEASE file of the application that will use **autosave** to point to this directory.
+3. Edit **autosave**'s configure/RELEASE file and set the paths to your installation of EPICS base.
 4. Run gnumake in the top level directory and check for any compilation errors.
 
 

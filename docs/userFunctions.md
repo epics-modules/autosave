@@ -39,6 +39,22 @@ This document provides detailed information about all user-callable functions in
 save_restoreSet_DatedBackupFiles(1);  // Enable dated backup files
 ```
 
+### `void save_restoreSet_periodicDatedBackups(int periodInMinutes)`
+
+**Purpose**: Enables periodic creation of dated backup files at a specified interval.
+
+**Parameters**:
+- `periodInMinutes`: Interval in minutes between dated backups. If greater than 0, periodic dated backups are enabled. If 0 or negative, they are disabled.
+
+**Notes**:
+- Requires `save_restoreSet_DatedBackupFiles(1)` to also be set
+- Useful for maintaining a time-series of backup files without relying solely on reboot-triggered backups
+
+**Example**:
+```c
+save_restoreSet_periodicDatedBackups(60);  // Create a dated backup every hour
+```
+
 ### `void save_restoreSet_NumSeqFiles(int numSeqFiles)`
 
 **Purpose**: Sets the number of sequenced backup files to maintain.
@@ -582,6 +598,24 @@ char *macros = getMacroString("auto_settings.req");
 **Example**:
 ```c
 autosaveBuild("built_settings.req", "_settings.req", 1);
+```
+
+### `int eraseFile(char *filename)`
+
+**Purpose**: Erases the contents of a file by opening it in write mode and immediately closing it.
+
+**Parameters**:
+- `filename`: Name of the file to erase. Supports environment variable expansion via `macEnvExpand()`.
+
+**Returns**: Status (0 for success, -1 on error)
+
+**Notes**:
+- Useful for clearing a request file before rebuilding it with `appendToFile()` calls
+- The file is truncated to zero length but not deleted
+
+**Example**:
+```c
+eraseFile("built_settings.req");
 ```
 
 ### `void appendToFile(char *filename, char *line)`

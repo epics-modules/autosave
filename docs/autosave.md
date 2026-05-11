@@ -162,7 +162,15 @@ save_restoreSet_CAReconnect(1)
 save_restoreSet_CallbackTimeout(-1)
 ```
 
-### 11. Start the Save Task (required to save files)
+### 11. Disable/Enable Saving at Runtime (optional)
+The `save_restoreStatus.db` database includes two PVs for temporarily disabling autosave at runtime:
+
+- **`$(P)SR_disable`**: A bo record. Setting this to 1 ("Disable") stops autosave from writing save files. Setting it to 0 ("Enable") resumes saving.
+- **`$(P)SR_disableMaxSecs`**: A longout record. If `SR_disable` is set, autosave will automatically re-enable itself after this many seconds have elapsed. If set to 0, autosave remains disabled until manually re-enabled.
+
+This is useful during maintenance or large batch operations where frequent saves are unnecessary or could interfere.
+
+### 12. Start the Save Task (required to save files)
 ```
 create_monitor_set("auto_positions.req", 5, "P=xxx:")
 create_monitor_set("auto_settings.req", 30, "P=xxx:")
@@ -319,29 +327,75 @@ Save files must end with `<END>` followed by one or two characters. Lines can be
 - **save_restoreStatus\*.adl**: Status displays
 - **configMenu\*.adl**: Configuration management displays
 
+### Status Displays
+
+The save_restoreStatus displays show the current state of all save sets, including connection status, save times, and any errors.
+
+![save_restoreStatus display showing summary of all save sets](save_restoreStatus.adl.jpg)
+
+The detailed status display shows additional information for each save set:
+
+![save_restoreStatus detail display showing per-set status, file paths, and timing](save_restoreStatus_more.adl.jpg)
+
 ---
 
 ## User-Callable Functions
 
 Below are listed some common IOC shell functions. Full information on them can be found [here](userFunctions.md)
 
-- **asVerify**: Compare PV values with saved values
-- **create_manual_set**: Create a save set for manual saving
-- **create_monitor_set**: Create a save set with periodic saving
+**Configuration:**
+- **save_restoreSet_DatedBackupFiles**: Configure backup file naming
+- **save_restoreSet_periodicDatedBackups**: Enable periodic dated backups
+- **save_restoreSet_NumSeqFiles**: Set number of sequenced backup files
+- **save_restoreSet_SeqPeriodInSeconds**: Set interval between sequenced backups
+- **save_restoreSet_RetrySeconds**: Set delay between failed write and retry
+- **save_restoreSet_CallbackTimeout**: Set interval between forced writes
+- **save_restoreSet_CAReconnect**: Enable periodic PV reconnection
+- **save_restoreSet_IncompleteSetsOk**: Allow saving/restoring incomplete sets
+- **save_restoreSet_FilePermissions**: Set file permissions for .sav files
+- **save_restoreSet_NFSHost**: Specify NFS host (vxWorks/RTEMS)
+- **save_restoreSet_status_prefix**: Set prefix for status PVs
+- **save_restoreSet_UseStatusPVs**: Enable/disable status PVs
+- **set_saveTask_priority**: Set the save_restore task priority
+
+**Save Set Management:**
+- **create_monitor_set**: Create a save set triggered by PV changes
 - **create_periodic_set**: Create a save set with time-based saving
 - **create_triggered_set**: Create a save set with trigger-based saving
-- **fdbrestore**: Restore PVs from a save file
-- **makeAutosaveFiles**: Generate request files from info nodes
+- **create_manual_set**: Create a save set for manual saving
 - **manual_save**: Manually save current PV values
+- **reload_monitor_set**: Change PVs and period for a monitor save set
+- **reload_periodic_set**: Change PVs and period for a periodic save set
+- **reload_triggered_set**: Change PVs and trigger for a triggered save set
 - **reload_manual_set**: Change PVs in a manual save set
 - **remove_data_set**: Delete a save set
-- **save_restoreSet_DatedBackupFiles**: Configure backup file naming
-- **save_restoreSet_Debug**: Set debug level
-- **save_restoreSet_NFSHost**: Specify NFS host
+- **set_savefile_name**: Change the save file name for a save set
+
+**File Paths:**
 - **set_requestfile_path**: Set path for request files
+- **set_savefile_path**: Set path for save files
+
+**Restore:**
 - **set_pass0_restoreFile**: Specify files for pass 0 restore
 - **set_pass1_restoreFile**: Specify files for pass 1 restore
-- **set_savefile_path**: Set path for save files
+- **fdbrestore**: Restore PVs from a save file at runtime
+- **fdbrestoreX**: Restore PVs from any file at runtime (no backup, no `<END>` required)
+
+**Status and Debug:**
+- **save_restoreSet_Debug**: Set debug level
+- **save_restoreShow**: List save sets and their PVs
+
+**autosaveBuild:**
+- **autosaveBuild**: Configure automatic request-file generation
+- **eraseFile**: Erase a file's contents
+- **appendToFile**: Add a line to a request file
+
+**Verification:**
+- **asVerify**: Compare PV values with saved values
+
+**Info Node:**
+- **makeAutosaveFiles**: Generate request files from info nodes
+- **makeAutosaveFileFromDbInfo**: Generate a request file from specific info nodes
 
 ---
 

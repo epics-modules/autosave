@@ -5,8 +5,7 @@ nav_order: 3
 ---
 
 
-autosave Release Notes
-======================
+# autosave Release Notes
 
 ### Unreleased
 
@@ -256,7 +255,6 @@ autosave Release Notes
 - Use epicsTime() instead of time(). Defend against partial-init failures
 - Array support now understands max and curr number of elements, and is prepared to see the current number of elements change.
 - Use epicsThreadStackSizeGet instead of hard-coded stack size.
-- [cvs log](cvsLog.txt)
 
 ### v4.0
 
@@ -376,5 +374,5 @@ The functions - create\_periodic\_set() - create\_monitor\_set() - reload\_perio
 - In Frank Lenkszus' version, set\_requestfile\_path() could specify only a single directory. Now that include files are a possibility, you can specify several request-file directories by calling set\_requestfile\_path() several times.
  - Backup files made as part of a restore operation (i.e., files ending in ".bu", or "YYMMDD-HHMMSS") are no longer created using the VxWorks "copy" command.
 
- Suggestions and Comments to:   
- [Tim Mooney ](mailto:mooney@aps.anl.gov): (mooney@aps.anl.gov)
+ Suggestions and Comments to:
+ [GitHub Issues](https://github.com/epics-modules/autosave/issues)
