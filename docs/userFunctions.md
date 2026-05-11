@@ -40,6 +40,8 @@ This document provides detailed information about all user-callable functions in
 save_restoreSet_DatedBackupFiles(1);  // Enable dated backup files
 ```
 
+---
+
 ### save_restoreSet_periodicDatedBackups
 
 **Purpose**: Enables periodic creation of dated backup files at a specified interval.
@@ -57,6 +59,8 @@ save_restoreSet_DatedBackupFiles(1);  // Enable dated backup files
 save_restoreSet_periodicDatedBackups(60);  // Create a dated backup every hour
 ```
 
+---
+
 ### save_restoreSet_NumSeqFiles
 
 **Purpose**: Sets the number of sequenced backup files to maintain.
@@ -72,6 +76,8 @@ save_restoreSet_periodicDatedBackups(60);  // Create a dated backup every hour
 save_restoreSet_NumSeqFiles(3);  // Maintain 3 sequence files
 ```
 
+---
+
 ### save_restoreSet_SeqPeriodInSeconds
 
 **Purpose**: Sets the time interval between sequenced backups.
@@ -85,6 +91,8 @@ save_restoreSet_NumSeqFiles(3);  // Maintain 3 sequence files
 save_restoreSet_SeqPeriodInSeconds(600);  // 10 minutes between sequence files
 ```
 
+---
+
 ### save_restoreSet_RetrySeconds
 
 **Purpose**: Sets the delay between a failed save-file write and the retry.
@@ -97,6 +105,8 @@ save_restoreSet_SeqPeriodInSeconds(600);  // 10 minutes between sequence files
 // void save_restoreSet_RetrySeconds(int seconds)
 save_restoreSet_RetrySeconds(60);  // Retry failed writes after 60 seconds
 ```
+
+---
 
 ### save_restoreSet_CallbackTimeout
 
@@ -113,6 +123,8 @@ save_restoreSet_RetrySeconds(60);  // Retry failed writes after 60 seconds
 save_restoreSet_CallbackTimeout(-1);  // Disable forced writes
 ```
 
+---
+
 ### save_restoreSet_CAReconnect
 
 **Purpose**: Controls whether autosave periodically retries connecting to PVs.
@@ -126,6 +138,8 @@ save_restoreSet_CallbackTimeout(-1);  // Disable forced writes
 save_restoreSet_CAReconnect(1);  // Enable reconnection attempts
 ```
 
+---
+
 ### save_restoreSet_IncompleteSetsOk
 
 **Purpose**: Controls behavior when PV connections are missing.
@@ -138,6 +152,8 @@ save_restoreSet_CAReconnect(1);  // Enable reconnection attempts
 // void save_restoreSet_IncompleteSetsOk(int ok)
 save_restoreSet_IncompleteSetsOk(1);  // Allow incomplete sets
 ```
+
+---
 
 ### save_restoreSet_FilePermissions
 
@@ -153,6 +169,8 @@ save_restoreSet_IncompleteSetsOk(1);  // Allow incomplete sets
 // void save_restoreSet_FilePermissions(int permissions)
 save_restoreSet_FilePermissions(0640);  // rw-r-----
 ```
+
+---
 
 ### save_restoreSet_NFSHost
 
@@ -173,6 +191,8 @@ save_restoreSet_FilePermissions(0640);  // rw-r-----
 save_restoreSet_NFSHost("oxygen", "164.54.49.4");
 ```
 
+---
+
 ### save_restoreSet_status_prefix
 
 **Purpose**: Sets the prefix for status PVs.
@@ -190,6 +210,8 @@ save_restoreSet_NFSHost("oxygen", "164.54.49.4");
 save_restoreSet_status_prefix("xxx:");
 ```
 
+---
+
 ### save_restoreSet_UseStatusPVs
 
 **Purpose**: Controls whether status PVs are used.
@@ -204,6 +226,8 @@ save_restoreSet_status_prefix("xxx:");
 // void save_restoreSet_UseStatusPVs(int ok)
 save_restoreSet_UseStatusPVs(1);  // Enable status PVs
 ```
+
+---
 
 ### set_saveTask_priority
 
@@ -246,6 +270,8 @@ set_saveTask_priority(50);
 create_monitor_set("auto_settings.req", 30, "P=xxx:");
 ```
 
+---
+
 ### create_periodic_set
 
 **Purpose**: Creates a save set that writes files at regular intervals.
@@ -262,6 +288,8 @@ create_monitor_set("auto_settings.req", 30, "P=xxx:");
 // int create_periodic_set(char *request_file, int period, char *macrostring)
 create_periodic_set("auto_settings.req", 300, "P=xxx:");  // Save every 5 minutes
 ```
+
+---
 
 ### create_triggered_set
 
@@ -280,6 +308,8 @@ create_periodic_set("auto_settings.req", 300, "P=xxx:");  // Save every 5 minute
 create_triggered_set("auto_settings.req", "xxx:saveTrigger", "P=xxx:");
 ```
 
+---
+
 ### create_manual_set
 
 **Purpose**: Creates a save set that writes files only when manually requested.
@@ -296,6 +326,8 @@ create_triggered_set("auto_settings.req", "xxx:saveTrigger", "P=xxx:");
 create_manual_set("auto_settings.req", "P=xxx:");
 ```
 
+---
+
 ### manual_save
 
 **Purpose**: Manually saves the current PV values for a request file.
@@ -311,6 +343,8 @@ create_manual_set("auto_settings.req", "P=xxx:");
 manual_save("auto_settings.req");
 ```
 
+---
+
 ### manual_save (extended)
 
 **Purpose**: Extended version of manual_save with callback support.
@@ -324,6 +358,8 @@ manual_save("auto_settings.req");
 **Returns**: Status (0 for success)
 
 **Notes**: Used by configMenu implementation
+
+---
 
 ### reload_manual_set
 
@@ -340,6 +376,8 @@ manual_save("auto_settings.req");
 // int reload_manual_set(char *request_file, char *macrostring)
 reload_manual_set("auto_settings.req", "P=xxx:");
 ```
+
+---
 
 ### reload_monitor_set
 
@@ -358,6 +396,8 @@ reload_manual_set("auto_settings.req", "P=xxx:");
 reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 ```
 
+---
+
 ### reload_periodic_set
 
 **Purpose**: Changes the PVs and period for a periodic save set.
@@ -369,6 +409,8 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 
 **Returns**: Status (0 for success)
 
+---
+
 ### reload_triggered_set
 
 **Purpose**: Changes the PVs and trigger for a triggered save set.
@@ -379,6 +421,8 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 - `macrostring`: Optional macro substitutions
 
 **Returns**: Status (0 for success)
+
+---
 
 ### remove_data_set
 
@@ -394,6 +438,8 @@ reload_monitor_set("auto_settings.req", 60, "P=xxx:");
 // int remove_data_set(char *request_file)
 remove_data_set("auto_settings.req");
 ```
+
+---
 
 ### set_savefile_name
 
@@ -436,6 +482,8 @@ set_savefile_name("auto_settings.req", "custom_settings.sav");
 set_requestfile_path(startup, "");
 set_requestfile_path(startup, "autosave");
 ```
+
+---
 
 ### set_savefile_path
 
@@ -482,6 +530,8 @@ set_savefile_path(startup, "autosave");
 set_pass0_restoreFile("auto_positions.sav", "P=xxx:");
 ```
 
+---
+
 ### set_pass1_restoreFile
 
 **Purpose**: Specifies a file to restore after record initialization.
@@ -498,6 +548,8 @@ set_pass0_restoreFile("auto_positions.sav", "P=xxx:");
 set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 ```
 
+---
+
 ### reboot_restore
 
 **Purpose**: Restores PV values during iocInit.
@@ -509,6 +561,8 @@ set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 **Returns**: Status (0 for success)
 
 **Notes**: Should only be called from initHooks
+
+---
 
 ### fdbrestore
 
@@ -529,6 +583,8 @@ set_pass1_restoreFile("auto_settings.sav", "P=xxx:");
 fdbrestore("auto_settings.sav");
 ```
 
+---
+
 ### fdbrestoreX
 
 **Purpose**: Restores PV values at runtime from any file.
@@ -547,6 +603,8 @@ fdbrestore("auto_settings.sav");
 // int fdbrestoreX(char *save_file)
 fdbrestoreX("custom_settings.dat");
 ```
+
+---
 
 ### fdbrestoreX (extended)
 
@@ -579,6 +637,8 @@ fdbrestoreX("custom_settings.dat");
 save_restoreSet_Debug(2);  // Verbose debugging
 ```
 
+---
+
 ### save_restoreShow
 
 **Purpose**: Lists save sets being managed by the save_restore task.
@@ -591,6 +651,8 @@ save_restoreSet_Debug(2);  // Verbose debugging
 // void save_restoreShow(int verbose)
 save_restoreShow(1);  // Show all save sets and their PVs
 ```
+
+---
 
 ### getMacroString
 
@@ -632,6 +694,8 @@ char *macros = getMacroString("auto_settings.req");
 autosaveBuild("built_settings.req", "_settings.req", 1);
 ```
 
+---
+
 ### eraseFile
 
 **Purpose**: Erases the contents of a file by opening it in write mode and immediately closing it.
@@ -650,6 +714,8 @@ autosaveBuild("built_settings.req", "_settings.req", 1);
 // int eraseFile(char *filename)
 eraseFile("built_settings.req");
 ```
+
+---
 
 ### appendToFile
 
@@ -704,6 +770,8 @@ asVerify("auto_settings.sav", 1, "");  // Verbose verification
 // void makeAutosaveFiles(void)
 makeAutosaveFiles();
 ```
+
+---
 
 ### makeAutosaveFileFromDbInfo
 
