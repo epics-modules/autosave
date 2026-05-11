@@ -1278,6 +1278,8 @@ STATIC int connect_list(struct chlist *plist, int verbose)
     struct channel *pchannel;
     int n, m;
     long status, field_size;
+    char realName[PV_NAME_LEN];
+    int is_long_string, nameLen;
 
     strNcpy(plist->statusStr, "Connecting PVs...", STATUS_STR_LEN);
 
@@ -1321,12 +1323,31 @@ STATIC int connect_list(struct chlist *plist, int verbose)
 
         pchannel->max_elements = ca_element_count(pchannel->chid); /* just to see if it's an array */
         pchannel->curr_elements = pchannel->max_elements;          /* begin with this assumption */
+
+        /* Detect long-string PVs (name ends with '$') and strip '$' for database access */
+        strNcpy(realName, pchannel->name, PV_NAME_LEN);
+        is_long_string = 0;
+        nameLen = strlen(realName);
+        if (nameLen > 0 && realName[nameLen - 1] == '$') {
+            realName[nameLen - 1] = '\0';
+            is_long_string = 1;
+        }
+
+        /* For long-string PVs with max_elements == 1, allocate pArray for string storage */
+        if (is_long_string && pchannel->max_elements == 1 && pchannel->pArray == NULL) {
+            pchannel->pArray = calloc(BUF_SIZE, sizeof(char));
+            if (pchannel->pArray == NULL) {
+                printf("save_restore:connect_list: can't alloc long-string buffer for '%s'\n", pchannel->name);
+            }
+        }
+
         if (save_restoreDebug >= 10)
             printf("save_restore:connect_list: '%s' has, at most, %ld elements\n", pchannel->name,
                    pchannel->max_elements);
         if (pchannel->max_elements > 1) {
-            /* We use database access for arrays, so get that info */
-            status = SR_get_array_info(pchannel->name, &pchannel->max_elements, &field_size, &pchannel->field_type);
+            /* We use database access for arrays, so get that info.
+             * Use realName (with '$' stripped) so dbNameToAddr succeeds. */
+            status = SR_get_array_info(realName, &pchannel->max_elements, &field_size, &pchannel->field_type);
             if (status) {
                 pchannel->curr_elements = pchannel->max_elements = -1;
                 printf("save_restore:connect_list: array PV '%s' is not local.\n", pchannel->name);
@@ -1336,6 +1357,11 @@ STATIC int connect_list(struct chlist *plist, int verbose)
                 if (save_restoreDebug >= 10)
                     printf("save_restore:connect_list:(after SR_get_array_info) '%s' has, at most, %ld elements\n",
                            pchannel->name, pchannel->max_elements);
+                /* Free any long-string buffer if we're now using the full array path */
+                if (is_long_string && pchannel->pArray) {
+                    free(pchannel->pArray);
+                    pchannel->pArray = NULL;
+                }
                 pchannel->pArray = calloc(pchannel->max_elements, field_size);
                 if (pchannel->pArray == NULL) {
                     printf("save_restore:connect_list: can't alloc array for '%s'\n", pchannel->name);
@@ -1483,9 +1509,28 @@ STATIC int get_channel_values(struct chlist *plist)
         /* Handle channels whose element count has not yet been determined. */
         if (pchannel->chid && (ca_state(pchannel->chid) == cs_conn) && (pchannel->max_elements == 0)) {
             /* Channel probably wasn't connected when connect_list() was called */
+            char lsName[PV_NAME_LEN];
+            int lsNameLen;
+
             pchannel->max_elements = pchannel->curr_elements = ca_element_count(pchannel->chid);
+
+            /* For long-string PVs with max_elements == 1, allocate pArray */
+            strNcpy(lsName, pchannel->name, PV_NAME_LEN);
+            lsNameLen = strlen(lsName);
+            if (lsNameLen > 0 && lsName[lsNameLen - 1] == '$') {
+                lsName[lsNameLen - 1] = '\0';
+                if (pchannel->max_elements == 1 && pchannel->pArray == NULL) {
+                    pchannel->pArray = calloc(BUF_SIZE, sizeof(char));
+                    if (pchannel->pArray == NULL) {
+                        printf("save_restore:get_channel_values: can't alloc long-string buffer for '%s'\n",
+                               pchannel->name);
+                    }
+                }
+            }
+
             if (pchannel->max_elements > 1) {
-                status = SR_get_array_info(pchannel->name, &pchannel->max_elements, &field_size, &pchannel->field_type);
+                /* Strip '$' for dbNameToAddr */
+                status = SR_get_array_info(lsName, &pchannel->max_elements, &field_size, &pchannel->field_type);
                 if (status) {
                     pchannel->curr_elements = pchannel->max_elements = -1; /* Mark channel so we ignore it forever. */
                     printf("save_restore:get_channel_values: array PV '%s' is not local.\n", pchannel->name);
@@ -1497,6 +1542,11 @@ STATIC int get_channel_values(struct chlist *plist)
                             "save_restore:get_channel_values:(after SR_get_array_info) '%s' has, at most, %ld "
                             "elements\n",
                             pchannel->name, pchannel->max_elements);
+                    /* Free any long-string buffer if we're now using the full array path */
+                    if (pchannel->pArray) {
+                        free(pchannel->pArray);
+                        pchannel->pArray = NULL;
+                    }
                     pchannel->pArray = calloc(pchannel->max_elements, field_size);
                     if (pchannel->pArray == NULL) {
                         printf("save_restore:get_channel_values: can't alloc array for '%s'\n", pchannel->name);
@@ -1526,6 +1576,16 @@ STATIC int get_channel_values(struct chlist *plist)
             if (pchannel->max_elements > 1) {
                 pchannel->curr_elements = pchannel->max_elements;
                 (void)SR_get_array(pchannel->name, pchannel->pArray, &pchannel->curr_elements);
+            }
+            /* For long-string PVs (name ends with '$') with max_elements == 1,
+             * fetch the long-string value via CA into pArray */
+            if (pchannel->max_elements == 1 && pchannel->pArray != NULL) {
+                int lsLen = strlen(pchannel->name);
+                if (lsLen > 0 && pchannel->name[lsLen - 1] == '$') {
+                    long nchar = ca_element_count(pchannel->chid);
+                    if (nchar > BUF_SIZE) nchar = BUF_SIZE;
+                    ca_array_get(DBR_CHAR, nchar, pchannel->chid, pchannel->pArray);
+                }
             }
             if (save_restoreDebug >= 15) {
                 printf("save_restore:get_channel_values: '%s' currently has %ld elements\n", pchannel->name,
