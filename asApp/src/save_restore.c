@@ -129,8 +129,6 @@
  *                Report failed connections to PV's at connect time.
  *                Allow embedded '.' in save-file name.
  */
-#define SRVERSION "autosave R5.3"
-
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -174,6 +172,7 @@
 #include "save_restore.h"
 #include "fGetDateStr.h"
 #include "configMenuClient.h"
+#include "autosave_release.h"
 #include "log_macros.h"
 
 #define SET_FILE_PERMISSIONS 1
@@ -330,7 +329,7 @@ STATIC epicsMessageQueueId opMsgQueue = NULL; /* message queue for manual/progra
 STATIC short save_restore_init = 0;
 STATIC short save_restore_shutdown = 0;
 STATIC epicsEventId shutdownEvent;
-STATIC char *SRversion = SRVERSION;
+STATIC char *SRversion = AUTOSAVE_RELEASE;
 STATIC struct pathListElement *reqFilePathList = NULL;
 char saveRestoreFilePath[MAX_PATH_LEN] = ""; /* path to save files, also used by dbrestore.c */
 STATIC unsigned int taskPriority = 20;       /* epicsThreadPriorityCAServerLow -- initial task priority */
