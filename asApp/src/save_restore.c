@@ -1670,6 +1670,12 @@ void print_chmod_error(int errNumber)
             strcpy(longMessage,
                    "A function was passed incorrect argument values, or an operation was attempted on an object and "
                    "the operation specified is not supported for that type of object.");
+            break;
+
+        default:
+            sprintf(shortMessage, "Unknown errno %d", errNumber);
+            longMessage[0] = '\0';
+            break;
     }
 
     printf("Error %d - %s\n%s\n", errNumber, shortMessage, longMessage);
