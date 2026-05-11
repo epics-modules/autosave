@@ -1,4 +1,6 @@
 /* save_restore.h */
+#ifndef INC_SAVE_RESTORE_H
+#define INC_SAVE_RESTORE_H
 
 #include <ellLib.h> /* pass0List, pass1List */
 #include <initHooks.h>
@@ -105,3 +107,5 @@ extern int openReqFile(const char *reqFile, FILE **fpp);
 extern int eraseFile(const char *filename);
 extern int appendToFile(const char *filename, const char *line);
 extern float mySafeDoubleToFloat(double d);
+
+#endif /* INC_SAVE_RESTORE_H */

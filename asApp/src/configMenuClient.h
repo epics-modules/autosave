@@ -1,4 +1,7 @@
 /* configMenuClient.h */
+#ifndef INC_CONFIGMENUCLIENT_H
+#define INC_CONFIGMENUCLIENT_H
+
 #define CONFIGMENU_ITEM_CHARS 40
 
 typedef void (*callbackFunc)(int status, void *puserPvt);
@@ -12,3 +15,5 @@ struct configFileListItem {
     char *name;
     char *description;
 };
+
+#endif /* INC_CONFIGMENUCLIENT_H */
