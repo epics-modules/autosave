@@ -236,7 +236,7 @@ def doPuts(verbose=0):
 			if verbose>1: print("ushort_array: writing values ", values)
 			put(prefix+pv, numpy.array(pv_values[pv]))
 		else:
-			if verbose: print("pv_type", pv_type, "not supported"
+			if verbose: print("pv_type", pv_type, "not supported")
 		
 	for (pv) in pv_types.keys():
 		p = epics.PV(prefix+pv)
@@ -270,4 +270,4 @@ def compare() :
 					print("\tsaved  =", pv_values[pv][i])
 					print("\tcurrent=", currVal[i])
 					numDifferences = numDifferences+1
-	print( numDifferences, " differences found"
+	print( numDifferences, " differences found")

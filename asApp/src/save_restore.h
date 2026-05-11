@@ -39,7 +39,7 @@
 #define DOUBLE_FMT "%.14g"
 
 #define BUF_SIZE 200
-#define EBUF_SIZE BUF_SIZE * 2
+#define EBUF_SIZE (BUF_SIZE * 2)
 #define ARRAY_BEGIN '{'
 #define ARRAY_END '}'
 #define ELEMENT_BEGIN '\"'
