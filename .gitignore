@@ -9,6 +9,7 @@ html/
 include/
 lib/
 templates/
+iocsh/
 cdCommands
 envPaths
 dllPath.bat
