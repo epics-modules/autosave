@@ -1,5 +1,7 @@
 # CONFIG_SITE
 
+MODULE = AUTOSAVE
+
 -include $(SUPPORT)/configure/CONFIG_SITE
 
 # Make any application-specific changes to the EPICS build

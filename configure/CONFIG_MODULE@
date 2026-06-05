@@ -1,0 +1,21 @@
+ifeq (,$(_@MODULE@_INCLUDED))
+_@MODULE@_INCLUDED = YES
+
+_@MODULE@_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+
+ifdef T_A
+
+_@MODULE@_DEPS := $(shell $(CONVERTRELEASE) -T $(_@MODULE@_DIR)/.. releaseTops)
+_@MODULE@_DEPS := $(filter-out EPICS_BASE SUPPORT, $(_@MODULE@_DEPS))
+
+$(foreach dep, $(_@MODULE@_DEPS), $(eval -include $($(dep))/cfg/CONFIG_MODULE))
+
+-include $(_@MODULE@_DIR)/@MODULE@_DEPS
+-include $(_@MODULE@_DIR)/@MODULE@_DEPS.local
+
+ALL_IOC_DBDS += $(@MODULE@_IOC_DBDS)
+ALL_IOC_LIBS := $(@MODULE@_IOC_LIBS) $(ALL_IOC_LIBS)
+ALL_IOC_SYS_LIBS := $(@MODULE@_IOC_SYS_LIBS) $(ALL_IOC_SYS_LIBS)
+
+endif # T_A
+endif # included

@@ -43,6 +43,8 @@ autosave_SRCS += osdNfs.c
 
 autosave_LIBS += $(EPICS_BASE_IOC_LIBS)
 
+CFG += AUTOSAVE_DEPS
+
 include $(TOP)/configure/RULES
 #----------------------------------------
 #  ADD RULES AFTER THIS LINE
