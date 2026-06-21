@@ -260,7 +260,7 @@ struct chlist {                        /* save set list element */
 
 struct channel {           /* database channel list element */
     struct channel *pnext; /* next channel */
-    char name[64];         /* channel name */
+    char name[PV_NAME_LEN + 1]; /* channel name */
     chid chid;             /* channel access id */
     char value[64];        /* value string */
     short enum_val;        /* short value of an enumerated field */
@@ -3197,7 +3197,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
     struct channel *pchannel;
     struct chlist *plist;
     int found, is_scalar;
-    char PVname[80];
+    char PVname[PV_NAME_LEN + 1];
     char restoreFile[MAX_PATH_LEN + 1] = "";
     char bu_filename[MAX_PATH_LEN + 1] = "";
     char buffer[BUF_SIZE], *bp, c;
@@ -3309,6 +3309,7 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
 
     /* restore from data file */
     while ((bp = fgets(buffer, BUF_SIZE, inp_fd))) {
+        int name_len = 0;
         if (handle && pairs) {
             ebuffer[0] = '\0';
             macExpandString(handle, buffer, ebuffer, EBUF_SIZE);
@@ -3319,8 +3320,16 @@ STATIC int do_manual_restore(char *filename, int file_type, char *macrostring)
         /* (value may be a string with leading whitespace; it may be */
         /* entirely whitespace; the number of spaces may be crucial; */
         /* it might also consist of zero characters) */
-        n = sscanf(bp, "%s%c%[^\n]", PVname, &c, value_string);
-        if (n < 3) *value_string = 0;
+        n = sscanf(bp, "%*s%n%c%[^\n]", &name_len, &c, value_string);
+        if (n < 2) *value_string = 0;
+        /* PVname can store one more character than PV_NAME_LEN. */
+        if (name_len <= PV_NAME_LEN) {
+            strncpy(PVname, bp, name_len);
+            PVname[name_len] = '\0';
+        } else {
+            strncpy(PVname, bp, PV_NAME_LEN);
+            PVname[PV_NAME_LEN] = '\0';
+        }
         if (strncmp(PVname, "<END>", 5) == 0) { break; }
         if (save_restoreDebug >= 5) { printf("save_restore:do_manual_restore: PVname='%s'\n", PVname); }
         if (isValid1stPVChar((int)PVname[0])) {
@@ -3537,7 +3546,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 {
     struct channel *pchannel = NULL;
     FILE *inp_fd = NULL;
-    char name[80] = "", *t = NULL, line[BUF_SIZE] = "", eline[EBUF_SIZE] = "";
+    char name[PV_NAME_LEN] = "", *t = NULL, line[BUF_SIZE] = "", eline[EBUF_SIZE] = "";
     char templatefile[MAX_PATH_LEN + 1] = "";
     char new_macro[BUF_SIZE] = "";
     int i = 0;
@@ -3668,7 +3677,7 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
                 }
                 plist->plast_chan = pchannel;
 #endif
-                strNcpy(pchannel->name, name, 64);
+                strNcpy(pchannel->name, name, PV_NAME_LEN);
                 strNcpy(pchannel->value, "Not Connected", 64);
                 pchannel->enum_val = -1;
                 pchannel->max_elements = 0;
@@ -3687,16 +3696,16 @@ STATIC int readReqFile(const char *reqFile, struct chlist *plist, char *macrostr
 	 * this can only be done when the list is defined.
 	 */
     if (handle) {
-        if (macGetValue(handle, "SAVEPATHPV", name, 80) > 0) {
+        if (macGetValue(handle, "SAVEPATHPV", name, PV_NAME_LEN) > 0) {
             plist->do_backups = 0;
             strNcpy(plist->savePathPV, name, PV_NAME_LEN);
         }
-        if (macGetValue(handle, "SAVENAMEPV", name, 80) > 0) {
+        if (macGetValue(handle, "SAVENAMEPV", name, PV_NAME_LEN) > 0) {
             plist->do_backups = 0;
             strNcpy(plist->saveNamePV, name, PV_NAME_LEN);
         }
-        if (macGetValue(handle, "CONFIG", name, 80) > 0) { strNcpy(plist->config, name, PV_NAME_LEN); }
-        if (macGetValue(handle, "CONFIGMENU", name, 80) > 0) { plist->do_backups = 0; }
+        if (macGetValue(handle, "CONFIG", name, PV_NAME_LEN) > 0) { strNcpy(plist->config, name, PV_NAME_LEN); }
+        if (macGetValue(handle, "CONFIGMENU", name, PV_NAME_LEN) > 0) { plist->do_backups = 0; }
         macDeleteHandle(handle);
         if (pairs) free(pairs);
     }

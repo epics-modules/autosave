@@ -759,7 +759,7 @@ long SR_array_restore(int pass, FILE *inp_fd, char *PVname, char *value_string, 
  */
 int reboot_restore(char *filename, initHookState init_state)
 {
-    char PVname[PV_NAME_LEN + 1]; /* Must be greater than max field width ("%80s") in the sscanf format below */
+    char PVname[PV_NAME_LEN + 1]; /* Must be PV_NAME_LEN + 1 so that we can detect names that are too long. */
     char bu_filename[PATH_SIZE + 1], fname[PATH_SIZE + 1] = "";
     char buffer[BUF_SIZE], *bp;
     char ebuffer[EBUF_SIZE]; /* make room for macro expansion */
@@ -774,7 +774,7 @@ int reboot_restore(char *filename, initHookState init_state)
     int n, write_backup, num_errors, is_scalar;
     long *pStatusVal = 0;
     char *statusStr = 0;
-    char realName[64]; /* name without trailing '$' */
+    char realName[PV_NAME_LEN+1]; /* name without trailing '$' */
     int is_long_string;
     struct restoreFileListItem *pLI;
     /* macrostring */
@@ -862,6 +862,7 @@ int reboot_restore(char *filename, initHookState init_state)
     /* restore from data file */
     num_errors = 0;
     while ((bp = fgets(buffer, BUF_SIZE, inp_fd))) {
+        int name_len = 0;
         if (handle && pairs) {
             ebuffer[0] = '\0';
             macExpandString(handle, buffer, ebuffer, EBUF_SIZE);
@@ -886,8 +887,16 @@ int reboot_restore(char *filename, initHookState init_state)
          */
         PVname[0] = '\0';
         value_string[0] = '\0';
-        n = sscanf(bp, "%80s%c%[^\n\r]", PVname, &c, value_string);
-        if (n < 3) *value_string = 0;
+        n = sscanf(bp, "%*s%n%c%[^\n\r]", &name_len, &c, value_string);
+        /* PVname can store one more character than PV_NAME_LEN. */
+        if (name_len <= PV_NAME_LEN) {
+            strncpy(PVname, bp, name_len);
+            PVname[name_len] = '\0';
+        } else {
+            strncpy(PVname, bp, PV_NAME_LEN);
+            PVname[PV_NAME_LEN] = '\0';
+        }
+        if (n < 2) *value_string = 0;
         if ((n < 1) || (PVname[0] == '\0')) {
             if (save_restoreDebug >= 10) {
                 ERRLOG("line (fragment) '%s' ignored.\n", bp);
@@ -904,7 +913,7 @@ int reboot_restore(char *filename, initHookState init_state)
             }
             continue;
         }
-        if (strlen(PVname) >= 80) {
+        if (strlen(PVname) >= PV_NAME_LEN) {
             /* must be a munged input line */
             ERRLOG("'%s' is too long to be a PV name.\n", PVname);
             continue;
@@ -934,7 +943,7 @@ int reboot_restore(char *filename, initHookState init_state)
 
             /* dbStatic doesn't know about long-string fields (PV name with appended '$'). */
             is_long_string = 0;
-            strNcpy(realName, PVname, 63);
+            strNcpy(realName, PVname, PV_NAME_LEN);
             if (realName[strlen(realName) - 1] == '$') {
                 realName[strlen(realName) - 1] = '\0';
                 is_long_string = 1;
