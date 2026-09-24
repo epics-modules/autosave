@@ -44,7 +44,7 @@
 #define FLOAT_FMT "%.7g"
 #define DOUBLE_FMT "%.14g"
 
-#define BUF_SIZE 200
+#define BUF_SIZE 32767
 #define EBUF_SIZE (BUF_SIZE * 2)
 #define ARRAY_BEGIN '{'
 #define ARRAY_END '}'
