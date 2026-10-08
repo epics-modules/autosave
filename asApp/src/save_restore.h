@@ -2,6 +2,7 @@
 #ifndef INC_SAVE_RESTORE_H
 #define INC_SAVE_RESTORE_H
 
+#include <dbDefs.h> /* PVNAME_STRINGSZ for PV length*/
 #include <ellLib.h> /* pass0List, pass1List */
 #include <initHooks.h>
 #include "save_restore_common.h"
@@ -57,7 +58,9 @@
 #define FN_LEN 80                  /* filename length */
 #define STRING_LEN MAX_STRING_SIZE /* EPICS max length for string PV */
 #define STATUS_STR_LEN 300
-#define PV_NAME_LEN 80 /* string containing a PV name */
+/* PV_NAME_LENGTH was historcially at least 80, so we ensure it is at least that and otherwise use
+PVNAME_STRINGSZ from EPICS base dbDefs.h */
+#define PV_NAME_LEN ((PVNAME_SZ > 80) ? (PVNAME_SZ) : (80)) /* string containing a PV name */
 #define MAXSTRING 300
 
 struct restoreFileListItem {
